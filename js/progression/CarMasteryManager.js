@@ -742,4 +742,4 @@ export function createCarMasteryManager(deps) {
 export { _instance as carMasteryManager };
 
 // Export tree data for the UI renderer
-export { GENERIC_TREE_TEMPLATE, CAR_OVERRIDES, buildTreeForCar };
+export { CAR_OVERRIDES, buildTreeForCar };
