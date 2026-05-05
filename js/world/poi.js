@@ -302,11 +302,11 @@ export function initPOI(scene, world, saveManager) {
   _save = saveManager;
   if (!_save) { _save = { get: (_k, d) => d, set: () => {} }; }
 
-  const collectedBoards    = _save.get('collectedBoards',    []);
-  const discoveredLandmarks= _save.get('discoveredLandmarks',[]);
-  const claimedBarns       = _save.get('claimedBarns',       []);
-  const trapBests          = _save.get('speedTrapBests',      {});
-
+  const collectedBoards    = sm.get('world',     'collectedBoards')     ?? [];
+  const discoveredLandmarks= sm.get('world',     'discoveredLandmarks') ?? [];
+  const claimedBarns       = sm.get('barnFinds', 'discovered')          ?? [];
+  const trapBests          = sm.get('world',     'speedTrapBests')      ?? {};
+  
   // ── Boards ───────────────────────────────────────────────────────────────
   const boardGeo = new THREE.PlaneGeometry(BOARD_GLOW_SIZE, BOARD_GLOW_SIZE);
 
@@ -535,10 +535,10 @@ function _checkSpeedTrap(id, state, trap, speedKph) {
     const prevBest = state.best;
     state.best = tier;
 
-    const bests = _save?.get('speedTrapBests', {}) ?? {};
+    const bests = _save?.get('world', 'speedTrapBests') ?? {};
     bests[id] = tier;
-    _save?.set('speedTrapBests', bests);
-
+    _save?.set('world', 'speedTrapBests', bests);
+    
     const tierLabels = ['', 'Bronze', 'Silver', 'Gold'];
     _fireCollect({
       type:     'speedTrap',
