@@ -686,6 +686,4 @@ class BarnFindManager {
 
 const barnFindManager = new BarnFindManager();
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { BarnFindManager, barnFindManager };
-}
+export { BarnFindManager, barnFindManager };
