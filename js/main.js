@@ -125,7 +125,7 @@ async function boot() {
   // Step 11 — Accolade & mastery managers
   // Both depend on progressionManager being ready.
   // ----------------------------------------------------------
-  const accoladeManager    = new AccoladeManager(saveManager, progressionManager, notificationSystem);
+  const accoladeManager = new AccoladeManager({ saveManager, progressionManager, notificationSystem });
   const carMasteryManager  = new CarMasteryManager(saveManager, progressionManager, notificationSystem);
 
   // ----------------------------------------------------------
