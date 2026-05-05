@@ -249,9 +249,7 @@ export async function initBuildings(sceneRef, worldRef) {
       translation: { x: bld.position.x, y: bld.colliderSize.hy, z: bld.position.z },
       colliders:   [{
         shape: 'cuboid',
-        hx:    bld.colliderSize.hx,
-        hy:    bld.colliderSize.hy,
-        hz:    bld.colliderSize.hz,
+        args:  [bld.colliderSize.hx, bld.colliderSize.hy, bld.colliderSize.hz],
       }],
     });
 
@@ -263,7 +261,7 @@ export async function initBuildings(sceneRef, worldRef) {
       translation: { x: bld.doorPosition.x, y: 1.0, z: bld.doorPosition.z },
       colliders:   [{
         shape:    'ball',
-        radius:   PROMPT_RADIUS,
+        args:     [PROMPT_RADIUS],
         sensor:   true,
       }],
     });
