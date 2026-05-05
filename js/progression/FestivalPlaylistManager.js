@@ -331,7 +331,7 @@ export class FestivalPlaylistManager extends EventTarget {
   // ── Private ──────────────────────────────────────────────────────────────
 
   _loadState() {
-    const saved = this._save.playlist?.get?.() ?? {};
+    const saved = this._save.get('playlist', 'fpm_state') ?? {};
     return {
       // Weekly challenge progress: { [weekNumber]: { [challengeId]: number } }
       weeklyProgress:   saved.weeklyProgress   ?? {},
@@ -345,7 +345,7 @@ export class FestivalPlaylistManager extends EventTarget {
   }
 
   _persist() {
-    this._save.playlist?.set?.(this._state);
+    this._save.set('playlist', 'fpm_state', this._state);
   }
 
   /** Season key used as a stable identifier in save data. */
@@ -371,7 +371,7 @@ export class FestivalPlaylistManager extends EventTarget {
    * and lock out any unclaimed Tier 4 cars from the previous season.
    */
   _maybeResetWeek() {
-    const lastWeek = this._save.playlist?.getLastWeek?.() ?? -1;
+    const lastWeek = this._save.get('playlist', 'lastWeek') ?? -1;
     if (lastWeek === this._weekNumber) return;
 
     // If the season changed, mark previous season car as missed if not claimed
@@ -388,7 +388,7 @@ export class FestivalPlaylistManager extends EventTarget {
       }
     }
 
-    this._save.playlist?.setLastWeek?.(this._weekNumber);
+    this._save.set('playlist', 'lastWeek', this._weekNumber);
     this._persist();
 
     this.dispatchEvent(new CustomEvent('week_reset', {
