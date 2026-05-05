@@ -299,13 +299,13 @@ let _ready = false;
  * @param {object}      saveManager  — SaveManager singleton
  */
 export function initPOI(scene, world, saveManager) {
-  _save = saveManager ?? _defaultSave ?? { get: (_k, d) => d };
+  _save = saveManager;
+  if (!_save) { _save = { get: (_k, d) => d, set: () => {} }; }
 
-  const sm = _save;
-  const collectedBoards    = sm.get('collectedBoards',    []);
-  const discoveredLandmarks= sm.get('discoveredLandmarks',[]);
-  const claimedBarns       = sm.get('claimedBarns',       []);
-  const trapBests          = sm.get('speedTrapBests',      {});
+  const collectedBoards    = _save.get('collectedBoards',    []);
+  const discoveredLandmarks= _save.get('discoveredLandmarks',[]);
+  const claimedBarns       = _save.get('claimedBarns',       []);
+  const trapBests          = _save.get('speedTrapBests',      {});
 
   // ── Boards ───────────────────────────────────────────────────────────────
   const boardGeo = new THREE.PlaneGeometry(BOARD_GLOW_SIZE, BOARD_GLOW_SIZE);
