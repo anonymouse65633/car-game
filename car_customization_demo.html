@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Car Customization — Part 4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  /* ── ROOT VARS ── */
+  :root {
+    --bg:        #0a0a0c;
+    --bg2:       #111114;
+    --bg3:       #18181d;
+    --border:    #2a2a32;
+    --accent:    #ff5c00;
+    --accent2:   #ff9340;
+    --dim:       #4a4a58;
+    --text:      #e8e8f0;
+    --textdim:   #7a7a8c;
+    --green:     #00e5a0;
+    --blue:      #4cc9f0;
+    --purple:    #9b5de5;
+    --red:       #ff3860;
+    --font-ui:   'Barlow Condensed', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: var(--bg2);
+    border-bottom: 2px solid var(--accent);
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 {
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  header h1 span { color: var(--text); }
+
+  .car-selector {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .car-selector label { color: var(--textdim); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.85rem; }
+  select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    cursor: pointer;
+    outline: none;
+    letter-spacing: 0.05em;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* ── LAYOUT ── */
+  .app-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 260px;
+    gap: 0;
+    height: calc(100vh - 55px);
+  }
+
+  /* ── PREVIEW PANEL ── */
+  .preview-panel {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .car-preview-wrap {
+    width: 100%;
+    aspect-ratio: 1.5;
+    background: radial-gradient(ellipse at center, #1a1a24 0%, var(--bg) 80%);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .car-preview-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,92,0,0.04) 40px);
+    pointer-events: none;
+  }
+
+  .car-svg-wrap {
+    width: 85%;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.8));
+    transition: filter 0.3s;
+  }
+
+  .compare-badge {
+    position: absolute; top: 8px; left: 8px;
+    background: var(--accent); color: #000;
+    font-size: 0.7rem; font-weight: 700;
+    padding: 2px 6px; letter-spacing: 0.1em;
+    text-transform: uppercase; display: none;
+  }
+
+  /* PR CLASS BADGE */
+  .pr-display {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 12px;
+    text-align: center;
+  }
+  .pr-class-badge {
+    font-size: 3.5rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    transition: color 0.3s;
+  }
+  .pr-number {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    color: var(--textdim);
+    margin-top: 4px;
+  }
+  .pr-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--bg);
+    margin-top: 8px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .pr-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s, background 0.3s;
+  }
+
+  /* STAT BARS in preview */
+  .stat-list { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+  .stat-row { display: flex; align-items: center; gap: 8px; }
+  .stat-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--textdim);
+    width: 70px;
+    flex-shrink: 0;
+  }
+  .stat-bar-bg {
+    flex: 1; height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .stat-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .stat-val {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text);
+    width: 38px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── MAIN TABS AREA ── */
+  .main-area {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .tab-bar {
+    display: flex;
+    background: var(--bg2);
+    border-bottom: 2px solid var(--border);
+    padding: 0 8px;
+  }
+  .tab-btn {
+    padding: 14px 22px;
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--textdim);
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    margin-bottom: -2px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  /* ── SECTION GROUPS ── */
+  .section-group {
+    margin-bottom: 24px;
+  }
+  .section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+  }
+
+  .option-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 6px;
+  }
+
+  .opt-btn {
+    padding: 8px 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--textdim);
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    line-height: 1.3;
+    letter-spacing: 0.03em;
+  }
+  .opt-btn:hover { border-color: var(--accent2); color: var(--text); }
+  .opt-btn.selected {
+    background: rgba(255,92,0,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .opt-btn .pr-tag {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--green);
+    font-family: var(--font-mono);
+    margin-top: 2px;
+  }
+
+  /* COLOR ZONES */
+  .color-zones {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .color-zone-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .color-zone-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--textdim);
+    width: 110px;
+    flex-shrink: 0;
+  }
+  .color-swatch {
+    width: 30px; height: 30px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: border-color 0.2s, transform 0.15s;
+    flex-shrink: 0;
+  }
+  .color-swatch:hover { border-color: var(--accent); transform: scale(1.1); }
+  input[type="color"] { display: none; }
+
+  .horizon-colors {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    margin-top: 8px;
+  }
+  .hc-dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .hc-dot:hover { transform: scale(1.2); border-color: white; }
+  .hc-dot.active { border-color: white; transform: scale(1.15); }
+
+  /* WHEEL CHOOSER */
+  .wheel-controls { display: flex; flex-direction: column; gap: 10px; }
+  .range-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .range-row label {
+    font-size: 0.78rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--textdim); width: 110px; flex-shrink: 0;
+  }
+  input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .range-val {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent2);
+    width: 45px; text-align: right; flex-shrink: 0;
+  }
+
+  /* TUNING SLIDERS */
+  .tuning-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .tune-row {
+    display: flex; flex-direction: column; gap: 4px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+  }
+  .tune-label {
+    font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--textdim);
+  }
+  .tune-val-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tune-val-row input[type="range"] { flex: 1; }
+  .tune-val {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent2);
+    width: 42px; text-align: right;
+  }
+
+  /* MASTERY TREE */
+  .mastery-header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 16px;
+  }
+  .mastery-pts {
+    font-size: 2.2rem; font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .mastery-pts span {
+    font-size: 0.8rem; font-weight: 400;
+    color: var(--textdim); display: block;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .mastery-earn-btn {
+    background: var(--bg3); border: 1px solid var(--accent);
+    color: var(--accent); font-family: var(--font-ui);
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 6px 14px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .mastery-earn-btn:hover { background: rgba(255,92,0,0.15); }
+
+  .mastery-tree {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 8px;
+  }
+  .mastery-node {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .mastery-node:hover:not(.locked-out) { border-color: var(--accent2); }
+  .mastery-node.unlocked {
+    border-color: var(--green);
+    background: rgba(0,229,160,0.05);
+  }
+  .mastery-node.locked-out { opacity: 0.4; cursor: not-allowed; }
+  .mastery-node-label {
+    font-size: 0.85rem; font-weight: 700;
+    color: var(--text); margin-bottom: 6px;
+    line-height: 1.3;
+  }
+  .mastery-node.unlocked .mastery-node-label { color: var(--green); }
+  .mastery-node-cost {
+    font-family: var(--font-mono); font-size: 0.72rem;
+    color: var(--accent);
+  }
+  .mastery-node.unlocked .mastery-node-cost { color: var(--green); }
+  .unlock-check {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 1rem; color: var(--green); display: none;
+  }
+  .mastery-node.unlocked .unlock-check { display: block; }
+
+  /* ── STATS SIDEBAR ── */
+  .stats-sidebar {
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .side-section-title {
+    font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--accent); border-bottom: 1px solid var(--border);
+    padding-bottom: 6px; margin-bottom: 10px;
+  }
+
+  .stat-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .stat-card-label {
+    font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--textdim);
+  }
+  .stat-card-val {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    color: var(--text);
+    font-weight: 400;
+  }
+  .stat-card-val.highlight { color: var(--accent2); }
+
+  .upgrade-list { display: flex; flex-direction: column; gap: 4px; }
+  .upgrade-item {
+    display: flex; justify-content: space-between;
+    font-size: 0.78rem; padding: 4px 8px;
+    background: var(--bg3); border: 1px solid var(--border);
+  }
+  .upgrade-item .uname { color: var(--textdim); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.7rem; }
+  .upgrade-item .uval  { color: var(--text); font-family: var(--font-mono); font-size: 0.72rem; }
+  .upgrade-item.has-upgrade .uval { color: var(--green); }
+
+  .save-bar {
+    display: flex; gap: 8px; margin-top: auto;
+  }
+  .action-btn {
+    flex: 1;
+    padding: 10px 8px;
+    font-family: var(--font-ui); font-size: 0.78rem;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+    border: 1px solid var(--border); cursor: pointer;
+    transition: all 0.2s;
+  }
+  .action-btn.primary {
+    background: var(--accent); color: #000;
+    border-color: var(--accent);
+  }
+  .action-btn.primary:hover { background: var(--accent2); }
+  .action-btn.secondary {
+    background: transparent; color: var(--textdim);
+  }
+  .action-btn.secondary:hover { border-color: var(--accent2); color: var(--text); }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--accent); color: #000;
+    font-family: var(--font-ui); font-size: 0.85rem;
+    font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; padding: 10px 20px;
+    transform: translateY(100px); opacity: 0;
+    transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 999;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--dim); }
+
+  /* TUNE PRESET ROW */
+  .tune-presets { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .preset-chip {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--textdim); font-family: var(--font-ui);
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;
+    padding: 4px 10px; cursor: pointer; transition: all 0.15s;
+  }
+  .preset-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  .perf-tier-row {
+    display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px;
+  }
+  .perf-tier-label {
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.15em; color: var(--textdim); margin-bottom: 4px;
+  }
+  .tier-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tier-btn {
+    padding: 7px 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--textdim); font-family: var(--font-ui);
+    font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .tier-btn:hover { border-color: var(--accent2); color: var(--text); }
+  .tier-btn.selected {
+    background: rgba(255,92,0,0.12);
+    border-color: var(--accent); color: var(--accent);
+  }
+  .tier-btn .pr-pts {
+    font-family: var(--font-mono); font-size: 0.68rem;
+    color: var(--green); display: block; margin-top: 1px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Car <span>Customization</span></h1>
+  <div class="car-selector">
+    <label>Vehicle</label>
+    <select id="carSelect">
+      <option value="nissan_silvia">Nissan Silvia S15 — 1999</option>
+      <option value="subaru_wrx">Subaru WRX STI — 2004</option>
+      <option value="lamborghini_huracan">Lamborghini Huracán — 2014</option>
+      <option value="ford_mustang">Ford Mustang GT — 2020</option>
+      <option value="toyota_ae86">Toyota AE86 — 1986</option>
+    </select>
+  </div>
+</header>
+
+<div class="app-layout">
+
+  <!-- LEFT: Car Preview -->
+  <aside class="preview-panel">
+    <div class="car-preview-wrap">
+      <div class="compare-badge" id="compareBadge">STOCK</div>
+      <div class="car-svg-wrap" id="carSvgWrap"></div>
+    </div>
+
+    <div class="pr-display">
+      <div class="pr-class-badge" id="prClassBadge">C</div>
+      <div class="pr-number" id="prNumber">PR — 120</div>
+      <div class="pr-bar"><div class="pr-bar-fill" id="prBarFill"></div></div>
+    </div>
+
+    <div class="stat-list">
+      <div class="stat-row">
+        <span class="stat-label">Power</span>
+        <div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-power" style="background:var(--accent)"></div></div>
+        <span class="stat-val" id="sv-power">250hp</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Handling</span>
+        <div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-handling" style="background:var(--green)"></div></div>
+        <span class="stat-val" id="sv-handling">58%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Braking</span>
+        <div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-braking" style="background:var(--blue)"></div></div>
+        <span class="stat-val" id="sv-braking">50%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Top Speed</span>
+        <div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-topspeed" style="background:var(--purple)"></div></div>
+        <span class="stat-val" id="sv-topspeed">210km/h</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">0–100</span>
+        <div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-accel" style="background:var(--accent2)"></div></div>
+        <span class="stat-val" id="sv-accel">7.8s</span>
+      </div>
+    </div>
+
+    <div style="width:100%;font-family:var(--font-mono);font-size:0.7rem;color:var(--textdim);text-align:center;line-height:1.8">
+      <div id="weightDisplay">1180 kg</div>
+      <div id="pwrDisplay">0.212 hp/kg</div>
+    </div>
+  </aside>
+
+  <!-- MIDDLE: Tabs -->
+  <main class="main-area">
+    <nav class="tab-bar">
+      <button class="tab-btn active" data-tab="visual">Visual</button>
+      <button class="tab-btn" data-tab="perf">Performance</button>
+      <button class="tab-btn" data-tab="tuning">Tuning</button>
+      <button class="tab-btn" data-tab="mastery">Mastery</button>
+    </nav>
+
+    <!-- VISUAL TAB -->
+    <div class="tab-content" id="tab-visual">
+
+      <div class="section-group">
+        <div class="section-title">Paint Type</div>
+        <div class="option-grid" id="paintTypeGrid"></div>
+      </div>
+
+      <div class="section-group">
+        <div class="section-title">Color Zones</div>
+        <div class="color-zones" id="colorZones"></div>
+        <div style="margin-top:12px">
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--textdim);margin-bottom:8px">Horizon Colors</div>
+          <div class="horizon-colors" id="horizonColors"></div>
+        </div>
+      </div>
+
+      <div class="section-group">
+        <div class="section-title">Window Tint</div>
+        <div class="option-grid" id="tintGrid"></div>
+      </div>
+
+      <div class="section-group">
+        <div class="section-title">Body Kit</div>
+        <div id="bodyKitSection"></div>
+      </div>
+
+      <div class="section-group">
+        <div class="section-title">Wheels</div>
+        <div class="wheel-controls" id="wheelControls"></div>
+      </div>
+
+      <div class="section-group">
+        <div class="section-title">Tire Compound</div>
+        <div class="option-grid" id="tireCompoundGrid"></div>
+      </div>
+
+      <div class="section-group">
+        <div class="section-title">Extras</div>
+        <div class="option-grid" id="extrasGrid"></div>
+      </div>
+
+    </div>
+
+    <!-- PERFORMANCE TAB -->
+    <div class="tab-content" id="tab-perf" style="display:none">
+
+      <div class="section-group">
+        <div class="section-title">Engine</div>
+        <div class="perf-tier-row">
+          <div class="perf-tier-label">Engine Internals</div>
+          <div class="tier-btns" id="engineTierBtns"></div>
+        </div>
+        <div class="perf-tier-row">
+          <div class="perf-tier-label">Aspiration</div>
+          <div class="tier-btns" id="aspirationBtns"></div>
+        </div>
+        <div class="perf-tier-row">
+          <div class="perf-tier-label">Exhaust</div>
+          <div class="tier-btns" id="exhaustBtns"></div>
+        </div>
+      </div>
+
+      <div class="section-group">
+        <div class="section-title">Drivetrain</div>
+        <div class="perf-tier-row">
+          <div class="perf-tier-label">Transmission</div>
+          <div class="tier-btns" id="transBtns"></div>
+        </div>
+        <div class="perf-tier-row">
+          <div class="perf-tier-label">Differential</div>
+          <div class="tier-btns" id="diffBtns"></div>
+        </div>
+      </div>
+
+      <div class="section-group">
+        <div class="section-title">Platform & Chassis</div>
+        <div class="perf-tier-row">
+          <div class="perf-tier-label">Brakes</div>
+          <div class="tier-btns" id="brakesBtns"></div>
+        </div>
+        <div class="perf-tier-row">
+          <div class="perf-tier-label">Suspension</div>
+          <div class="tier-btns" id="suspBtns"></div>
+        </div>
+        <div class="perf-tier-row">
+          <div class="perf-tier-label">Weight Reduction</div>
+          <div class="tier-btns" id="weightBtns"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TUNING TAB -->
+    <div class="tab-content" id="tab-tuning" style="display:none">
+      <div class="tune-presets">
+        <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--textdim)">Saved Tunes:</span>
+        <div class="preset-chip" id="savePresetBtn">+ Save Tune</div>
+        <div class="preset-chip" id="resetTuneBtn">↺ Reset</div>
+        <span id="tuneCodeDisplay" style="font-family:var(--font-mono);font-size:0.7rem;color:var(--dim)"></span>
+      </div>
+      <div class="tuning-grid" id="tuningGrid"></div>
+    </div>
+
+    <!-- MASTERY TAB -->
+    <div class="tab-content" id="tab-mastery" style="display:none">
+      <div class="mastery-header">
+        <div class="mastery-pts">
+          <span>Mastery Points</span>
+          <span id="masteryPtsVal">0 pts</span>
+        </div>
+        <button class="mastery-earn-btn" id="earnPtsBtn">+ Earn 5 Pts (Demo)</button>
+      </div>
+      <div style="font-size:0.78rem;color:var(--textdim);margin-bottom:16px;line-height:1.6">
+        Mastery points are earned by driving this car in races, drifting, and performing stunts.
+        Click nodes to unlock perks — each car has its own mastery tree.
+      </div>
+      <div class="mastery-tree" id="masteryTree"></div>
+      <div style="margin-top:20px;font-family:var(--font-mono);font-size:0.72rem;color:var(--dim)" id="masteryTotal"></div>
+    </div>
+
+  </main>
+
+  <!-- RIGHT: Stats Sidebar -->
+  <aside class="stats-sidebar">
+    <div>
+      <div class="side-section-title">Live Stats</div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div class="stat-card">
+          <span class="stat-card-label">Power</span>
+          <span class="stat-card-val highlight" id="sc-power">250 hp</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-label">Weight</span>
+          <span class="stat-card-val" id="sc-weight">1180 kg</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-label">0–100 km/h</span>
+          <span class="stat-card-val" id="sc-accel">7.8 s</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-label">Top Speed</span>
+          <span class="stat-card-val" id="sc-speed">210 km/h</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-label">Drivetrain</span>
+          <span class="stat-card-val" id="sc-drive">RWD</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="side-section-title">Active Upgrades</div>
+      <div class="upgrade-list" id="upgradeList"></div>
+    </div>
+
+    <div style="margin-top:auto">
+      <div class="save-bar">
+        <button class="action-btn primary" id="saveAllBtn">Save Build</button>
+        <button class="action-btn secondary" id="resetAllBtn">Reset</button>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--dim);margin-top:8px;text-align:center" id="lastSaved"></div>
+    </div>
+  </aside>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+const PAINT_TYPES = [
+  { id:'solid',label:'Solid' },{ id:'metallic',label:'Metallic' },
+  { id:'matte',label:'Matte' },{ id:'satin',label:'Satin' },
+  { id:'carbon',label:'Carbon' },{ id:'chrome',label:'Chrome' },
+  { id:'colorshift',label:'Color-Shift' },
+];
+const WINDOW_TINTS = [
+  { id:'clear',label:'Clear' },{ id:'light',label:'Light Tint' },
+  { id:'dark',label:'Dark Tint' },{ id:'vdark',label:'Very Dark' },
+  { id:'mirror',label:'Mirror' },
+];
+const HORIZON_COLORS = [
+  '#E63946','#F4A261','#E9C46A','#2A9D8F','#264653',
+  '#6A0572','#1B4332','#E9ECEF','#212529','#F72585',
+  '#7209B7','#3A0CA3','#4361EE','#4CC9F0','#06D6A0',
+  '#FFBE0B','#FB5607','#FF006E','#8338EC','#3A86FF',
+];
+const BODY_PARTS = {
+  frontBumper: { label: 'Front Bumper', opts: ['Stock','Sport','Track','Wide Body Front','Custom'] },
+  rearBumper:  { label: 'Rear Bumper',  opts: ['Stock','Sport','Track','Diffuser Edition'] },
+  sideSkirts:  { label: 'Side Skirts',  opts: ['Stock','Race Skirts','Wide Arch Skirts'] },
+  hood:        { label: 'Hood',         opts: ['Stock','Vented Hood','Carbon Hood','Race Hood'] },
+  roofScoop:   { label: 'Roof Scoop',   opts: ['None','Small Scoop','Large Scoop','Full Ram Air'] },
+  rearWing:    { label: 'Rear Wing',    opts: ['Stock','Lip Spoiler','Sport Wing','Race Wing','GT Blade','No Spoiler'] },
+  splitter:    { label: 'Splitter',     opts: ['None','Canards','Full Splitter'] },
+  diffuser:    { label: 'Diffuser',     opts: ['None','Standard','Race'] },
+  rollCage:    { label: 'Roll Cage',    opts: ['None','Partial','Full'] },
+  wideBody:    { label: 'Wide Body',    opts: ['None','Wide Body Kit'] },
+};
+const TIRE_COMPOUNDS = [
+  { id:'street',label:'Street' },{ id:'sport',label:'Sport' },
+  { id:'semislick',label:'Semi-Slick' },{ id:'slick',label:'Slick' },
+  { id:'offroad',label:'Off-Road' },{ id:'mud',label:'Mud Terrain' },
+  { id:'drag',label:'Drag Radial' },
+];
+const WHEEL_FINISHES = ['Gloss Black','Silver','Gold','Bronze','Matte','Chrome','Candy','Body Color','Carbon','Custom Color'];
+const WHEEL_DESIGNS = ['Stock','Sport 5-Spoke','Multi-Spoke','Mono Block','Turbine','Classic Wire','Split-Spoke','Mesh','Forged','Retro'];
+
+const ENGINE_TIERS = [
+  { id:'stock',label:'Stock Block',pr:0 },{ id:'street',label:'Street Engine',pr:15 },
+  { id:'sport',label:'Sport Engine',pr:35 },{ id:'race',label:'Race Engine',pr:60 },
+  { id:'swap',label:'Engine Swap',pr:90 },
+];
+const ASPIRATION = [
+  { id:'na',label:'Stock (NA)',pr:0 },
+  { id:'stock_turbo',label:'Stock Turbo',pr:20 },{ id:'sport_turbo',label:'Sport Turbo',pr:40 },
+  { id:'race_turbo',label:'Race Turbo',pr:65 },{ id:'twin_turbo',label:'Twin Turbo',pr:90 },
+  { id:'stock_super',label:'Stock Supercharger',pr:30 },{ id:'sport_super',label:'Sport Supercharger',pr:55 },
+  { id:'race_super',label:'Race Supercharger',pr:85 },
+];
+const EXHAUST_OPTS = [
+  { id:'stock',label:'Stock',pr:0 },{ id:'sport',label:'Sport',pr:8 },
+  { id:'race',label:'Race',pr:18 },{ id:'competition',label:'Competition',pr:28 },
+];
+const TRANS_TIERS = [
+  { id:'stock',label:'Stock Gearbox',pr:0 },{ id:'street',label:'Street',pr:12 },
+  { id:'sport',label:'Sport',pr:28 },{ id:'race',label:'Race',pr:48 },
+  { id:'sequential',label:'Sequential',pr:65 },
+];
+const DIFF_OPTS = [
+  { id:'open',label:'Open Diff',pr:0 },{ id:'street',label:'Street LSD',pr:15 },
+  { id:'race',label:'Race LSD',pr:35 },{ id:'drift',label:'Drift Diff',pr:25 },
+];
+const BRAKE_TIERS = [
+  { id:'stock',label:'Stock',pr:0 },{ id:'street',label:'Street',pr:10 },
+  { id:'sport',label:'Sport',pr:22 },{ id:'race',label:'Race',pr:38 },
+  { id:'carbon',label:'Carbon Ceramic',pr:55 },
+];
+const SUSP_OPTS = [
+  { id:'stock',label:'Stock',pr:0 },{ id:'street',label:'Street',pr:15 },
+  { id:'sport',label:'Sport',pr:32 },{ id:'race',label:'Race',pr:55 },
+  { id:'rally',label:'Rally',pr:30 },{ id:'drift',label:'Drift',pr:28 },
+];
+const WEIGHT_RED = [
+  { id:'none',label:'Stock Weight',pr:0 },{ id:'tier1',label:'Tier 1 (-30kg)',pr:12 },
+  { id:'tier2',label:'Tier 2 (-60kg)',pr:25 },{ id:'tier3',label:'Tier 3 (-100kg)',pr:40 },
+];
+const PR_CLASSES = [
+  { label:'D', min:0,   max:99,  color:'#6c757d' },
+  { label:'C', min:100, max:249, color:'#fd7e14' },
+  { label:'B', min:250, max:449, color:'#ffc107' },
+  { label:'A', min:450, max:649, color:'#20c997' },
+  { label:'S', min:650, max:849, color:'#0dcaf0' },
+  { label:'X', min:850, max:999, color:'#d63384' },
+];
+const CAR_DB = {
+  nissan_silvia:        { name:'Nissan Silvia S15',      basePR:120, basePower:250,  baseWeight:1180, drive:'RWD' },
+  subaru_wrx:           { name:'Subaru WRX STI',         basePR:180, basePower:300,  baseWeight:1450, drive:'AWD' },
+  lamborghini_huracan:  { name:'Lamborghini Huracán',    basePR:580, basePower:610,  baseWeight:1422, drive:'AWD' },
+  ford_mustang:         { name:'Ford Mustang GT',        basePR:220, basePower:460,  baseWeight:1700, drive:'RWD' },
+  toyota_ae86:          { name:'Toyota AE86',            basePR:80,  basePower:128,  baseWeight:940,  drive:'RWD' },
+};
+const TUNING_PARAMS = [
+  { key:'tirePressureFront', label:'Tyre Pressure (F)', min:24, max:40,  step:0.5, unit:'psi', default:32 },
+  { key:'tirePressureRear',  label:'Tyre Pressure (R)', min:24, max:40,  step:0.5, unit:'psi', default:32 },
+  { key:'camberFront',       label:'Camber (F)',         min:-5, max:2,   step:0.1, unit:'°',  default:-1.0 },
+  { key:'camberRear',        label:'Camber (R)',         min:-4, max:2,   step:0.1, unit:'°',  default:-0.5 },
+  { key:'toeFront',          label:'Toe (F)',            min:-2, max:2,   step:0.1, unit:'°',  default:0.0 },
+  { key:'toeRear',           label:'Toe (R)',            min:-2, max:2,   step:0.1, unit:'°',  default:0.1 },
+  { key:'caster',            label:'Caster',            min:3,  max:9,   step:0.1, unit:'°',  default:6.5 },
+  { key:'springsFront',      label:'Springs (F)',        min:4,  max:30,  step:0.5, unit:'N/mm', default:12 },
+  { key:'springsRear',       label:'Springs (R)',        min:4,  max:28,  step:0.5, unit:'N/mm', default:10 },
+  { key:'rideHeightFront',   label:'Ride Height (F)',    min:60, max:180, step:5,   unit:'mm', default:120 },
+  { key:'rideHeightRear',    label:'Ride Height (R)',    min:60, max:180, step:5,   unit:'mm', default:120 },
+  { key:'dampingBumpFront',  label:'Damping Bump (F)',   min:1,  max:20,  step:0.5, unit:'',  default:5 },
+  { key:'dampingBumpRear',   label:'Damping Bump (R)',   min:1,  max:20,  step:0.5, unit:'',  default:5 },
+  { key:'dampingReboundFront',label:'Rebound (F)',       min:1,  max:25,  step:0.5, unit:'',  default:7 },
+  { key:'dampingReboundRear', label:'Rebound (R)',       min:1,  max:25,  step:0.5, unit:'',  default:7 },
+  { key:'arbFront',          label:'ARB (F)',            min:4,  max:35,  step:0.5, unit:'N/mm', default:18 },
+  { key:'arbRear',           label:'ARB (R)',            min:4,  max:32,  step:0.5, unit:'N/mm', default:15 },
+  { key:'brakeBias',         label:'Brake Bias',        min:30, max:80,  step:1,   unit:'%F', default:60 },
+  { key:'diffAccelLock',     label:'Diff Accel Lock',   min:0,  max:100, step:5,   unit:'%',  default:25 },
+  { key:'diffDecelLock',     label:'Diff Decel Lock',   min:0,  max:100, step:5,   unit:'%',  default:20 },
+  { key:'turboBoost',        label:'Turbo Boost',       min:0.5,max:2.5, step:0.05,unit:'bar',default:1.0 },
+  { key:'finalDrive',        label:'Final Drive',       min:2.0,max:5.5, step:0.05,unit:'',  default:3.73 },
+];
+const MASTERY_TREE = [
+  { id:'credit_bonus',   label:'+10% Race Credits',      cost:3  },
+  { id:'drift_xp',       label:'+15% Drift XP',          cost:4  },
+  { id:'free_livery',    label:'Exclusive Livery',        cost:5  },
+  { id:'hidden_color',   label:'Hidden Color Unlocked',   cost:6  },
+  { id:'parts_discount', label:'10% Parts Discount',      cost:7  },
+  { id:'wheelspin',      label:'Bonus Wheelspin ×2',      cost:8  },
+  { id:'xp_multiplier',  label:'XP Multiplier +20%',      cost:10 },
+  { id:'max_power',      label:'Hidden Power +3%',        cost:15 },
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+const STORE_KEY = 'cargame_custom_v1';
+
+function loadStore() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
+}
+function saveStore(data) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch {}
+}
+
+let store = loadStore();
+let currentCarId = 'nissan_silvia';
+
+function getCarData(carId) {
+  if (!store[carId]) {
+    store[carId] = {
+      visual: {
+        paintType: 'solid',
+        primaryColor: '#E63946', secondaryColor: '#212529',
+        tertiaryColor: '#6c757d', caliperColor: '#E63946', interiorColor: '#212529',
+        windowTint: 'clear',
+        bodyKit: { frontBumper:'Stock',rearBumper:'Stock',sideSkirts:'Stock',
+          hood:'Stock',roofScoop:'None',rearWing:'Stock',splitter:'None',
+          diffuser:'None',rollCage:'None',wideBody:'None' },
+        wheels: { design:'Sport 5-Spoke', finish:'Gloss Black', diameter:18, width:225 },
+        tires: { compound:'sport', width:225 },
+        extras: { headlights:'Stock',taillights:'Stock',plateText:'HORIZON',neonEnabled:false,neonColor:'#ff00ff' },
+      },
+      perf: {
+        engine:'stock', aspiration:'na', exhaust:'stock',
+        transmission:'stock', differential:'open',
+        brakes:'stock', suspension:'stock', weightReduction:'none',
+      },
+      tuning: Object.fromEntries(TUNING_PARAMS.map(p => [p.key, p.default])),
+      mastery: { points: 0, totalEarned: 0, unlocked: [] },
+    };
+  }
+  return store[carId];
+}
+
+// ─────────────────────────────────────────────
+// PR + STATS
+// ─────────────────────────────────────────────
+function calcPR(carId) {
+  const car = CAR_DB[carId];
+  const perf = getCarData(carId).perf;
+  const pts =
+    (ENGINE_TIERS.find(e=>e.id===perf.engine)?.pr||0) +
+    (ASPIRATION.find(a=>a.id===perf.aspiration)?.pr||0) +
+    (EXHAUST_OPTS.find(e=>e.id===perf.exhaust)?.pr||0) +
+    (TRANS_TIERS.find(t=>t.id===perf.transmission)?.pr||0) +
+    (DIFF_OPTS.find(d=>d.id===perf.differential)?.pr||0) +
+    (BRAKE_TIERS.find(b=>b.id===perf.brakes)?.pr||0) +
+    (SUSP_OPTS.find(s=>s.id===perf.suspension)?.pr||0) +
+    (WEIGHT_RED.find(w=>w.id===perf.weightReduction)?.pr||0);
+  return Math.min(999, car.basePR + pts);
+}
+
+function calcStats(carId) {
+  const car = CAR_DB[carId];
+  const perf = getCarData(carId).perf;
+  const engMult = [1,1.05,1.12,1.22,1.35][[
+    'stock','street','sport','race','swap'].indexOf(perf.engine)] || 1;
+  const aspBoost = ASPIRATION.find(a=>a.id===perf.aspiration);
+  const boostMult = aspBoost ? (aspBoost.pr / 90) * 0.4 + 1 : 1;
+  const exhGain = [0,0.02,0.04,0.06][['stock','sport','race','competition'].indexOf(perf.exhaust)] || 0;
+  const power = Math.round(car.basePower * engMult * boostMult * (1 + exhGain));
+
+  const wReduction = [0,30,60,100][['none','tier1','tier2','tier3'].indexOf(perf.weightReduction)] || 0;
+  const weight = car.baseWeight - wReduction;
+
+  const suspBonus = SUSP_OPTS.find(s=>s.id===perf.suspension)?.pr || 0;
+  const handling = Math.min(99, 50 + suspBonus * 0.8);
+  const brakeScore = BRAKE_TIERS.find(b=>b.id===perf.brakes)?.pr || 0;
+  const braking = Math.min(99, 50 + brakeScore * 0.8);
+
+  const pwRatio = power / weight;
+  const topSpeed = Math.round(180 + pwRatio * 120);
+  const accel = Math.max(2, (10 - pwRatio * 8)).toFixed(1);
+
+  return { power, weight, handling: handling.toFixed(0), braking: braking.toFixed(0), topSpeed, accel, pwRatio };
+}
+
+// ─────────────────────────────────────────────
+// CAR SVG (dynamic)
+// ─────────────────────────────────────────────
+function getCarSVG(visualConfig) {
+  const pc = visualConfig.primaryColor;
+  const sc = visualConfig.secondaryColor;
+  const tc = visualConfig.tertiaryColor;
+  const wt = visualConfig.windowTint;
+  const wtO = { clear:0.1, light:0.3, dark:0.55, vdark:0.75, mirror:0.92 }[wt] || 0.1;
+  const wideBody = visualConfig.bodyKit.wideBody !== 'None';
+  const bodyY = wideBody ? 10 : 15;
+  const neon = visualConfig.extras.neonEnabled;
+  const neonC = visualConfig.extras.neonColor || '#ff00ff';
+
+  // Paint style on body
+  let bodyFill = pc;
+  let bodyFilter = '';
+  if (visualConfig.paintType === 'metallic')   bodyFilter = `url(#metallic)`;
+  if (visualConfig.paintType === 'chrome')     bodyFill = `url(#chrome_grad)`;
+  if (visualConfig.paintType === 'matte')      bodyFilter = '';
+  if (visualConfig.paintType === 'carbon')     bodyFill = `url(#carbon_pat)`;
+  if (visualConfig.paintType === 'colorshift') bodyFill = `url(#shift_grad)`;
+
+  return `<svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="metallic" cx="40%" cy="40%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="black" stop-opacity="0.15"/>
+    </radialGradient>
+    <linearGradient id="chrome_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0e0e0"/>
+      <stop offset="30%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#a0a0a0"/>
+      <stop offset="100%" stop-color="#d0d0d0"/>
+    </linearGradient>
+    <linearGradient id="shift_grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="${pc}"/>
+      <stop offset="50%" stop-color="${sc}"/>
+      <stop offset="100%" stop-color="${pc}"/>
+    </linearGradient>
+    <pattern id="carbon_pat" patternUnits="userSpaceOnUse" width="8" height="8">
+      <rect width="8" height="8" fill="#1a1a1a"/>
+      <rect x="0" y="0" width="4" height="4" fill="#2a2a2a"/>
+      <rect x="4" y="4" width="4" height="4" fill="#2a2a2a"/>
+    </pattern>
+    ${neon ? `<filter id="neon_glow"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>` : ''}
+    <filter id="drop"><feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="rgba(0,0,0,0.6)"/></filter>
+  </defs>
+
+  <!-- Shadow -->
+  <ellipse cx="200" cy="158" rx="160" ry="12" fill="rgba(0,0,0,0.4)"/>
+
+  <!-- Neon underglow -->
+  ${neon ? `<ellipse cx="200" cy="152" rx="140" ry="8" fill="${neonC}" opacity="0.35" filter="url(#neon_glow)"/>` : ''}
+
+  <!-- Main body -->
+  <g filter="url(#drop)">
+    <!-- Body base -->
+    <path d="M 40 ${120+bodyY} Q 30 ${100+bodyY} 60 ${80+bodyY} L 120 ${55+bodyY} Q 160 ${40+bodyY} 200 ${38+bodyY} Q 240 ${38+bodyY} 270 ${52+bodyY} L 330 ${78+bodyY} Q 360 ${90+bodyY} 365 ${110+bodyY} L 365 ${130+bodyY} Q 340 ${140+bodyY} 280 ${142+bodyY} Q 200 ${146+bodyY} 120 ${142+bodyY} Q 60 ${140+bodyY} 40 ${130+bodyY} Z"
+      fill="${bodyFill}" />
+    ${visualConfig.paintType==='metallic' ? `
+    <path d="M 40 ${120+bodyY} Q 30 ${100+bodyY} 60 ${80+bodyY} L 120 ${55+bodyY} Q 160 ${40+bodyY} 200 ${38+bodyY} Q 240 ${38+bodyY} 270 ${52+bodyY} L 330 ${78+bodyY} Q 360 ${90+bodyY} 365 ${110+bodyY} L 365 ${130+bodyY} Q 340 ${140+bodyY} 280 ${142+bodyY} Q 200 ${146+bodyY} 120 ${142+bodyY} Q 60 ${140+bodyY} 40 ${130+bodyY} Z"
+      fill="url(#metallic)" />` : ''}
+
+    <!-- Roof / secondary zone -->
+    <path d="M 125 ${70+bodyY} Q 160 ${42+bodyY} 200 ${40+bodyY} Q 240 ${40+bodyY} 270 ${54+bodyY} L 310 ${72+bodyY} L 280 ${70+bodyY} Q 240 ${52+bodyY} 200 ${50+bodyY} Q 162 ${52+bodyY} 128 ${70+bodyY} Z"
+      fill="${visualConfig.bodyKit.hood==='Carbon Hood' ? 'url(#carbon_pat)' : sc}" opacity="0.9"/>
+
+    <!-- Windows -->
+    <path d="M 145 ${68+bodyY} Q 175 ${50+bodyY} 200 ${48+bodyY} L 255 ${50+bodyY} Q 270 ${52+bodyY} 290 ${66+bodyY} L 270 ${68+bodyY} Q 245 ${55+bodyY} 200 ${54+bodyY} Q 165 ${55+bodyY} 148 ${68+bodyY} Z"
+      fill="rgba(120,180,240,0.85)" opacity="${1 - wtO}"/>
+    <path d="M 145 ${68+bodyY} Q 175 ${50+bodyY} 200 ${48+bodyY} L 255 ${50+bodyY} Q 270 ${52+bodyY} 290 ${66+bodyY} L 270 ${68+bodyY} Q 245 ${55+bodyY} 200 ${54+bodyY} Q 165 ${55+bodyY} 148 ${68+bodyY} Z"
+      fill="rgba(0,0,0,${wtO})"/>
+
+    <!-- Door trim / tertiary -->
+    <line x1="200" y1="${70+bodyY}" x2="200" y2="${138+bodyY}" stroke="${tc}" stroke-width="1.5" opacity="0.6"/>
+
+    <!-- Headlights -->
+    <ellipse cx="355" cy="${105+bodyY}" rx="12" ry="7" fill="${visualConfig.extras.headlights==='Smoked'?'#333':'#ffe8b0'}" opacity="0.9"/>
+    <ellipse cx="355" cy="${105+bodyY}" rx="8" ry="4" fill="white" opacity="0.6"/>
+    <!-- Taillights -->
+    <ellipse cx="50" cy="${108+bodyY}" rx="10" ry="6" fill="${visualConfig.extras.taillights==='Smoked'?'#440000':'#ff2200'}" opacity="0.9"/>
+
+    <!-- Front bumper accent -->
+    ${visualConfig.bodyKit.frontBumper!=='Stock' ? `
+    <path d="M 340 ${118+bodyY} Q 360 ${115+bodyY} 370 ${125+bodyY} L 365 ${132+bodyY} Q 355 ${128+bodyY} 338 ${125+bodyY} Z"
+      fill="${sc}" opacity="0.8"/>` : ''}
+
+    <!-- Rear wing -->
+    ${visualConfig.bodyKit.rearWing==='Race Wing'||visualConfig.bodyKit.rearWing==='GT Blade' ? `
+    <rect x="45" y="${52+bodyY}" width="5" height="22" fill="${tc}" rx="1"/>
+    <rect x="38" y="${50+bodyY}" width="20" height="4" fill="${tc}" rx="2"/>` : ''}
+    ${visualConfig.bodyKit.rearWing==='Sport Wing' ? `
+    <rect x="47" y="${58+bodyY}" width="4" height="16" fill="${tc}" rx="1"/>
+    <rect x="40" y="${56+bodyY}" width="16" height="3" fill="${tc}" rx="1.5"/>` : ''}
+
+    <!-- Splitter -->
+    ${visualConfig.bodyKit.splitter==='Full Splitter' ? `
+    <rect x="350" y="${128+bodyY}" width="25" height="4" fill="${sc}" rx="1" opacity="0.85"/>` : ''}
+
+    <!-- Caliper visible through wheel -->
+    <circle cx="120" cy="${142+bodyY}" r="6" fill="${visualConfig.caliperColor}" opacity="0.6"/>
+    <circle cx="285" cy="${142+bodyY}" r="6" fill="${visualConfig.caliperColor}" opacity="0.6"/>
+
+    <!-- Wheels -->
+    <circle cx="285" cy="${142+bodyY}" r="${24 + (visualConfig.wheels.diameter-15)*0.5}" fill="#111" stroke="${visualConfig.wheels.finish==='Chrome'?'#ccc':visualConfig.wheels.finish==='Gold'?'#c9a227':visualConfig.wheels.finish==='Bronze'?'#8c5e2a':'#333'}" stroke-width="3"/>
+    <circle cx="285" cy="${142+bodyY}" r="${16 + (visualConfig.wheels.diameter-15)*0.3}" fill="${visualConfig.wheels.finish==='Gloss Black'?'#222':visualConfig.wheels.finish==='Silver'?'#aaa':visualConfig.wheels.finish==='Gold'?'#c9a227':visualConfig.wheels.finish==='Chrome'?'#e8e8e8':'#444'}"/>
+    <circle cx="285" cy="${142+bodyY}" r="5" fill="#111"/>
+
+    <circle cx="120" cy="${142+bodyY}" r="${24 + (visualConfig.wheels.diameter-15)*0.5}" fill="#111" stroke="${visualConfig.wheels.finish==='Chrome'?'#ccc':visualConfig.wheels.finish==='Gold'?'#c9a227':visualConfig.wheels.finish==='Bronze'?'#8c5e2a':'#333'}" stroke-width="3"/>
+    <circle cx="120" cy="${142+bodyY}" r="${16 + (visualConfig.wheels.diameter-15)*0.3}" fill="${visualConfig.wheels.finish==='Gloss Black'?'#222':visualConfig.wheels.finish==='Silver'?'#aaa':visualConfig.wheels.finish==='Gold'?'#c9a227':visualConfig.wheels.finish==='Chrome'?'#e8e8e8':'#444'}"/>
+    <circle cx="120" cy="${142+bodyY}" r="5" fill="#111"/>
+
+    <!-- Neon accent stripe -->
+    ${neon ? `<line x1="80" y1="${138+bodyY}" x2="325" y2="${138+bodyY}" stroke="${neonC}" stroke-width="1.5" opacity="0.7"/>` : ''}
+  </g>
+</svg>`;
+}
+
+// ─────────────────────────────────────────────
+// UI HELPERS
+// ─────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function makeOptBtns(container, options, getSelected, onSelect, labelFn, subFn) {
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn' + (getSelected() === opt.id ? ' selected' : '');
+    btn.innerHTML = (labelFn ? labelFn(opt) : opt.label) +
+      (subFn ? `<span class="pr-tag">${subFn(opt)}</span>` : '');
+    btn.onclick = () => { onSelect(opt.id); renderAll(); };
+    container.appendChild(btn);
+  });
+}
+
+function makeTierBtns(container, options, getSelected, onSelect) {
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'tier-btn' + (getSelected() === opt.id ? ' selected' : '');
+    btn.innerHTML = opt.label + (opt.pr > 0 ? `<span class="pr-pts">+${opt.pr} PR</span>` : '');
+    btn.onclick = () => { onSelect(opt.id); renderAll(); };
+    container.appendChild(btn);
+  });
+}
+
+// ─────────────────────────────────────────────
+// RENDER FUNCTIONS
+// ─────────────────────────────────────────────
+function renderVisualTab() {
+  const d = getCarData(currentCarId);
+  const v = d.visual;
+
+  // Paint type
+  makeOptBtns(
+    document.getElementById('paintTypeGrid'),
+    PAINT_TYPES,
+    () => v.paintType,
+    id => { v.paintType = id; },
+  );
+
+  // Color zones
+  const czEl = document.getElementById('colorZones');
+  czEl.innerHTML = '';
+  const zones = [
+    { key:'primaryColor',   label:'Primary' },
+    { key:'secondaryColor', label:'Secondary' },
+    { key:'tertiaryColor',  label:'Trim' },
+    { key:'caliperColor',   label:'Calipers' },
+    { key:'interiorColor',  label:'Interior' },
+  ];
+  zones.forEach(z => {
+    const row = document.createElement('div');
+    row.className = 'color-zone-row';
+    const inp = document.createElement('input');
+    inp.type = 'color';
+    inp.id = 'ci_' + z.key;
+    inp.value = v[z.key];
+    const swatch = document.createElement('div');
+    swatch.className = 'color-swatch';
+    swatch.style.background = v[z.key];
+    swatch.onclick = () => inp.click();
+    inp.oninput = () => { v[z.key] = inp.value; swatch.style.background = inp.value; renderAll(); };
+    row.innerHTML = `<span class="color-zone-label">${z.label}</span>`;
+    row.appendChild(swatch);
+    row.appendChild(inp);
+    czEl.appendChild(row);
+  });
+
+  // Horizon colors — apply to primary
+  const hcEl = document.getElementById('horizonColors');
+  hcEl.innerHTML = '';
+  HORIZON_COLORS.forEach(c => {
+    const dot = document.createElement('div');
+    dot.className = 'hc-dot' + (v.primaryColor.toUpperCase() === c.toUpperCase() ? ' active' : '');
+    dot.style.background = c;
+    dot.onclick = () => { v.primaryColor = c; renderAll(); };
+    hcEl.appendChild(dot);
+  });
+
+  // Window tint
+  makeOptBtns(document.getElementById('tintGrid'), WINDOW_TINTS, () => v.windowTint, id => { v.windowTint = id; });
+
+  // Body kit
+  const bk = document.getElementById('bodyKitSection');
+  bk.innerHTML = '';
+  Object.entries(BODY_PARTS).forEach(([key, { label, opts }]) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-bottom:12px';
+    wrap.innerHTML = `<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--textdim);margin-bottom:5px">${label}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'option-grid';
+    opts.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn' + (v.bodyKit[key] === opt ? ' selected' : '');
+      btn.textContent = opt;
+      btn.onclick = () => { v.bodyKit[key] = opt; renderAll(); };
+      grid.appendChild(btn);
+    });
+    wrap.appendChild(grid);
+    bk.appendChild(wrap);
+  });
+
+  // Wheels
+  const wc = document.getElementById('wheelControls');
+  wc.innerHTML = '';
+  // Design
+  const designWrap = document.createElement('div');
+  designWrap.innerHTML = '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--textdim);margin-bottom:5px">Design</div>';
+  const designGrid = document.createElement('div');
+  designGrid.className = 'option-grid';
+  WHEEL_DESIGNS.forEach(w => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn' + (v.wheels.design === w ? ' selected' : '');
+    btn.textContent = w;
+    btn.onclick = () => { v.wheels.design = w; renderAll(); };
+    designGrid.appendChild(btn);
+  });
+  designWrap.appendChild(designGrid);
+  wc.appendChild(designWrap);
+
+  // Finish
+  const finishWrap = document.createElement('div');
+  finishWrap.style.marginTop = '10px';
+  finishWrap.innerHTML = '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--textdim);margin-bottom:5px">Finish</div>';
+  const finishGrid = document.createElement('div');
+  finishGrid.className = 'option-grid';
+  WHEEL_FINISHES.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn' + (v.wheels.finish === f ? ' selected' : '');
+    btn.textContent = f;
+    btn.onclick = () => { v.wheels.finish = f; renderAll(); };
+    finishGrid.appendChild(btn);
+  });
+  finishWrap.appendChild(finishGrid);
+  wc.appendChild(finishWrap);
+
+  // Diameter slider
+  const dRow = document.createElement('div');
+  dRow.className = 'range-row';
+  dRow.style.marginTop = '10px';
+  dRow.innerHTML = `<label>Diameter</label>
+    <input type="range" min="15" max="24" step="1" value="${v.wheels.diameter}">
+    <span class="range-val">${v.wheels.diameter}"</span>`;
+  dRow.querySelector('input').oninput = e => {
+    v.wheels.diameter = +e.target.value;
+    dRow.querySelector('.range-val').textContent = e.target.value + '"';
+    renderAll();
+  };
+  wc.appendChild(dRow);
+
+  // Tire compound
+  makeOptBtns(document.getElementById('tireCompoundGrid'), TIRE_COMPOUNDS, () => v.tires.compound, id => { v.tires.compound = id; });
+
+  // Extras
+  const eg = document.getElementById('extrasGrid');
+  eg.innerHTML = '';
+  // Headlights
+  ['Stock','Smoked','Clear Cover','Custom Color'].forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn' + (v.extras.headlights === opt ? ' selected' : '');
+    btn.textContent = 'HL: ' + opt;
+    btn.onclick = () => { v.extras.headlights = opt; renderAll(); };
+    eg.appendChild(btn);
+  });
+  // Neon toggle
+  const neonBtn = document.createElement('button');
+  neonBtn.className = 'opt-btn' + (v.extras.neonEnabled ? ' selected' : '');
+  neonBtn.textContent = v.extras.neonEnabled ? '🔆 Neon ON' : 'Neon OFF';
+  neonBtn.onclick = () => { v.extras.neonEnabled = !v.extras.neonEnabled; renderAll(); };
+  eg.appendChild(neonBtn);
+  // Neon color
+  if (v.extras.neonEnabled) {
+    const neonInp = document.createElement('input');
+    neonInp.type = 'color';
+    neonInp.value = v.extras.neonColor || '#ff00ff';
+    neonInp.style.cssText = 'height:32px;width:60px;padding:2px;background:var(--bg3);border:1px solid var(--border);cursor:pointer';
+    neonInp.oninput = e => { v.extras.neonColor = e.target.value; renderAll(); };
+    eg.appendChild(neonInp);
+  }
+}
+
+function renderPerfTab() {
+  const d = getCarData(currentCarId);
+  const p = d.perf;
+  makeTierBtns(document.getElementById('engineTierBtns'), ENGINE_TIERS, () => p.engine, id => { p.engine = id; });
+  makeTierBtns(document.getElementById('aspirationBtns'), ASPIRATION, () => p.aspiration, id => { p.aspiration = id; });
+  makeTierBtns(document.getElementById('exhaustBtns'), EXHAUST_OPTS, () => p.exhaust, id => { p.exhaust = id; });
+  makeTierBtns(document.getElementById('transBtns'), TRANS_TIERS, () => p.transmission, id => { p.transmission = id; });
+  makeTierBtns(document.getElementById('diffBtns'), DIFF_OPTS, () => p.differential, id => { p.differential = id; });
+  makeTierBtns(document.getElementById('brakesBtns'), BRAKE_TIERS, () => p.brakes, id => { p.brakes = id; });
+  makeTierBtns(document.getElementById('suspBtns'), SUSP_OPTS, () => p.suspension, id => { p.suspension = id; });
+  makeTierBtns(document.getElementById('weightBtns'), WEIGHT_RED, () => p.weightReduction, id => { p.weightReduction = id; });
+}
+
+function renderTuningTab() {
+  const d = getCarData(currentCarId);
+  const t = d.tuning;
+  const grid = document.getElementById('tuningGrid');
+  grid.innerHTML = '';
+  TUNING_PARAMS.forEach(p => {
+    const cell = document.createElement('div');
+    cell.className = 'tune-row';
+    const val = t[p.key] !== undefined ? t[p.key] : p.default;
+    cell.innerHTML = `
+      <div class="tune-label">${p.label}</div>
+      <div class="tune-val-row">
+        <input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${val}">
+        <span class="tune-val">${parseFloat(val).toFixed(p.step < 1 ? 2 : 0)}${p.unit}</span>
+      </div>`;
+    cell.querySelector('input').oninput = e => {
+      t[p.key] = +e.target.value;
+      const disp = parseFloat(e.target.value).toFixed(p.step < 1 ? 2 : 0) + p.unit;
+      cell.querySelector('.tune-val').textContent = disp;
+    };
+    grid.appendChild(cell);
+  });
+}
+
+function renderMasteryTab() {
+  const d = getCarData(currentCarId);
+  const m = d.mastery;
+  document.getElementById('masteryPtsVal').textContent = m.points + ' pts';
+  document.getElementById('masteryTotal').textContent = 'Total earned: ' + m.totalEarned + ' pts';
+
+  const tree = document.getElementById('masteryTree');
+  tree.innerHTML = '';
+  MASTERY_TREE.forEach(node => {
+    const isUnlocked = m.unlocked.includes(node.id);
+    const canAfford = m.points >= node.cost;
+    const div = document.createElement('div');
+    div.className = 'mastery-node' + (isUnlocked ? ' unlocked' : '') + (!canAfford && !isUnlocked ? ' locked-out' : '');
+    div.innerHTML = `
+      <div class="mastery-node-label">${node.label}</div>
+      <div class="mastery-node-cost">${isUnlocked ? '✓ Unlocked' : node.cost + ' pts'}</div>
+      <span class="unlock-check">✓</span>`;
+    if (!isUnlocked) {
+      div.onclick = () => {
+        if (m.points >= node.cost) {
+          m.points -= node.cost;
+          m.unlocked.push(node.id);
+          showToast('Mastery Unlocked: ' + node.label);
+          renderAll();
+        } else {
+          showToast('Not enough mastery points!');
+        }
+      };
+    }
+    tree.appendChild(div);
+  });
+}
+
+function renderStatsPanel() {
+  const stats = calcStats(currentCarId);
+  const pr = calcPR(currentCarId);
+  const prClass = PR_CLASSES.find(c => pr >= c.min && pr <= c.max) || PR_CLASSES[0];
+  const car = CAR_DB[currentCarId];
+  const d = getCarData(currentCarId);
+  const perf = d.perf;
+
+  // PR badge
+  document.getElementById('prClassBadge').textContent = prClass.label;
+  document.getElementById('prClassBadge').style.color = prClass.color;
+  document.getElementById('prNumber').textContent = 'PR — ' + pr;
+  const prFill = document.getElementById('prBarFill');
+  prFill.style.width = (pr / 999 * 100) + '%';
+  prFill.style.background = prClass.color;
+
+  // Stat bars (left panel)
+  const maxPower = 1200;
+  document.getElementById('sb-power').style.width = (stats.power / maxPower * 100) + '%';
+  document.getElementById('sv-power').textContent = stats.power + 'hp';
+  document.getElementById('sb-handling').style.width = stats.handling + '%';
+  document.getElementById('sv-handling').textContent = stats.handling + '%';
+  document.getElementById('sb-braking').style.width = stats.braking + '%';
+  document.getElementById('sv-braking').textContent = stats.braking + '%';
+  document.getElementById('sb-topspeed').style.width = (stats.topSpeed / 400 * 100) + '%';
+  document.getElementById('sv-topspeed').textContent = stats.topSpeed + 'km/h';
+  const accelPct = Math.max(0, 100 - (stats.accel - 2) / 10 * 100);
+  document.getElementById('sb-accel').style.width = accelPct + '%';
+  document.getElementById('sv-accel').textContent = stats.accel + 's';
+
+  document.getElementById('weightDisplay').textContent = stats.weight + ' kg';
+  document.getElementById('pwrDisplay').textContent = stats.pwRatio.toFixed(3) + ' hp/kg';
+
+  // Sidebar stats
+  document.getElementById('sc-power').textContent = stats.power + ' hp';
+  document.getElementById('sc-weight').textContent = stats.weight + ' kg';
+  document.getElementById('sc-accel').textContent = stats.accel + ' s';
+  document.getElementById('sc-speed').textContent = stats.topSpeed + ' km/h';
+  document.getElementById('sc-drive').textContent = car.drive;
+
+  // Upgrade list
+  const ul = document.getElementById('upgradeList');
+  ul.innerHTML = '';
+  const upgrades = [
+    { name:'Engine',  val: perf.engine,         opts: ENGINE_TIERS },
+    { name:'Aspir.',  val: perf.aspiration,      opts: ASPIRATION },
+    { name:'Exhaust', val: perf.exhaust,         opts: EXHAUST_OPTS },
+    { name:'Trans.',  val: perf.transmission,    opts: TRANS_TIERS },
+    { name:'Diff',    val: perf.differential,    opts: DIFF_OPTS },
+    { name:'Brakes',  val: perf.brakes,          opts: BRAKE_TIERS },
+    { name:'Susp.',   val: perf.suspension,      opts: SUSP_OPTS },
+    { name:'Weight',  val: perf.weightReduction, opts: WEIGHT_RED },
+  ];
+  upgrades.forEach(u => {
+    const opt = u.opts.find(o => o.id === u.val);
+    const isUpgraded = u.val !== u.opts[0].id;
+    const item = document.createElement('div');
+    item.className = 'upgrade-item' + (isUpgraded ? ' has-upgrade' : '');
+    item.innerHTML = `<span class="uname">${u.name}</span><span class="uval">${opt?.label || u.val}</span>`;
+    ul.appendChild(item);
+  });
+}
+
+function renderCarPreview() {
+  const d = getCarData(currentCarId);
+  document.getElementById('carSvgWrap').innerHTML = getCarSVG(d.visual);
+}
+
+function renderAll() {
+  renderCarPreview();
+  renderStatsPanel();
+  const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+  if (activeTab === 'visual')   renderVisualTab();
+  if (activeTab === 'perf')     renderPerfTab();
+  if (activeTab === 'tuning')   renderTuningTab();
+  if (activeTab === 'mastery')  renderMasteryTab();
+}
+
+// ─────────────────────────────────────────────
+// EVENTS
+// ─────────────────────────────────────────────
+document.getElementById('carSelect').onchange = e => {
+  currentCarId = e.target.value;
+  renderAll();
+};
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ['visual','perf','tuning','mastery'].forEach(id => {
+      document.getElementById('tab-' + id).style.display = btn.dataset.tab === id ? '' : 'none';
+    });
+    renderAll();
+  };
+});
+
+document.getElementById('saveAllBtn').onclick = () => {
+  saveStore(store);
+  const now = new Date();
+  document.getElementById('lastSaved').textContent = 'Saved ' + now.toLocaleTimeString();
+  showToast('Build saved!');
+};
+
+document.getElementById('resetAllBtn').onclick = () => {
+  if (confirm('Reset all customization for this car?')) {
+    delete store[currentCarId];
+    renderAll();
+    showToast('Build reset.');
+  }
+};
+
+document.getElementById('earnPtsBtn').onclick = () => {
+  const m = getCarData(currentCarId).mastery;
+  m.points += 5;
+  m.totalEarned += 5;
+  renderAll();
+  showToast('+5 Mastery Points!');
+};
+
+document.getElementById('savePresetBtn').onclick = () => {
+  const name = prompt('Name this tune preset:');
+  if (!name) return;
+  const d = getCarData(currentCarId);
+  if (!d.savedPresets) d.savedPresets = [];
+  d.savedPresets.push({ name, config: { ...d.tuning } });
+  saveStore(store);
+  showToast('Tune "' + name + '" saved!');
+};
+
+document.getElementById('resetTuneBtn').onclick = () => {
+  const d = getCarData(currentCarId);
+  d.tuning = Object.fromEntries(TUNING_PARAMS.map(p => [p.key, p.default]));
+  renderAll();
+  showToast('Tune reset to stock.');
+};
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+renderAll();
+</script>
+</body>
+</html>

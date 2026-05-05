@@ -1,0 +1,72 @@
+/* ============================================================
+   Horizon City — css/menus.css
+   Shell styles for the phone menu overlay, fullscreen map,
+   and all shop overlays. JS modules inject their own inner
+   styles — this file only handles the outer containers.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Overlay Backdrop
+   Dark semi-transparent layer rendered behind all menus.
+   ------------------------------------------------------------ */
+.hc-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 200;
+  backdrop-filter: blur(4px);
+}
+
+/* ------------------------------------------------------------
+   Phone Menu Shell
+   PhoneMenu.js mounts into #hc-phone-menu.
+   Hidden by default; JS adds .open to show it.
+   ------------------------------------------------------------ */
+#hc-phone-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: none;          /* JS sets display:flex when open */
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+#hc-phone-menu.open {
+  display: flex;
+}
+
+/* ------------------------------------------------------------
+   Map Container
+   FullscreenMap mounts into #hc-map-container.
+   ------------------------------------------------------------ */
+#hc-map-container {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: none;
+  pointer-events: auto;
+  background: var(--hc-dark);
+}
+
+#hc-map-container.open {
+  display: block;
+}
+
+/* ------------------------------------------------------------
+   Shop Container
+   All shop UIs (AutoShow, Parts, Livery, Boutique) mount here.
+   ------------------------------------------------------------ */
+#hc-shop-container {
+  position: fixed;
+  inset: 0;
+  z-index: 280;
+  display: none;
+  pointer-events: auto;
+  background: var(--hc-dark);
+  overflow-y: auto;
+}
+
+#hc-shop-container.open {
+  display: block;
+}

@@ -1,0 +1,347 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   main.css — Horizon City Global Foundation
+   Load order: FIRST (before hud.css, menus.css, race.css, animations.css)
+
+   Responsibilities:
+     - CSS reset & box model
+     - Rajdhani font import
+     - --hc-* brand variable definitions on :root
+     - Base body / canvas layout
+     - Shared utility classes used across all modules
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Font ──────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
+
+
+/* ── Reset ──────────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Remove default list styles used inside menus */
+ul, ol {
+  list-style: none;
+}
+
+/* Remove default button styles — JS modules apply their own */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  padding: 0;
+}
+
+/* Remove default input/select styles */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  background: none;
+  border: none;
+  outline: none;
+  color: inherit;
+}
+
+/* Remove default anchor decoration */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ── Brand Variables ─────────────────────────────────────────────────────────
+   All --hc-* variables are defined here. Every JS module's injected <style>
+   block reads these. Do not duplicate them elsewhere.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+
+  /* Core accent colours */
+  --hc-orange:          #FF6B00;   /* Primary accent — buttons, highlights  */
+  --hc-orange-dim:      #CC5500;   /* Hover / pressed state                 */
+  --hc-orange-glow:     rgba(255, 107, 0, 0.35); /* Glow halos             */
+
+  /* Reward / economy colours */
+  --hc-gold:            #FFD700;   /* CR amounts, wheelspin prizes           */
+  --hc-gold-dim:        #C9A800;   /* Muted gold (subtitles, secondary CR)  */
+  --hc-xp-blue:         #00BFFF;   /* XP bars and level fill                */
+  --hc-xp-blue-glow:    rgba(0, 191, 255, 0.30);
+
+  /* Status / feedback colours */
+  --hc-green:           #00FF88;   /* Cash earn, level-up, positive states  */
+  --hc-green-dim:       #00CC6A;
+  --hc-red:             #FF2244;   /* Warnings, ABS light, damage indicator */
+  --hc-red-dim:         #CC1133;
+  --hc-purple:          #B06AFF;   /* Seasonal events, super wheelspin      */
+  --hc-cyan:            #00E5FF;   /* Rivals, info highlights               */
+
+  /* Neutral / text */
+  --hc-white:           #FFFFFF;
+  --hc-off-white:       #E8E8E8;
+  --hc-text:            #E8E8E8;
+  --hc-text-dim:        #888888;
+  --hc-text-muted:      rgba(255, 255, 255, 0.40);
+
+  /* Surface colours (dark-mode game UI) */
+  --hc-dark:            #0A0A0A;   /* Page / overlay backgrounds            */
+  --hc-dark-mid:        #141414;   /* Card backgrounds                      */
+  --hc-dark-light:      #222222;   /* Input backgrounds, dividers           */
+  --hc-dark-border:     rgba(255, 255, 255, 0.08); /* Subtle borders       */
+  --hc-dark-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Gradients */
+  --hc-grad-menu:       linear-gradient(160deg, #0f0f0f 0%, #1a1a1a 100%);
+  --hc-grad-card:       linear-gradient(135deg, #141414 0%, #1e1e1e 100%);
+  --hc-grad-orange:     linear-gradient(90deg, #FF6B00 0%, #FF9500 100%);
+  --hc-grad-race:       linear-gradient(135deg, #0A0A0A 0%, #1a0800 100%);
+
+  /* Shape */
+  --hc-radius:          8px;
+  --hc-radius-sm:       4px;
+  --hc-radius-lg:       16px;
+  --hc-radius-xl:       24px;
+  --hc-radius-pill:     999px;
+
+  /* Typography */
+  --hc-font:            'Rajdhani', 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --hc-font-size-xs:    0.72rem;   /* 11.5px — labels, badges              */
+  --hc-font-size-sm:    0.88rem;   /* 14px   — secondary text              */
+  --hc-font-size-md:    1.0rem;    /* 16px   — body default                */
+  --hc-font-size-lg:    1.25rem;   /* 20px   — subheadings                 */
+  --hc-font-size-xl:    1.6rem;    /* 25.6px — headings                    */
+  --hc-font-size-2xl:   2.2rem;    /* 35px   — hero numbers, prices        */
+  --hc-font-size-3xl:   3.5rem;    /* 56px   — countdown, big readouts     */
+
+  /* Motion */
+  --hc-transition:      0.2s ease;
+  --hc-transition-slow: 0.4s ease;
+  --hc-transition-fast: 0.12s ease;
+
+  /* Z-index layers (document-level — HUD root uses its own internal stack) */
+  --hc-z-canvas:        0;
+  --hc-z-hud:           100;
+  --hc-z-map:           250;
+  --hc-z-backdrop:      200;
+  --hc-z-menu:          300;
+  --hc-z-shop:          280;
+  --hc-z-race-ui:       290;
+  --hc-z-results:       295;
+  --hc-z-countdown:     310;
+  --hc-z-loading:       500;
+  --hc-z-toast:         400;
+
+  /* Spacing scale (used by shop UIs, results screen, phone menu shell) */
+  --hc-space-xs:        4px;
+  --hc-space-sm:        8px;
+  --hc-space-md:        16px;
+  --hc-space-lg:        24px;
+  --hc-space-xl:        40px;
+  --hc-space-2xl:       64px;
+}
+
+
+/* ── Base Layout ─────────────────────────────────────────────────────────────
+   html and body fill the viewport exactly. No scrollbars. The game canvas
+   sits at z-index 0; all UI overlays stack above it.
+   ─────────────────────────────────────────────────────────────────────────── */
+html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* Prevent iOS bounce scroll from exposing the background */
+  overscroll-behavior: none;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #000;
+  font-family: var(--hc-font);
+  font-size: var(--hc-font-size-md);
+  color: var(--hc-text);
+  /* Prevent text selection during gameplay */
+  user-select: none;
+  -webkit-user-select: none;
+  /* Prevent tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+/* ── Canvas ──────────────────────────────────────────────────────────────────
+   Three.js writes to #game-canvas. It must be exactly the full viewport,
+   positioned under every UI layer.
+   ─────────────────────────────────────────────────────────────────────────── */
+#game-canvas {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--hc-z-canvas);
+}
+
+
+/* ── Loading Screen ──────────────────────────────────────────────────────────
+   Shown while main.js boots. Hidden by main.js once the loop starts.
+   ─────────────────────────────────────────────────────────────────────────── */
+#hc-loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--hc-z-loading);
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hc-space-lg);
+  pointer-events: none;
+}
+
+#hc-loading-screen .hc-loading-title {
+  font-family: var(--hc-font);
+  font-size: clamp(2rem, 8vw, 5rem);
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--hc-white);
+}
+
+#hc-loading-screen .hc-loading-title span {
+  color: var(--hc-orange);
+}
+
+#hc-loading-screen .hc-loading-bar-track {
+  width: clamp(200px, 40vw, 400px);
+  height: 3px;
+  background: var(--hc-dark-light);
+  border-radius: var(--hc-radius-pill);
+  overflow: hidden;
+}
+
+#hc-loading-screen .hc-loading-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--hc-grad-orange);
+  border-radius: var(--hc-radius-pill);
+  transition: width 0.3s ease;
+}
+
+#hc-loading-screen .hc-loading-hint {
+  font-size: var(--hc-font-size-sm);
+  color: var(--hc-text-dim);
+  letter-spacing: 0.08em;
+}
+
+/* Fade out when JS removes the 'visible' class */
+#hc-loading-screen.fade-out {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+
+/* ── Shared Utility Classes ──────────────────────────────────────────────────
+   Small helpers used by multiple JS module injected styles. Keeping them
+   here avoids duplication across module-level <style> blocks.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Scrollbar styling — applied to any overflow container */
+.hc-scrollable {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+.hc-scrollable::-webkit-scrollbar {
+  width: 4px;
+}
+.hc-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hc-scrollable::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--hc-radius-pill);
+}
+
+/* Currency / credit amount display */
+.hc-cr {
+  color: var(--hc-gold);
+  font-weight: 700;
+}
+.hc-cr::before {
+  content: 'CR ';
+  font-weight: 500;
+  opacity: 0.75;
+  font-size: 0.85em;
+}
+
+/* XP amount display */
+.hc-xp {
+  color: var(--hc-xp-blue);
+  font-weight: 700;
+}
+.hc-xp::after {
+  content: ' XP';
+  font-weight: 500;
+  opacity: 0.75;
+  font-size: 0.85em;
+}
+
+/* Car class badges — D / C / B / A / S1 / S2 */
+.hc-class-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--hc-radius-sm);
+  font-family: var(--hc-font);
+  font-size: var(--hc-font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #000;
+  flex-shrink: 0;
+}
+.hc-class-D  { background: #8888AA; }
+.hc-class-C  { background: #44BB44; }
+.hc-class-B  { background: #BBBB22; }
+.hc-class-A  { background: #FF8800; }
+.hc-class-S1 { background: #DD22DD; }
+.hc-class-S2 { background: #00DDFF; color: #000; }
+
+/* Divider line */
+.hc-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--hc-dark-border);
+  flex-shrink: 0;
+}
+
+/* Invisible but interactive — for overlay click-catches */
+.hc-click-catch {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* Screen-reader only text */
+.hc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

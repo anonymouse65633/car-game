@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon City — Part 5: Avatar Customization Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/avatar.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: #06060c;
+      height: 100%;
+      font-family: 'Rajdhani', sans-serif;
+      color: #f0f0f8;
+    }
+    body {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      grid-template-rows: 48px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top bar */
+    .topbar {
+      grid-column: 1 / 3;
+      background: #0d0d18;
+      border-bottom: 1px solid #2e2e48;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #8888aa;
+    }
+    .topbar-logo { color: #e94560; font-size: 15px; font-weight: 700; }
+    .topbar-sep { opacity: 0.3; }
+
+    /* Boutique panel */
+    #boutique-container {
+      grid-column: 1;
+      grid-row: 2;
+      overflow: hidden;
+      border-right: 1px solid #2e2e48;
+    }
+
+    /* Sidebar preview */
+    .preview-sidebar {
+      grid-column: 2;
+      grid-row: 2;
+      background: #0d0d18;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    .preview-sidebar h3 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #55556a;
+      border-bottom: 1px solid #2e2e48;
+      padding-bottom: 8px;
+    }
+
+    /* 3D viewport placeholder */
+    .avatar-viewport {
+      background: linear-gradient(180deg, #141420 0%, #0a0a14 100%);
+      border: 1px solid #2e2e48;
+      border-radius: 10px;
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #55556a;
+      font-size: 13px;
+      text-align: center;
+    }
+    .avatar-viewport .figure { font-size: 64px; }
+    .viewport-label {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #e94560;
+      font-weight: 700;
+    }
+
+    /* State dump */
+    #state-dump {
+      background: #0a0a12;
+      border: 1px solid #2e2e48;
+      border-radius: 8px;
+      color: #6688aa;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      line-height: 1.5;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 10px 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Driver card preview in sidebar */
+    #dc-preview-sidebar .driver-card { width: 100%; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <span class="topbar-logo">HORIZON CITY</span>
+    <span class="topbar-sep">|</span>
+    <span>Part 5 — Avatar Customization</span>
+    <span class="topbar-sep">|</span>
+    <span>Clothing Boutique Demo</span>
+  </div>
+
+  <div id="boutique-container"></div>
+
+  <div class="preview-sidebar">
+    <h3>3D Preview</h3>
+    <div class="avatar-viewport">
+      <div class="figure">🧍</div>
+      <div class="viewport-label">Three.js Viewport</div>
+      <div>Connects in full game</div>
+    </div>
+
+    <h3>Driver Card</h3>
+    <div id="dc-preview-sidebar"></div>
+
+    <h3>Live State</h3>
+    <div id="state-dump">Loading...</div>
+  </div>
+
+  <!-- Load as ES modules -->
+  <script type="module">
+    import { AvatarUI }      from './AvatarUI.js';
+    import { renderDriverCard } from './DriverCard.js';
+    import { avatarSystem }  from './AvatarSystem.js';
+
+    // Mount boutique UI
+    const boutique = new AvatarUI({
+      container: document.getElementById('boutique-container'),
+      onClose: () => console.log('Close requested'),
+      onPreview: (state) => {
+        // Update sidebar driver card
+        renderDriverCard(document.getElementById('dc-preview-sidebar'));
+        // Update state dump
+        const dump = {
+          name:       state.driverName,
+          pronouns:   state.pronouns,
+          bodyType:   state.bodyType,
+          skin:       state.skinTone,
+          hair:       `${state.hairStyle} / ${state.hairColor}`,
+          equipped:   state.equipped,
+          stickers:   state.activeStickers,
+          outfits:    state.outfitSlots.filter(Boolean).length + ' saved',
+        };
+        document.getElementById('state-dump').textContent =
+          JSON.stringify(dump, null, 2);
+      },
+    });
+
+    // Initial render
+    renderDriverCard(document.getElementById('dc-preview-sidebar'));
+    const s = avatarSystem.state;
+    document.getElementById('state-dump').textContent =
+      JSON.stringify({ name: s.driverName, equipped: s.equipped }, null, 2);
+  </script>
+
+</body>
+</html>

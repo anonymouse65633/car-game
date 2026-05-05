@@ -1,0 +1,283 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   hud.css — Horizon City HUD Structural Layer
+   Load order: SECOND (after main.css, before menus.css)
+
+   Responsibilities:
+     - Pre-load structural definition for #hc-hud-root so the overlay
+       exists visually before HUDManager.js initialises.
+       (HUDManager injects its own HUD_BASE_CSS via JS after page load —
+        that injected CSS has higher source-order priority and overrides
+        these definitions where they overlap. This file is the safety net.)
+     - Document-level z-index layer map (single source of truth).
+     - Minimap wrapper visual treatment (.minimap-wrapper class).
+     - HUD corner anchor helpers used by multiple child modules.
+     - Pointer-events rules for interactive HUD children.
+     - Responsive HUD edge adjustments that apply before JS loads.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ── HUD Root Overlay ────────────────────────────────────────────────────────
+   The full-screen transparent overlay that sits above #game-canvas and
+   below every menu layer. HUDManager.js creates this div and inserts it
+   after the canvas element. This rule ensures it renders correctly even
+   if the JS is slow to initialise.
+   ─────────────────────────────────────────────────────────────────────────── */
+#hc-hud-root {
+  position: fixed;
+  inset: 0;
+  /* HUDManager uses z-index 800 in its injected CSS — match here so
+     no flash of wrong stacking order on first paint. */
+  z-index: 800;
+  /* Pass all pointer events to the canvas during gameplay.
+     HUDManager adds .menu-open to re-enable events when menus are open. */
+  pointer-events: none;
+  overflow: hidden;
+  font-family: var(--hc-font);
+  /* Prevent layout shifts from triggering repaints during fast turns */
+  will-change: contents;
+  /* Isolate HUD compositing layer from the canvas */
+  isolation: isolate;
+}
+
+/* When a menu is open, the menu layer catches input */
+#hc-hud-root.menu-open {
+  pointer-events: none; /* root still passes through */
+}
+
+/* ── Backdrop Dimmer ─────────────────────────────────────────────────────────
+   Semi-transparent overlay shown behind phone / setup / results screens.
+   HUDManager toggles .visible on this element.
+   ─────────────────────────────────────────────────────────────────────────── */
+#hc-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.25s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#hc-backdrop.visible {
+  background: rgba(0, 0, 0, 0.45);
+  /* Catch clicks in empty space to close menus */
+  pointer-events: auto;
+}
+
+/* ── Menu Layer ──────────────────────────────────────────────────────────────
+   The interactive child layer inside hc-hud-root. HUDManager toggles
+   pointer-events when any menu is open.
+   ─────────────────────────────────────────────────────────────────────────── */
+#hc-menu-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+#hc-hud-root.menu-open #hc-menu-layer {
+  pointer-events: auto;
+}
+
+/* ── Game-State Class Helpers ────────────────────────────────────────────────
+   Applied to #hc-hud-root by HUDManager to show/hide relevant HUD chunks.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Race-only elements (timer, position, leaderboard) are hidden outside races */
+#hc-hud-root:not(.racing) .hc-race-only {
+  display: none !important;
+}
+
+/* Driving-only elements (speedo, gear) are hidden when on foot */
+#hc-hud-root.on-foot .hc-driving-only {
+  display: none !important;
+}
+
+/* ── Z-Index Layer Map ───────────────────────────────────────────────────────
+   All document-level layers documented in one place.
+   Anything inside #hc-hud-root uses its own internal z-index stack (0–50).
+   Layers below are relative to the document root.
+
+   0    #game-canvas            Three.js WebGL surface
+   100  #hc-hud-root            Gameplay HUD overlay
+   200  #hc-overlay-backdrop    Shared dim layer behind menus
+   250  #hc-map-container       Fullscreen map
+   280  #hc-shop-container      All shop UIs
+   290  #hc-race-setup          Race setup screen
+   295  #hc-race-results        Race results screen
+   300  #hc-phone-menu          Phone menu (topmost UI menu)
+   310  #hc-countdown-overlay   Pre-race 3-2-1-GO
+   400  .hc-toast / notifications (injected by NotificationSystem)
+   500  #hc-loading-screen      Boot loading cover
+   ─────────────────────────────────────────────────────────────────────────── */
+
+
+/* ── Minimap Wrapper ─────────────────────────────────────────────────────────
+   MinimapRenderer creates a div with className='minimap-wrapper' and sets
+   position/size via inline styles. This class provides the visual treatment
+   (shape, blur, ring border) that inline styles can't express.
+   ─────────────────────────────────────────────────────────────────────────── */
+.minimap-wrapper {
+  /* Shape — circular minimap */
+  border-radius: 50%;
+  overflow: hidden;
+  /* Glass effect behind the canvas */
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  /* Subtle ring border */
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.12),
+    0 0 0 4px rgba(0, 0, 0, 0.40),
+    inset 0 0 20px rgba(0, 0, 0, 0.30);
+  /* Smooth resize transitions (triggered by MinimapRenderer.onResize) */
+  transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
+  /* Raise above other HUD elements at the same z-level */
+  z-index: 10;
+}
+
+/* Canvas inside the wrapper — fill it completely */
+.minimap-canvas {
+  display: block;
+  border-radius: 50%;
+}
+
+/* North compass label */
+.minimap-compass {
+  font-family: var(--hc-font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 0 4px #000;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Hide minimap entirely in some race types (set by HUDManager) */
+#hc-hud-root.minimap-hidden .minimap-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+/* ── HUD Corner Anchors ──────────────────────────────────────────────────────
+   Utility classes child modules can use to anchor themselves to viewport
+   corners without fighting absolute position inheritance.
+   DrivingHUD and RaceHUD use their own absolute positioning internally,
+   but these classes are available for any future HUD modules.
+   ─────────────────────────────────────────────────────────────────────────── */
+.hc-hud-anchor {
+  position: absolute;
+}
+.hc-hud-anchor--tl { top: var(--hud-edge, 24px); left: var(--hud-edge, 24px); }
+.hc-hud-anchor--tr { top: var(--hud-edge, 24px); right: var(--hud-edge, 24px); }
+.hc-hud-anchor--bl { bottom: var(--hud-edge, 24px); left: var(--hud-edge, 24px); }
+.hc-hud-anchor--br { bottom: var(--hud-edge, 24px); right: var(--hud-edge, 24px); }
+.hc-hud-anchor--tc {
+  top: var(--hud-edge, 24px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.hc-hud-anchor--bc {
+  bottom: var(--hud-edge, 24px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+
+/* ── Interactive HUD Children ────────────────────────────────────────────────
+   Any HUD element that needs to receive input (e.g. a pause button,
+   phone open button) adds this class. The root stays pointer-events:none
+   so the canvas gets input everywhere else.
+   ─────────────────────────────────────────────────────────────────────────── */
+.hc-hud-interactive {
+  pointer-events: auto;
+}
+
+
+/* ── Speed Lines Overlay ─────────────────────────────────────────────────────
+   DrivingHUD injects its own #hc-speed-lines CSS, but we define the
+   base here so the element has correct stacking if the style tag is
+   briefly missing during hot reloads or slow JS init.
+   ─────────────────────────────────────────────────────────────────────────── */
+#hc-speed-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+}
+
+/* ── Chromatic Aberration / Impact Flash ─────────────────────────────────────
+   Full-screen post-process overlay driven by DrivingHUD on hard impacts.
+   ─────────────────────────────────────────────────────────────────────────── */
+#hc-chroma {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+
+/* ── Responsive Edge Reduction ───────────────────────────────────────────────
+   HUDManager also applies these via its --hud-scale / --hud-edge vars in
+   its injected CSS, but having them here prevents layout jumps during
+   the brief gap before JS initialises.
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1280px) {
+  #hc-hud-root {
+    --hud-edge: 18px;
+    --hud-scale: 0.88;
+  }
+}
+
+@media (max-width: 900px) {
+  #hc-hud-root {
+    --hud-edge: 12px;
+    --hud-scale: 0.75;
+  }
+  /* Shrink minimap on small screens */
+  .minimap-wrapper {
+    width: 120px !important;
+    height: 120px !important;
+  }
+  .minimap-canvas {
+    width: 120px !important;
+    height: 120px !important;
+  }
+}
+
+
+/* ── Colour Blind Modes ──────────────────────────────────────────────────────
+   Applied to #hc-hud-root by SettingsMenu. Redefines colour vars so all
+   child modules automatically pick up the adjusted palette.
+   ─────────────────────────────────────────────────────────────────────────── */
+#hc-hud-root.cb-deuteranopia {
+  --hud-gold:  #e6c619;
+  --hud-green: #8be0ff;
+  --hud-red:   #ff8c42;
+}
+#hc-hud-root.cb-protanopia {
+  --hud-gold:  #ffe066;
+  --hud-green: #80d4ff;
+  --hud-red:   #ff9900;
+}
+#hc-hud-root.cb-tritanopia {
+  --hud-gold:  #f5c542;
+  --hud-blue:  #ff6f91;
+  --hud-cyan:  #ff9de2;
+}
+
+
+/* ── Reduced Motion ──────────────────────────────────────────────────────────
+   Respect OS-level preference. HUDManager's injected CSS also sets this,
+   but having it here means it applies from first paint.
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  #hc-hud-root * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

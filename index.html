@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon City</title>
+
+  <!-- Rajdhani font — preconnect for performance, then load -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS — load order matters: main variables first, then layers -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/hud.css">
+  <link rel="stylesheet" href="css/menus.css">
+  <link rel="stylesheet" href="css/race.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/avatar.css">
+  <link rel="stylesheet" href="css/shop.css">
+
+  <!-- Import map — must come before any module scripts -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three":                     "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/examples/jsm/":       "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+      "howler":                    "https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.esm.js",
+      "@dimforge/rapier3d-compat": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.12.0/rapier.es.js"
+    }
+  }
+  </script>
+
+  <!-- Firebase SDK v10 compat — must load before js/firebase/firebase.js -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <!-- Three.js render target -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- HUDManager mounts here -->
+  <div id="hc-hud-root"></div>
+
+  <!-- PhoneMenu mounts here -->
+  <div id="hc-phone-menu"></div>
+
+  <!-- FullscreenMap mounts here -->
+  <div id="hc-map-container"></div>
+
+  <!-- All shop UIs (AutoShow, Parts, Livery, Boutique) mount here -->
+  <div id="hc-shop-container"></div>
+
+  <!-- RaceSetupScreen mounts here -->
+  <div id="hc-race-setup"></div>
+
+  <!-- RaceResultsScreen mounts here -->
+  <div id="hc-race-results"></div>
+
+  <!-- Pre-race countdown overlay: 3 - 2 - 1 - GO -->
+  <div id="hc-countdown-overlay">
+    <span id="hc-countdown-number"></span>
+  </div>
+
+  <!-- Loading screen — hidden by main.js when boot completes -->
+  <div id="hc-loading-screen">
+    <span>HORIZON CITY</span>
+  </div>
+
+  <!-- Boot — last in body so all DOM nodes above are ready -->
+  <script type="module" src="js/main.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,73 @@
+/* ============================================================
+   Horizon City — css/race.css
+   Outer containers for the race setup screen, race results
+   screen, and the pre-race countdown overlay.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Race Setup Screen
+   RaceSetupScreen.js mounts into #hc-race-setup.
+   ------------------------------------------------------------ */
+#hc-race-setup {
+  position: fixed;
+  inset: 0;
+  z-index: 290;
+  display: none;
+  pointer-events: auto;
+  background: var(--hc-dark);
+  overflow-y: auto;
+}
+
+#hc-race-setup.open {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------------------------------------------------
+   Race Results Screen
+   RaceResultsScreen.js mounts into #hc-race-results.
+   ------------------------------------------------------------ */
+#hc-race-results {
+  position: fixed;
+  inset: 0;
+  z-index: 295;
+  display: none;
+  pointer-events: auto;
+  background: linear-gradient(135deg, var(--hc-dark) 0%, #1a0a00 100%);
+  overflow-y: auto;
+}
+
+#hc-race-results.open {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------------------------------------------------
+   Countdown Overlay
+   3-2-1-GO screen shown before a race starts.
+   Activated by adding .active — pointer-events stays none
+   so the game canvas remains interactive underneath.
+   ------------------------------------------------------------ */
+#hc-countdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 310;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+#hc-countdown-overlay.active {
+  display: flex;
+}
+
+#hc-countdown-number {
+  font-family: var(--hc-font);
+  font-size: clamp(80px, 20vw, 200px);
+  font-weight: 700;
+  color: var(--hc-orange);
+  text-shadow: 0 0 40px var(--hc-orange), 0 0 80px rgba(255, 107, 0, 0.5);
+  line-height: 1;
+}

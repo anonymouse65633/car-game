@@ -1,0 +1,88 @@
+/* ============================================================
+   Horizon City — css/animations.css
+   All GSAP target classes and CSS @keyframes used across the
+   game. GSAP animates elements by class name — if these
+   classes are missing, animations will be invisible.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   GSAP Target Classes
+   These selectors must exist for GSAP to find them.
+   Inner styles are intentionally minimal — GSAP drives the
+   animated properties at runtime.
+   ------------------------------------------------------------ */
+
+/* XP bar fill — GSAP drives width % */
+.hc-anim-xp-bar {}
+
+/* Credit counter — GSAP drives textContent via counter plugin */
+.hc-anim-credit-tick {}
+
+/* Level-up badge — GSAP scales this from 0 */
+.hc-anim-level-badge {}
+
+/* Podium blocks — GSAP staggers their reveal */
+.hc-anim-podium-1,
+.hc-anim-podium-2,
+.hc-anim-podium-3 {}
+
+/* Wheelspin spinning drum */
+.hc-anim-wheelspin-drum {}
+
+/* Accolade card flip */
+.hc-anim-card-flip {}
+
+/* ------------------------------------------------------------
+   @keyframes — XP Level-Up Bar Fill
+   CSS fallback for the XP bar; --xp-target is set inline
+   by JS so the bar fills to the correct percentage.
+   ------------------------------------------------------------ */
+@keyframes hcXpFill {
+  from { width: 0%; }
+  to   { width: var(--xp-target, 100%); }
+}
+
+/* ------------------------------------------------------------
+   @keyframes — Credit Earn Toast Pulse
+   Pulses the credit amount gold → white → gold on earn.
+   ------------------------------------------------------------ */
+@keyframes hcCreditPulse {
+  0%   { transform: scale(1);    color: var(--hc-gold); }
+  50%  { transform: scale(1.15); color: #fff; }
+  100% { transform: scale(1);    color: var(--hc-gold); }
+}
+
+/* ------------------------------------------------------------
+   @keyframes — Podium Reveal
+   Each podium block rises from below with opacity fade-in.
+   JS staggers the three blocks.
+   ------------------------------------------------------------ */
+@keyframes hcPodiumRise {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ------------------------------------------------------------
+   @keyframes — Notification Slide-In / Slide-Out
+   Notifications drop in from above the screen and retract
+   back up when dismissed.
+   ------------------------------------------------------------ */
+@keyframes hcNotifyIn {
+  from { transform: translateY(-120%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+@keyframes hcNotifyOut {
+  from { transform: translateY(0);     opacity: 1; }
+  to   { transform: translateY(-120%); opacity: 0; }
+}
+
+/* ------------------------------------------------------------
+   @keyframes — Phone Menu Open
+   Menu panel scales up from 90% with a fade so it feels
+   like it snaps open from the centre of the screen.
+   ------------------------------------------------------------ */
+@keyframes hcMenuOpen {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}

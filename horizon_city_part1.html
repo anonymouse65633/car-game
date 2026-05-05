@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Horizon City — Part 1: City World</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{overflow:hidden;background:#000;font-family:'Courier New',monospace}
+canvas#c{display:block;width:100vw;height:100vh}
+
+#hud{
+  position:fixed;top:20px;right:20px;
+  pointer-events:none;text-align:right;
+  text-shadow:0 0 12px rgba(0,0,0,0.9);
+}
+#district-label{
+  font-size:11px;letter-spacing:3px;color:rgba(255,255,255,0.55);
+  text-transform:uppercase;margin-bottom:2px
+}
+#district-name{
+  font-size:20px;font-weight:bold;letter-spacing:2px;
+  color:#00ffcc;transition:color 0.6s
+}
+#speed-wrap{margin-top:8px;display:flex;align-items:baseline;justify-content:flex-end;gap:5px}
+#speed{font-size:48px;font-weight:bold;color:#fff;line-height:1}
+#speed-unit{font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:2px}
+#time-wrap{margin-top:4px;font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:2px}
+#daynight{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffee88;margin-right:6px;vertical-align:middle}
+
+#minimap-wrap{
+  position:fixed;bottom:24px;left:24px;
+  width:180px;height:180px;
+  border-radius:50%;overflow:hidden;
+  border:1.5px solid rgba(255,255,255,0.18);
+  box-shadow:0 0 0 1px rgba(0,0,0,0.6)
+}
+canvas#mini{width:180px;height:180px}
+
+#banner{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;text-align:center;
+  opacity:0;transition:opacity 0.4s
+}
+#banner-sub{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:4px}
+#banner-name{font-size:32px;font-weight:bold;letter-spacing:3px;color:#fff;text-shadow:0 0 40px currentColor}
+
+#controls{
+  position:fixed;bottom:24px;right:24px;
+  color:rgba(255,255,255,0.35);font-size:11px;
+  line-height:2;letter-spacing:1px;text-align:right;pointer-events:none
+}
+
+#poi-msg{
+  position:fixed;top:80px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.15);
+  color:#ffee44;font-size:13px;letter-spacing:2px;
+  padding:8px 20px;border-radius:4px;pointer-events:none;
+  opacity:0;transition:opacity 0.3s
+}
+
+#loading{
+  position:fixed;inset:0;background:#0a0a14;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:100;transition:opacity 0.8s
+}
+#loading h1{color:#00ffcc;font-size:36px;letter-spacing:6px;margin-bottom:8px}
+#loading p{color:rgba(255,255,255,0.4);font-size:12px;letter-spacing:4px}
+#loading-bar{width:200px;height:2px;background:rgba(255,255,255,0.1);margin-top:20px;border-radius:2px;overflow:hidden}
+#loading-fill{height:100%;width:0%;background:#00ffcc;border-radius:2px;transition:width 0.3s}
+</style>
+</head>
+<body>
+<div id="loading">
+  <h1>HORIZON CITY</h1>
+  <p>PART 1 — CITY WORLD DESIGN</p>
+  <div id="loading-bar"><div id="loading-fill"></div></div>
+</div>
+
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div id="district-label">DISTRICT</div>
+  <div id="district-name">DOWNTOWN CORE</div>
+  <div id="speed-wrap"><span id="speed">0</span><span id="speed-unit">KM/H</span></div>
+  <div id="time-wrap"><span id="daynight"></span><span id="clock">12:00</span></div>
+</div>
+
+<div id="minimap-wrap"><canvas id="mini" width="180" height="180"></canvas></div>
+
+<div id="banner">
+  <div id="banner-sub">entering district</div>
+  <div id="banner-name">DOWNTOWN CORE</div>
+</div>
+
+<div id="poi-msg"></div>
+
+<div id="controls">
+  W / ↑ — Accelerate<br>
+  S / ↓ — Brake / Reverse<br>
+  A / ← D / → — Steer<br>
+  SHIFT — Boost<br>
+  C — Camera Toggle<br>
+  L — Skip Time
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ==============================================
+   HORIZON CITY  —  PART 1: City World Design
+   Districts, Roads, Buildings, Minimap, Day/Night
+   ============================================== */
+
+// ── Loading progress helper ──
+const fillEl = document.getElementById('loading-fill');
+let loadPct = 0;
+function progress(pct){ loadPct = pct; fillEl.style.width = pct + '%'; }
+
+// ── Renderer ──
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+
+// ── Scene ──
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x87ceeb, 300, 1800);
+
+// ── Camera ──
+const camera = new THREE.PerspectiveCamera(65, innerWidth/innerHeight, 0.5, 2500);
+camera.position.set(0, 12, -20);
+
+// ── Lights ──
+const ambient = new THREE.AmbientLight(0x8899bb, 0.6);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight(0xfff5e4, 2.0);
+sun.position.set(400, 600, 200);
+sun.castShadow = true;
+sun.shadow.mapSize.width = sun.shadow.mapSize.height = 2048;
+sun.shadow.camera.left  = -700; sun.shadow.camera.right = 700;
+sun.shadow.camera.top   =  700; sun.shadow.camera.bottom = -700;
+sun.shadow.camera.near  = 1;    sun.shadow.camera.far = 2000;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+// Night point lights for downtown neon
+const neonLights = [];
+
+progress(10);
+
+// ──────────────────────────────────────────────
+// DISTRICTS
+// ──────────────────────────────────────────────
+const DISTRICTS = [
+  {
+    id:'downtown', name:'DOWNTOWN CORE',
+    accentHex:'#00ffcc', accentColor:0x00ffcc,
+    groundColor:0x222230,
+    bounds:[-290,-290,290,290],
+    bldgColors:[0x334455,0x445566,0x3a4e62,0x2d3f52],
+    bldgH:[25,140], bldgCount:55,
+    bldgW:[8,24], bldgD:[8,24],
+    neon:true
+  },
+  {
+    id:'waterfront', name:'WATERFRONT & HARBOR',
+    accentHex:'#00aaff', accentColor:0x00aaff,
+    groundColor:0x556650,
+    bounds:[-750,340,750,920],
+    bldgColors:[0x546070,0x607080,0x4a5864],
+    bldgH:[6,28], bldgCount:30,
+    bldgW:[12,35], bldgD:[10,28]
+  },
+  {
+    id:'industrial', name:'INDUSTRIAL ZONE',
+    accentHex:'#ff8800', accentColor:0xff8800,
+    groundColor:0x3c3a34,
+    bounds:[-980,-440,-300,480],
+    bldgColors:[0x5a5040,0x4a4234,0x665544],
+    bldgH:[8,22], bldgCount:28,
+    bldgW:[18,50], bldgD:[12,40]
+  },
+  {
+    id:'suburbs', name:'SUBURBS & HILLSIDE',
+    accentHex:'#88ff44', accentColor:0x88ff44,
+    groundColor:0x3a6428,
+    bounds:[-580,-980,580,-340],
+    bldgColors:[0x7a6655,0x887060,0x6a5848],
+    bldgH:[3,10], bldgCount:40,
+    bldgW:[8,18], bldgD:[8,16]
+  },
+  {
+    id:'racing', name:'RACING DISTRICT',
+    accentHex:'#ff2244', accentColor:0xff2244,
+    groundColor:0x2a2a2a,
+    bounds:[300,-470,980,470],
+    bldgColors:[0x333333,0x3a3a3a,0x2a2a2a],
+    bldgH:[4,16], bldgCount:18,
+    bldgW:[15,40], bldgD:[8,25]
+  },
+  {
+    id:'outskirts', name:'OUTSKIRTS & HIGHWAY',
+    accentHex:'#ffcc00', accentColor:0xffcc00,
+    groundColor:0x6a5e40,
+    bounds:null
+  }
+];
+
+// Master district lookup
+function getDistrict(x,z){
+  for(const d of DISTRICTS){
+    if(!d.bounds) continue;
+    const [x1,z1,x2,z2] = d.bounds;
+    if(x>=x1 && x<=x2 && z>=z1 && z<=z2) return d;
+  }
+  return DISTRICTS[5];
+}
+
+// ── Base ground (outskirts desert color) ──
+{
+  const geo = new THREE.PlaneGeometry(4000,4000);
+  const mat = new THREE.MeshLambertMaterial({color:0x5c5040});
+  const m = new THREE.Mesh(geo,mat);
+  m.rotation.x = -Math.PI/2; m.position.y = 0;
+  m.receiveShadow = true;
+  scene.add(m);
+}
+
+// ── District ground planes ──
+function districtGround(d){
+  if(!d.bounds) return;
+  const [x1,z1,x2,z2] = d.bounds;
+  const geo = new THREE.PlaneGeometry(x2-x1, z2-z1);
+  const mat = new THREE.MeshLambertMaterial({color:d.groundColor});
+  const m = new THREE.Mesh(geo,mat);
+  m.rotation.x = -Math.PI/2;
+  m.position.set((x1+x2)/2, 0.02, (z1+z2)/2);
+  m.receiveShadow = true;
+  scene.add(m);
+}
+DISTRICTS.forEach(districtGround);
+
+// ── Water (Harbor) ──
+{
+  const geo = new THREE.PlaneGeometry(2000,800);
+  const mat = new THREE.MeshPhongMaterial({color:0x00337a,shininess:80,transparent:true,opacity:0.9});
+  const m = new THREE.Mesh(geo,mat);
+  m.rotation.x = -Math.PI/2; m.position.set(0,0.03,1400);
+  scene.add(m);
+}
+// Harbor quay edge
+{
+  const geo = new THREE.BoxGeometry(1500,1.5,12);
+  const mat = new THREE.MeshLambertMaterial({color:0x888880});
+  const m = new THREE.Mesh(geo,mat);
+  m.position.set(0,0.75,930);
+  m.castShadow=true; m.receiveShadow=true;
+  scene.add(m);
+}
+
+progress(20);
+
+// ──────────────────────────────────────────────
+// ROAD SYSTEM
+// ──────────────────────────────────────────────
+const ROAD_MAT   = new THREE.MeshLambertMaterial({color:0x141414});
+const MARK_MAT   = new THREE.MeshLambertMaterial({color:0xffffff});
+const YMARK_MAT  = new THREE.MeshLambertMaterial({color:0xffee00});
+const KERB_MAT   = new THREE.MeshLambertMaterial({color:0x555550});
+
+function road(x,z,w,l,ry=0,y=0.06){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,0.1,l), ROAD_MAT);
+  m.position.set(x,y,z); m.rotation.y=ry;
+  m.receiveShadow=true; scene.add(m);
+}
+function kerb(x,z,w,l,ry=0){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,0.15,l), KERB_MAT);
+  m.position.set(x,0.07,z); m.rotation.y=ry;
+  m.receiveShadow=true; scene.add(m);
+}
+function dashMarking(x,z,totalLen,ry=0,color='white'){
+  const mat = color==='yellow'? YMARK_MAT : MARK_MAT;
+  const dashes=Math.floor(totalLen/30);
+  for(let i=0;i<dashes;i++){
+    const t=-totalLen/2+i*30+12;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.02,7),mat);
+    const ox = Math.sin(ry)*t, oz = Math.cos(ry)*t;
+    m.position.set(x+ox,0.12,z+oz); m.rotation.y=ry;
+    if(i%2===0) scene.add(m);
+  }
+}
+function solidMarking(x,z,w,l,ry=0,color='white'){
+  const mat = color==='yellow'? YMARK_MAT : MARK_MAT;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,0.02,l),mat);
+  m.position.set(x,0.12,z); m.rotation.y=ry; scene.add(m);
+}
+
+// ── DOWNTOWN GRID ──
+// N-S streets
+for(let x=-240;x<=240;x+=80){
+  road(x,0,12,600);
+  dashMarking(x,0,600,0,'white');
+}
+// E-W streets
+for(let z=-240;z<=240;z+=80){
+  road(0,z,600,12,Math.PI/2);
+  dashMarking(0,z,600,Math.PI/2,'white');
+}
+// Main N-S Boulevard (wide)
+road(0,0,32,1800);
+solidMarking(-6,0,0.4,1800);  // left edge
+solidMarking(6,0,0.4,1800);   // right edge
+dashMarking(0,0,1800,0,'yellow'); // center
+
+// Main E-W Boulevard (wide)
+road(0,0,1800,32,Math.PI/2);
+solidMarking(0,-6,1800,0.4);
+solidMarking(0,6,1800,0.4);
+dashMarking(0,0,1800,Math.PI/2,'yellow');
+
+// ── HIGHWAY RING ROAD ──
+const RING_R = 830, RING_SEG = 28, RING_W = 40;
+for(let i=0;i<RING_SEG;i++){
+  const a0 = (i/RING_SEG)*Math.PI*2;
+  const a1 = ((i+1)/RING_SEG)*Math.PI*2;
+  const mid = (a0+a1)/2;
+  const segLen = 2*RING_R*Math.sin(Math.PI/RING_SEG)+4;
+  const rx = Math.sin(mid)*RING_R;
+  const rz = Math.cos(mid)*RING_R;
+  road(rx,rz,RING_W,segLen,-mid);
+  dashMarking(rx,rz,segLen,-mid,'yellow');
+  // Outer edge line
+  solidMarking(
+    rx+Math.sin(mid+Math.PI/2)*RING_W*0.46,
+    rz+Math.cos(mid+Math.PI/2)*RING_W*0.46,
+    0.5,segLen+2,-mid,'white'
+  );
+}
+
+// ── WATERFRONT roads ──
+road(0,630,24,1400);    // N-S promenade
+dashMarking(0,630,1400,0,'yellow');
+road(0,840,24,1400);    // drag strip approach
+road(0,560,1400,22,Math.PI/2);  // cross-waterfront E-W
+dashMarking(0,560,1400,Math.PI/2,'yellow');
+// Drag strip
+road(0,720,16,860);
+solidMarking(-6,720,0.3,860); solidMarking(6,720,0.3,860); // lanes
+// start/finish line
+for(let i=0;i<12;i++){
+  const off=-60+i*10;
+  const col = i%2===0? MARK_MAT : ROAD_MAT;
+  const m=new THREE.Mesh(new THREE.BoxGeometry(8,0.02,10),col);
+  m.position.set(off,0.13,300); scene.add(m);
+}
+
+// ── INDUSTRIAL roads ──
+road(-620,0,22,900);     // main N-S
+dashMarking(-620,0,900,0,'yellow');
+road(-620,0,900,22,Math.PI/2);  // main E-W
+for(let z=-320;z<=320;z+=160){
+  road(-620,z,650,16,Math.PI/2);
+}
+road(-480,200,300,14);
+road(-480,-200,300,14);
+
+// ── SUBURBS winding roads ──
+const subRoads=[
+  [0,-600,14,500,0.08],
+  [-180,-720,12,380,-0.14],
+  [180,-680,12,380,0.10],
+  [-300,-820,12,300,-0.05],
+  [300,-800,12,300,0.06],
+  [0,-860,12,180,Math.PI/2],
+];
+subRoads.forEach(([x,z,w,l,ry])=>{ road(x,z,w,l,ry); dashMarking(x,z,l,ry); });
+
+// ── RACING DISTRICT – circuit ──
+// Outer rectangle
+road(640,0,14,800);       // W straight
+road(820,0,14,800);       // E straight
+road(730,380,300,14,Math.PI/2);  // N straight
+road(730,-380,300,14,Math.PI/2); // S straight
+// Pit lane
+road(640,0,8,700);
+solidMarking(636,0,0.3,700,'white');
+// Racing curb strips (alternating red/white) on corners
+function racingCurb(x,z,rot){
+  for(let i=0;i<8;i++){
+    const mat=new THREE.MeshLambertMaterial({color:i%2===0?0xdd2222:0xffffff});
+    const m=new THREE.Mesh(new THREE.BoxGeometry(8,0.08,2.5),mat);
+    m.position.set(x+i*8-28,0.1,z); m.rotation.y=rot||0;
+    scene.add(m);
+  }
+}
+racingCurb(730,375,Math.PI/2); racingCurb(730,-375,Math.PI/2);
+racingCurb(650,0); racingCurb(800,0);
+
+progress(35);
+
+// ──────────────────────────────────────────────
+// BUILDINGS (procedural per district)
+// ──────────────────────────────────────────────
+const rng = (a,b)=>a+Math.random()*(b-a);
+const rngInt = (a,b)=>Math.floor(rng(a,b+1));
+
+// Road clearance check (very rough)
+function onRoad(x,z){
+  if(Math.abs(x)<20 || Math.abs(z)<20) return true;      // main boulevards
+  if(Math.abs(x)<6 && Math.abs(z)<310) return true;       // N-S downtown grid
+  return false;
+}
+
+function buildDistrict(d){
+  if(!d.bounds) return;
+  const [x1,z1,x2,z2]=d.bounds;
+  for(let i=0;i<d.bldgCount;i++){
+    const bx=rng(x1+5,x2-5), bz=rng(z1+5,z2-5);
+    if(d.id==='downtown' && onRoad(bx,bz)) continue;
+    const bw=rng(d.bldgW[0],d.bldgW[1]);
+    const bd=rng(d.bldgD?d.bldgD[0]:bw, d.bldgD?d.bldgD[1]:bw*1.5);
+    const bh=rng(d.bldgH[0],d.bldgH[1]);
+    const col=d.bldgColors[Math.floor(Math.random()*d.bldgColors.length)];
+    const mat=new THREE.MeshLambertMaterial({color:col});
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,bd),mat);
+    mesh.position.set(bx,bh/2,bz);
+    mesh.castShadow=mesh.receiveShadow=true;
+    scene.add(mesh);
+
+    // Window rows on tall downtown buildings
+    if(bh>30 && d.id==='downtown'){
+      const winMat=new THREE.MeshLambertMaterial({
+        color:0x6688aa,emissive:0x334466,emissiveIntensity:0.3,
+        transparent:true,opacity:0.7
+      });
+      const floors=Math.floor(bh/5);
+      for(let f=1;f<floors;f++){
+        const stripH=0.8, stripW=bw*0.75;
+        const sm=new THREE.Mesh(new THREE.BoxGeometry(stripW,stripH,0.2),winMat.clone());
+        sm.position.set(bx,f*5+1,bz+bd/2+0.1);
+        scene.add(sm);
+      }
+    }
+
+    // Industrial chimneys & pipes
+    if(d.id==='industrial' && Math.random()<0.3){
+      const ch=new THREE.Mesh(
+        new THREE.CylinderGeometry(0.8,1.2,bh*0.6,8),
+        new THREE.MeshLambertMaterial({color:0x886655})
+      );
+      ch.position.set(bx+bw*0.3,bh+bh*0.3,bz);
+      ch.castShadow=true; scene.add(ch);
+    }
+
+    // Houses get a roof
+    if(d.id==='suburbs' && bh<12){
+      const roof=new THREE.Mesh(
+        new THREE.CylinderGeometry(0,bw*0.65,bh*0.4,4),
+        new THREE.MeshLambertMaterial({color:0x995544})
+      );
+      roof.rotation.y=Math.PI/4;
+      roof.position.set(bx,bh+bh*0.2,bz);
+      scene.add(roof);
+    }
+
+    // Neon accent strip on downtown roof
+    if(d.id==='downtown' && bh>50 && Math.random()<0.4){
+      const accent=new THREE.MeshLambertMaterial({
+        color:d.accentColor,emissive:d.accentColor,emissiveIntensity:1.0
+      });
+      const strip=new THREE.Mesh(new THREE.BoxGeometry(bw,1.0,bd),accent);
+      strip.position.set(bx,bh,bz);
+      scene.add(strip);
+    }
+  }
+}
+DISTRICTS.forEach(buildDistrict);
+
+// Outskirts sparse buildings near ring
+for(let i=0;i<18;i++){
+  const angle=Math.random()*Math.PI*2;
+  const r=870+Math.random()*80;
+  const bx=Math.sin(angle)*r, bz=Math.cos(angle)*r;
+  const bw=rng(10,30), bd=rng(8,20), bh=rng(2,9);
+  const m=new THREE.Mesh(
+    new THREE.BoxGeometry(bw,bh,bd),
+    new THREE.MeshLambertMaterial({color:0x665533})
+  );
+  m.position.set(bx,bh/2,bz);
+  m.castShadow=m.receiveShadow=true;
+  scene.add(m);
+}
+
+progress(50);
+
+// ──────────────────────────────────────────────
+// LANDMARKS
+// ──────────────────────────────────────────────
+
+// 1. CENTRAL TOWER (Downtown) — tallest building
+{
+  const body=new THREE.Mesh(
+    new THREE.BoxGeometry(18,220,18),
+    new THREE.MeshLambertMaterial({color:0x334455})
+  );
+  body.position.set(60,110,-60); body.castShadow=true; scene.add(body);
+  // Glass panels
+  const glass=new THREE.Mesh(
+    new THREE.BoxGeometry(17,200,17),
+    new THREE.MeshPhongMaterial({color:0x4488bb,transparent:true,opacity:0.55,shininess:120})
+  );
+  glass.position.set(60,110,-60); scene.add(glass);
+  // Spire
+  const spire=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5,3,40,8),
+    new THREE.MeshLambertMaterial({color:0x00ffcc,emissive:0x00ffcc,emissiveIntensity:0.6})
+  );
+  spire.position.set(60,240,-60); scene.add(spire);
+  // Neon rings on tower
+  for(let y=40;y<220;y+=30){
+    const ring=new THREE.Mesh(
+      new THREE.BoxGeometry(19,0.6,19),
+      new THREE.MeshLambertMaterial({color:0x0044aa,emissive:0x0033aa,emissiveIntensity:0.5})
+    );
+    ring.position.set(60,y,-60); scene.add(ring);
+  }
+}
+
+// 2. GRAND BRIDGE (Waterfront)
+{
+  // Bridge deck
+  const deck=new THREE.Mesh(
+    new THREE.BoxGeometry(500,2.5,28),
+    new THREE.MeshLambertMaterial({color:0x777070})
+  );
+  deck.position.set(0,6,1080); deck.castShadow=true; scene.add(deck);
+  // Road on bridge
+  const bridgeRoad=new THREE.Mesh(
+    new THREE.BoxGeometry(500,0.2,16),
+    ROAD_MAT
+  );
+  bridgeRoad.position.set(0,7.2,1080); scene.add(bridgeRoad);
+  // Pylons
+  [-180,0,180].forEach(px=>{
+    const pylon=new THREE.Mesh(
+      new THREE.BoxGeometry(6,50,6),
+      new THREE.MeshLambertMaterial({color:0x888880})
+    );
+    pylon.position.set(px,25,1080); pylon.castShadow=true; scene.add(pylon);
+    // Cables
+    for(let cx=-100;cx<=100;cx+=20){
+      const cbl=new THREE.Mesh(
+        new THREE.BoxGeometry(0.3,0.3,Math.abs(cx)*0.6+5),
+        new THREE.MeshLambertMaterial({color:0xaaaaaa})
+      );
+      cbl.position.set(px+cx*0.5,45-(Math.abs(cx)*0.2),1080);
+      cbl.rotation.x=Math.atan2(Math.abs(cx)*0.2,Math.abs(cx));
+      scene.add(cbl);
+    }
+  });
+}
+
+// 3. CHIMNEY STACK (Industrial) — iconic tall chimney
+{
+  const chimney=new THREE.Mesh(
+    new THREE.CylinderGeometry(4,6,90,12),
+    new THREE.MeshLambertMaterial({color:0x8b5e3c})
+  );
+  chimney.position.set(-720,45,-60); chimney.castShadow=true; scene.add(chimney);
+  // Red warning rings
+  [15,35,55,75].forEach(h=>{
+    const band=new THREE.Mesh(
+      new THREE.CylinderGeometry(6.2,6.2,2,12),
+      new THREE.MeshLambertMaterial({color:0xcc2200})
+    );
+    band.position.set(-720,h,-60); scene.add(band);
+  });
+  // Smoke plume effect (stacked semi-transparent spheres)
+  for(let i=0;i<5;i++){
+    const puff=new THREE.Mesh(
+      new THREE.SphereGeometry(8+i*4,8,8),
+      new THREE.MeshLambertMaterial({color:0xcccccc,transparent:true,opacity:0.12-i*0.02})
+    );
+    puff.position.set(-720+rng(-5,5),95+i*12,-60+rng(-5,5));
+    scene.add(puff);
+  }
+}
+
+// 4. HILLSIDE LOOKOUT (Suburbs) — observation platform
+{
+  const hill=new THREE.Mesh(
+    new THREE.CylinderGeometry(30,50,20,16),
+    new THREE.MeshLambertMaterial({color:0x4a7a30})
+  );
+  hill.position.set(0,-650,10); hill.castShadow=true; scene.add(hill);
+  const platform=new THREE.Mesh(
+    new THREE.CylinderGeometry(18,18,1.5,16),
+    new THREE.MeshLambertMaterial({color:0x888880})
+  );
+  platform.position.set(0,-630,10); scene.add(platform);
+  const railing=new THREE.Mesh(
+    new THREE.CylinderGeometry(18.5,18.5,1,16,1,true),
+    new THREE.MeshLambertMaterial({color:0x666666})
+  );
+  railing.position.set(0,-629.5,10); scene.add(railing);
+  // Lookout tower
+  const tower=new THREE.Mesh(
+    new THREE.BoxGeometry(4,18,4),
+    new THREE.MeshLambertMaterial({color:0x777770})
+  );
+  tower.position.set(0,-620,10); scene.add(tower);
+}
+
+// 5. RACING: GRANDSTAND + PODIUM
+{
+  // Main grandstand (stepped)
+  for(let step=0;step<5;step++){
+    const stand=new THREE.Mesh(
+      new THREE.BoxGeometry(120,2+step*2,8),
+      new THREE.MeshLambertMaterial({color:0x444444})
+    );
+    stand.position.set(640,1+step*2,-250-step*8);
+    stand.castShadow=true; scene.add(stand);
+    // Seats
+    const seats=new THREE.Mesh(
+      new THREE.BoxGeometry(120,0.5,7),
+      new THREE.MeshLambertMaterial({color:step%2===0?0xcc2222:0xffffff})
+    );
+    seats.position.set(640,2+step*2+0.5,-250-step*8);
+    scene.add(seats);
+  }
+  // Podium
+  [0,1,2].forEach(p=>{
+    const heights=[12,8,6];
+    const colors=[0xffd700,0xc0c0c0,0xcd7f32];
+    const pod=new THREE.Mesh(
+      new THREE.BoxGeometry(12,heights[p],12),
+      new THREE.MeshLambertMaterial({color:colors[p]})
+    );
+    pod.position.set(680-p*16,heights[p]/2,380);
+    pod.castShadow=true; scene.add(pod);
+  });
+  // Pit garage row
+  for(let i=0;i<6;i++){
+    const garage=new THREE.Mesh(
+      new THREE.BoxGeometry(18,8,14),
+      new THREE.MeshLambertMaterial({color:0x333333})
+    );
+    garage.position.set(320+i*22,4,-180);
+    garage.castShadow=true; scene.add(garage);
+    const door=new THREE.Mesh(
+      new THREE.BoxGeometry(10,6,0.2),
+      new THREE.MeshLambertMaterial({color:0x222222})
+    );
+    door.position.set(320+i*22,3,-187.1); scene.add(door);
+  }
+  // Overpass Stack (Outskirts interchange)
+  const overpassMat=new THREE.MeshLambertMaterial({color:0x666660});
+  [0,30].forEach(yOff=>{
+    const op=new THREE.Mesh(new THREE.BoxGeometry(120,3,16),overpassMat);
+    op.position.set(820,8+yOff,0); op.castShadow=true; scene.add(op);
+    const op2=new THREE.Mesh(new THREE.BoxGeometry(16,3,120),overpassMat);
+    op2.position.set(820,8+yOff,0); op2.castShadow=true; scene.add(op2);
+  });
+  // Pillars
+  [[-40,0],[40,0],[0,-40],[0,40]].forEach(([ox,oz])=>{
+    const pillar=new THREE.Mesh(new THREE.CylinderGeometry(2,2,40,8),overpassMat);
+    pillar.position.set(820+ox,20,oz);
+    pillar.castShadow=true; scene.add(pillar);
+  });
+}
+
+progress(65);
+
+// ──────────────────────────────────────────────
+// TREES (Suburbs + Waterfront)
+// ──────────────────────────────────────────────
+function tree(x,z,h=8){
+  const trunk=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.4,0.6,h*0.4,6),
+    new THREE.MeshLambertMaterial({color:0x5c3a1a})
+  );
+  trunk.position.set(x,h*0.2,z); trunk.castShadow=true; scene.add(trunk);
+  const foliage=new THREE.Mesh(
+    new THREE.SphereGeometry(h*0.35,7,7),
+    new THREE.MeshLambertMaterial({color:0x2d6a1a})
+  );
+  foliage.position.set(x,h*0.55+h*0.35,z); foliage.castShadow=true; scene.add(foliage);
+}
+// Suburb trees
+for(let i=0;i<60;i++) tree(rng(-550,550),rng(-960,-350),rng(6,12));
+// Waterfront palm-style trees
+for(let i=0;i<20;i++) tree(rng(-680,680),rng(350,550),rng(7,10));
+
+// ──────────────────────────────────────────────
+// BONUS BOARDS (Collectibles — driveable-through)
+// ──────────────────────────────────────────────
+const BOARD_TYPES = [
+  {type:'credits', color:0xffee00, label:'CR', positions:[
+    [100,200],[–180,–120],[320,–80],[–480,300],[600,150],[–100,650],
+    [200,–600],[–620,–200],[750,350],[–300,–500]
+  ]},
+  {type:'xp', color:0x00ffcc, label:'XP', positions:[
+    [–80,180],[250,–180],[–380,100],[540,–250],[100,700],
+    [–700,100],[300,–700],[800,–100],[–200,800],[420,400]
+  ]}
+];
+const boardMeshes = [];
+BOARD_TYPES.forEach(bt=>{
+  if(!bt.positions) return;
+  bt.positions.forEach(pos=>{
+    if(!pos) return;
+    const [bx,bz]=pos;
+    const frame=new THREE.Mesh(
+      new THREE.BoxGeometry(4,4,0.5),
+      new THREE.MeshLambertMaterial({color:bt.color,emissive:bt.color,emissiveIntensity:0.4})
+    );
+    frame.position.set(bx,2,bz);
+    frame.rotation.y=Math.random()*Math.PI;
+    scene.add(frame);
+    boardMeshes.push({mesh:frame, type:bt.type, color:bt.color, collected:false});
+  });
+});
+
+progress(75);
+
+// ──────────────────────────────────────────────
+// PLAYER CAR
+// ──────────────────────────────────────────────
+const carGroup = new THREE.Group();
+
+const bodyMat   = new THREE.MeshPhongMaterial({color:0xff2200,shininess:120});
+const roofMat   = new THREE.MeshPhongMaterial({color:0xcc1800,shininess:80});
+const glassMat  = new THREE.MeshPhongMaterial({color:0x88aacc,transparent:true,opacity:0.5,shininess:200});
+const wheelMat  = new THREE.MeshPhongMaterial({color:0x111111,shininess:40});
+const rimMat    = new THREE.MeshLambertMaterial({color:0xcccccc});
+const lightMat  = new THREE.MeshPhongMaterial({color:0xffffcc,emissive:0xffffcc,emissiveIntensity:0.0,shininess:200});
+const brakeMat  = new THREE.MeshPhongMaterial({color:0xff2200,emissive:0xff0000,emissiveIntensity:0.0,shininess:200});
+
+// Main body
+const bodyMesh=new THREE.Mesh(new THREE.BoxGeometry(2,0.7,4.6),bodyMat);
+bodyMesh.position.y=0.55; bodyMesh.castShadow=true; carGroup.add(bodyMesh);
+
+// Roof
+const roofMesh=new THREE.Mesh(new THREE.BoxGeometry(1.75,0.55,2.4),roofMat);
+roofMesh.position.set(0,1.2,-0.2); roofMesh.castShadow=true; carGroup.add(roofMesh);
+
+// Windscreen
+const winMesh=new THREE.Mesh(new THREE.BoxGeometry(1.7,0.55,0.15),glassMat);
+winMesh.position.set(0,1.15,1.0); winMesh.rotation.x=-0.3; carGroup.add(winMesh);
+
+// Rear windscreen
+const rwinMesh=new THREE.Mesh(new THREE.BoxGeometry(1.7,0.45,0.15),glassMat);
+rwinMesh.position.set(0,1.1,-1.35); rwinMesh.rotation.x=0.3; carGroup.add(rwinMesh);
+
+// Hood slope
+const hoodMesh=new THREE.Mesh(new THREE.BoxGeometry(1.9,0.25,1.0),bodyMat);
+hoodMesh.position.set(0,0.9,1.4); hoodMesh.rotation.x=0.2; carGroup.add(hoodMesh);
+
+// Bumpers
+[-2.4,2.4].forEach((zPos,i)=>{
+  const bmp=new THREE.Mesh(new THREE.BoxGeometry(2.1,0.25,0.3),new THREE.MeshPhongMaterial({color:0x333333}));
+  bmp.position.set(0,0.3,zPos); carGroup.add(bmp);
+});
+
+// Spoiler
+const spoiler=new THREE.Mesh(new THREE.BoxGeometry(2.1,0.08,0.7),bodyMat);
+spoiler.position.set(0,1.05,-2.5); carGroup.add(spoiler);
+[-0.9,0.9].forEach(sx=>{
+  const sp=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.35,0.5),bodyMat);
+  sp.position.set(sx,0.83,-2.5); carGroup.add(sp);
+});
+
+// Wheels + rims
+const wheels=[];
+const wheelPos=[[-1.1,0.32,1.6],[1.1,0.32,1.6],[-1.1,0.32,-1.6],[1.1,0.32,-1.6]];
+wheelPos.forEach((wp,wi)=>{
+  const wg=new THREE.CylinderGeometry(0.32,0.32,0.22,12);
+  const wm=new THREE.Mesh(wg,wheelMat);
+  wm.rotation.z=Math.PI/2; wm.position.set(...wp);
+  wm.castShadow=true; carGroup.add(wm);
+  const rim=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.19,0.24,6),rimMat);
+  rim.rotation.z=Math.PI/2; rim.position.set(...wp);
+  carGroup.add(rim);
+  wheels.push(wm);
+});
+
+// Headlights
+[-0.65,0.65].forEach(xo=>{
+  const hl=new THREE.Mesh(new THREE.BoxGeometry(0.38,0.2,0.1),lightMat.clone());
+  hl.position.set(xo,0.55,2.36); carGroup.add(hl);
+});
+// Tail lights
+[-0.65,0.65].forEach(xo=>{
+  const tl=new THREE.Mesh(new THREE.BoxGeometry(0.38,0.18,0.1),brakeMat.clone());
+  tl.position.set(xo,0.5,-2.36); carGroup.add(tl);
+});
+
+carGroup.position.set(0,0,0);
+scene.add(carGroup);
+
+// ── Car state ──
+let carSpeed=0, carAngle=0;
+const MAX_SPEED=90, BOOST_SPEED=140;
+const ACCEL=28, BRAKE=50, FRICTION=18, TURN_RATE=1.9;
+
+// ── Headlight spot lights (toggle at night) ──
+const carHeadlights=[];
+[-0.65,0.65].forEach(xo=>{
+  const sl=new THREE.SpotLight(0xfff5e0,0,80,Math.PI*0.12,0.3);
+  sl.castShadow=false;
+  carGroup.add(sl);
+  carGroup.add(sl.target);
+  sl.position.set(xo,0.55,2.4);
+  sl.target.position.set(xo*1.2,0,20);
+  carHeadlights.push(sl);
+});
+
+progress(85);
+
+// ──────────────────────────────────────────────
+// INPUT
+// ──────────────────────────────────────────────
+const keys={};
+window.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='KeyC') camMode=(camMode+1)%3;
+  if(e.code==='KeyL') gameTime=(gameTime+0.15)%1;
+  e.preventDefault();
+},{passive:false});
+window.addEventListener('keyup',e=>{ keys[e.code]=false; });
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+// ──────────────────────────────────────────────
+// DAY/NIGHT CYCLE
+// ──────────────────────────────────────────────
+let gameTime = 0.38; // start at ~9am
+const DAY_SPEED = 1/(20*60); // 20 real minutes per in-game day
+
+// Sky color stops keyed by time 0-1
+function lerp3(c1,c2,t){ return {r:c1.r+(c2.r-c1.r)*t, g:c1.g+(c2.g-c1.g)*t, b:c1.b+(c2.b-c1.b)*t}; }
+const skyStops = [
+  {t:0.00, r:0.04,g:0.04,b:0.10},  // midnight
+  {t:0.20, r:0.06,g:0.06,b:0.15},  // pre-dawn
+  {t:0.25, r:0.80,g:0.35,b:0.15},  // dawn
+  {t:0.30, r:0.90,g:0.70,b:0.60},  // morning
+  {t:0.40, r:0.53,g:0.81,b:0.98},  // day
+  {t:0.60, r:0.40,g:0.70,b:0.92},  // afternoon
+  {t:0.72, r:0.95,g:0.60,b:0.25},  // golden hour
+  {t:0.78, r:0.65,g:0.25,b:0.30},  // dusk
+  {t:0.85, r:0.10,g:0.05,b:0.20},  // twilight
+  {t:1.00, r:0.04,g:0.04,b:0.10},  // midnight
+];
+function getSky(t){
+  for(let i=0;i<skyStops.length-1;i++){
+    const a=skyStops[i], b=skyStops[i+1];
+    if(t>=a.t && t<b.t){
+      const u=(t-a.t)/(b.t-a.t);
+      return lerp3(a,b,u);
+    }
+  }
+  return skyStops[0];
+}
+function sunIntensity(t){
+  if(t<0.22||t>0.82) return 0;
+  if(t<0.27) return (t-0.22)/0.05;
+  if(t<0.75) return 1.0;
+  return 1-(t-0.75)/0.07;
+}
+function formatClock(t){
+  const h=Math.floor(t*24), m=Math.floor((t*24*60)%60);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+// ──────────────────────────────────────────────
+// MINIMAP
+// ──────────────────────────────────────────────
+const miniCanvas=document.getElementById('mini');
+const mc=miniCanvas.getContext('2d');
+const MSIZE=180;
+const MSCALE=MSIZE/2600; // world –1300 to +1300
+
+function w2m(x,z){ return {mx:MSIZE/2+x*MSCALE, my:MSIZE/2+z*MSCALE}; }
+
+const districtFills={
+  downtown:'#181824', waterfront:'#2a3a2a',
+  industrial:'#2a2820', suburbs:'#1e3a12',
+  racing:'#1a1a1a', outskirts:'#2a2418'
+};
+const districtBorders={
+  downtown:'#00ffcc44', waterfront:'#00aaff44',
+  industrial:'#ff880044', suburbs:'#88ff4444',
+  racing:'#ff224444', outskirts:'#ffcc0044'
+};
+function drawMinimap(cx,cz,cAngle){
+  mc.fillStyle='#0a0a14'; mc.fillRect(0,0,MSIZE,MSIZE);
+  // Districts
+  DISTRICTS.forEach(d=>{
+    if(!d.bounds) return;
+    const [x1,z1,x2,z2]=d.bounds;
+    const a=w2m(x1,z1), b=w2m(x2,z2);
+    mc.fillStyle=districtFills[d.id]||'#222';
+    mc.fillRect(a.mx,a.my,b.mx-a.mx,b.my-a.my);
+    mc.strokeStyle=districtBorders[d.id]||'#33333366';
+    mc.lineWidth=0.5; mc.strokeRect(a.mx,a.my,b.mx-a.mx,b.my-a.my);
+  });
+  // Water
+  const wa=w2m(-1000,920), wb=w2m(1000,1800);
+  mc.fillStyle='#001444'; mc.fillRect(wa.mx,wa.my,wb.mx-wa.mx,wb.my-wa.my);
+  // Highway ring
+  const rc=w2m(0,0);
+  mc.beginPath();
+  mc.arc(rc.mx,rc.my,RING_R*MSCALE,0,Math.PI*2);
+  mc.strokeStyle='#ffcc0055'; mc.lineWidth=2; mc.stroke();
+  // Main boulevards
+  mc.strokeStyle='#33333388'; mc.lineWidth=1.5;
+  const nsa=w2m(0,-900), nsb=w2m(0,900);
+  mc.beginPath(); mc.moveTo(nsa.mx,nsa.my); mc.lineTo(nsb.mx,nsb.my); mc.stroke();
+  const ewa=w2m(-900,0), ewb=w2m(900,0);
+  mc.beginPath(); mc.moveTo(ewa.mx,ewa.my); mc.lineTo(ewb.mx,ewb.my); mc.stroke();
+  // Boards
+  boardMeshes.forEach(b=>{
+    if(b.collected) return;
+    const p=w2m(b.mesh.position.x,b.mesh.position.z);
+    mc.fillStyle=b.type==='credits'?'#ffee00':'#00ffcc';
+    mc.fillRect(p.mx-1.5,p.my-1.5,3,3);
+  });
+  // Car
+  const cp=w2m(cx,cz);
+  mc.save(); mc.translate(cp.mx,cp.my); mc.rotate(cAngle);
+  mc.fillStyle='#ff3300';
+  mc.beginPath(); mc.moveTo(0,-5); mc.lineTo(3,4); mc.lineTo(-3,4); mc.closePath(); mc.fill();
+  mc.restore();
+}
+
+// ──────────────────────────────────────────────
+// CAMERA MODES
+// ──────────────────────────────────────────────
+let camMode=0; // 0=chase, 1=hood, 2=birds-eye
+const camTarget=new THREE.Vector3();
+
+// ──────────────────────────────────────────────
+// HUD refs
+// ──────────────────────────────────────────────
+const elDistrict=document.getElementById('district-name');
+const elSpeed=document.getElementById('speed');
+const elClock=document.getElementById('clock');
+const elDaynight=document.getElementById('daynight');
+const elBanner=document.getElementById('banner');
+const elBannerName=document.getElementById('banner-name');
+const elPoiMsg=document.getElementById('poi-msg');
+let currentDistId='';
+let bannerTimer=null;
+
+function showBanner(d){
+  elBannerName.textContent=d.name;
+  elBannerName.style.color=d.accentHex;
+  elBanner.style.opacity='1';
+  if(bannerTimer) clearTimeout(bannerTimer);
+  bannerTimer=setTimeout(()=>{ elBanner.style.opacity='0'; },2800);
+}
+function showPoi(msg){
+  elPoiMsg.textContent=msg;
+  elPoiMsg.style.opacity='1';
+  setTimeout(()=>{ elPoiMsg.style.opacity='0'; },2200);
+}
+
+progress(95);
+
+// ──────────────────────────────────────────────
+// MAIN LOOP
+// ──────────────────────────────────────────────
+const tmpVec=new THREE.Vector3();
+let lastT=performance.now();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now();
+  const dt=Math.min((now-lastT)/1000, 0.05);
+  lastT=now;
+
+  // ── Input ──
+  const fwd=keys['KeyW']||keys['ArrowUp'];
+  const bwd=keys['KeyS']||keys['ArrowDown'];
+  const lft=keys['KeyA']||keys['ArrowLeft'];
+  const rgt=keys['KeyD']||keys['ArrowRight'];
+  const boost=keys['ShiftLeft']||keys['ShiftRight'];
+  const maxSpd=boost?BOOST_SPEED:MAX_SPEED;
+
+  if(fwd) carSpeed=Math.min(carSpeed+ACCEL*dt,maxSpd);
+  else if(bwd) carSpeed=Math.max(carSpeed-BRAKE*dt,-maxSpd*0.45);
+  else {
+    const fric=FRICTION*(boost?0.5:1);
+    if(carSpeed>0) carSpeed=Math.max(0,carSpeed-fric*dt);
+    else if(carSpeed<0) carSpeed=Math.min(0,carSpeed+fric*dt);
+  }
+
+  const spd01=Math.abs(carSpeed)/MAX_SPEED;
+  const turn=TURN_RATE*dt*Math.sqrt(spd01)*(carSpeed<0?-1:1);
+  if(lft) carAngle+=turn;
+  if(rgt) carAngle-=turn;
+
+  // Move
+  carGroup.position.x+=Math.sin(carAngle)*carSpeed*dt;
+  carGroup.position.z+=Math.cos(carAngle)*carSpeed*dt;
+  carGroup.position.x=Math.max(-1100,Math.min(1100,carGroup.position.x));
+  carGroup.position.z=Math.max(-1100,Math.min(1100,carGroup.position.z));
+  carGroup.rotation.y=carAngle;
+
+  // Body lean
+  carGroup.rotation.z=(lft&&spd01>0.05?0.04:rgt&&spd01>0.05?-0.04:0)*0.5;
+
+  // Wheel spin
+  const wspin=carSpeed*dt*0.75;
+  wheels.forEach(w=>{ w.rotation.x+=wspin; });
+
+  // Brake lights
+  const brakeLit=bwd&&carSpeed>1;
+  carGroup.children.forEach(c=>{
+    if(c.material===brakeMat) c.material.emissiveIntensity=brakeLit?1.0:0;
+  });
+
+  // ── Day/Night ──
+  gameTime=(gameTime+DAY_SPEED*dt)%1;
+  const sky=getSky(gameTime);
+  const skyCol=new THREE.Color(sky.r,sky.g,sky.b);
+  scene.background=skyCol;
+  scene.fog.color.copy(skyCol);
+
+  const si=sunIntensity(gameTime);
+  sun.intensity=si*2.0;
+  ambient.intensity=0.15+si*0.5;
+
+  // Sun arc
+  const sunAngle=(gameTime-0.5)*Math.PI*2;
+  sun.position.set(Math.cos(sunAngle)*600,Math.sin(sunAngle+Math.PI/2)*600,250);
+  sun.color.setRGB(
+    1.0,
+    0.85+si*0.15,
+    0.65+si*0.35
+  );
+
+  // Night mode
+  const isNight=gameTime<0.22||gameTime>0.80;
+  carHeadlights.forEach(sl=>{ sl.intensity=isNight?30:0; });
+  elDaynight.style.background=isNight?'#3366ff':'#ffee88';
+
+  // ── Collect boards ──
+  boardMeshes.forEach(b=>{
+    if(b.collected) return;
+    const dx=b.mesh.position.x-carGroup.position.x;
+    const dz=b.mesh.position.z-carGroup.position.z;
+    if(Math.sqrt(dx*dx+dz*dz)<5){
+      b.collected=true;
+      scene.remove(b.mesh);
+      showPoi(b.type==='credits'?'+ CREDITS BOARD COLLECTED!':'+ XP BOARD COLLECTED!');
+    }
+    b.mesh.rotation.y+=0.02;
+    b.mesh.position.y=2+Math.sin(now*0.002+b.mesh.position.x)*0.4;
+  });
+
+  // ── District detection ──
+  const dist=getDistrict(carGroup.position.x,carGroup.position.z);
+  if(dist.id!==currentDistId){
+    currentDistId=dist.id;
+    elDistrict.textContent=dist.name;
+    elDistrict.style.color=dist.accentHex;
+    showBanner(dist);
+  }
+
+  // ── Camera ──
+  const cp=carGroup.position;
+  if(camMode===0){
+    // Chase cam
+    const off=new THREE.Vector3(0,7,-17);
+    off.applyAxisAngle(new THREE.Vector3(0,1,0),carAngle);
+    const tgt=cp.clone().add(off);
+    camera.position.lerp(tgt,0.08);
+    tmpVec.set(cp.x,cp.y+1.5,cp.z);
+    camera.lookAt(tmpVec);
+  } else if(camMode===1){
+    // Hood cam
+    const hoodOff=new THREE.Vector3(0,1.4,2.5);
+    hoodOff.applyAxisAngle(new THREE.Vector3(0,1,0),carAngle);
+    camera.position.copy(cp.clone().add(hoodOff));
+    const fwdPt=new THREE.Vector3(Math.sin(carAngle),0,Math.cos(carAngle));
+    camera.lookAt(cp.clone().add(fwdPt.multiplyScalar(30)));
+  } else {
+    // Birds-eye
+    camera.position.set(cp.x,180,cp.z+5);
+    camera.lookAt(cp.x,0,cp.z);
+  }
+
+  // ── HUD ──
+  const kmh=Math.abs(carSpeed)*3.6;
+  elSpeed.textContent=Math.round(kmh);
+  elClock.textContent=formatClock(gameTime);
+
+  // ── Minimap ──
+  drawMinimap(carGroup.position.x,carGroup.position.z,carAngle);
+
+  renderer.render(scene,camera);
+}
+
+// ── Kick off ──
+progress(100);
+setTimeout(()=>{
+  const ldEl=document.getElementById('loading');
+  ldEl.style.opacity='0';
+  setTimeout(()=>ldEl.style.display='none',800);
+  animate();
+},400);
+</script>
+</body>
+</html>
