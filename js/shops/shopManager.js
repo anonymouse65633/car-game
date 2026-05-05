@@ -27,7 +27,7 @@ export {
   SELL_BACK_RATE,
   STARTING_CREDITS,
   INTRO_BONUS,
-  RACE_REWARDS,
+  RACE_PAYOUTS,
   CHAMPIONSHIP_ENTRY_FEE,
   CHAMPIONSHIP_PAYOUT_MULTIPLIER,
   attemptDailyLogin as _economyDailyLogin,  // internal — use festivalHub's wrapper
