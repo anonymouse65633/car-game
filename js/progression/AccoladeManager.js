@@ -559,7 +559,7 @@ export class AccoladeManager extends EventTarget {
 
   /** Seed in-memory state from SaveManager, filling defaults for any new accolades. */
   _loadProgress() {
-    const saved    = this._save.accolades.getAll?.() ?? {};
+    const saved = this._save.get('accolades', 'progress') ?? {};
     const progress = {};
     for (const accolade of ACCOLADE_DEFINITIONS) {
       progress[accolade.id] = saved[accolade.id] ?? {
@@ -572,8 +572,8 @@ export class AccoladeManager extends EventTarget {
 
   /** Flush in-memory state back to SaveManager. */
   _persist() {
-    this._save.accolades?.setAll(this._progress);
-  }
+    this._save.set('accolades', 'progress', this._progress);
+}
 
   /**
    * Attempt to unlock a single tier. No-ops if already unlocked.
