@@ -723,5 +723,5 @@ export function createFestivalPlaylistManager(deps) {
 export { _instance as festivalPlaylistManager };
 
 // Export for use by external systems that report challenge progress
-export { CHALLENGE_POOL, SEASON_CATALOGUE, SEASON_THEME, SEASON_TIERS };
+export { CHALLENGE_POOL, SEASON_CATALOGUE, SEASON_TIERS };
 export { getWeekNumber, getSeasonIndex, generateWeeklyChallenges };
