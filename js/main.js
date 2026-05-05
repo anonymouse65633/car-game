@@ -8,7 +8,7 @@
 
 import { initFirebase }                          from './firebase/firebase.js';
 import { saveManager }                           from './save/SaveManager.js';
-import { initRenderer, scene, renderFrame }      from './engine/renderer.js';
+import { initRenderer, scene, camera, renderFrame }      from './engine/renderer.js';
 import { initPhysics, stepPhysics, world }                    from './engine/physics.js';
 import { initInput, inputState }                 from './engine/input.js';
 import { audioManager }                          from './engine/audio.js';
@@ -95,10 +95,10 @@ async function boot() {
   // interest, and NPC traffic. Order matters — city first.
   // ----------------------------------------------------------
   await initCity(scene);
-  initEnvironment(scene);
+  initEnvironment(camera);
   await initBuildings(scene, world);
-  initPOI(scene);
-  initNPCs(scene);
+  initPOI(scene, world, saveManager);
+  initNPCs(scene, world);
 
   // ----------------------------------------------------------
   // Step 8 — Progression & economy singletons
