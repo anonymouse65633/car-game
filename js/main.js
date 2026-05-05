@@ -104,7 +104,6 @@ async function boot() {
   // Step 8 — Progression & economy singletons
   // ----------------------------------------------------------
   const notificationSystem = new NotificationSystem();
-  notificationSystem.mount(document.getElementById('hc-hud-root'));
 
   const progressionManager = new ProgressionManager(saveManager, notificationSystem);
 
