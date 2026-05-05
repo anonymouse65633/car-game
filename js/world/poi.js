@@ -299,9 +299,10 @@ let _ready = false;
  * @param {object}      saveManager  — SaveManager singleton
  */
 export function initPOI(scene, world, saveManager) {
-  _save = saveManager;
+  _save = saveManager ?? _defaultSave ?? { get: (_k, d) => d, set: () => {} };
   if (!_save) { _save = { get: (_k, d) => d, set: () => {} }; }
 
+  const sm = _save;
   const collectedBoards    = sm.get('world',     'collectedBoards')     ?? [];
   const discoveredLandmarks= sm.get('world',     'discoveredLandmarks') ?? [];
   const claimedBarns       = sm.get('barnFinds', 'discovered')          ?? [];
