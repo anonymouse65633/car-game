@@ -465,6 +465,4 @@ class DailyRewardManager {
 
 const dailyRewardManager = new DailyRewardManager();
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { DailyRewardManager, dailyRewardManager };
-}
+export { DailyRewardManager, dailyRewardManager };
