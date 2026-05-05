@@ -829,3 +829,7 @@ export const TUNING_GARAGE_LOCATION = {
   district: 'Industrial District',
   description: 'Fine-tune every aspect of your setup for free. Save up to 5 presets per car.',
 };
+
+export function resetPartsShop() {
+  // Clears any runtime parts/tuning state (persisted state lives in SaveManager)
+}
