@@ -326,7 +326,7 @@ export function initPOI(scene, world, saveManager) {
         handle:      `poi_board_${board.id}`,
         type:        'fixed',
         translation: { x: board.position.x, y: board.position.y + 1.5, z: board.position.z },
-        colliders:   [{ shape: 'ball', radius: BOARD_COLLECT_RADIUS, sensor: true }],
+        colliders:   [{ shape: 'ball', args: [BOARD_COLLECT_RADIUS], sensor: true }],
       });
     }
 
