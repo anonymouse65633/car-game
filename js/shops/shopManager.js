@@ -495,3 +495,15 @@ export function getShopLocation(locationId) {
 export function getShopsByDistrict(districtLabel) {
   return ALL_SHOP_LOCATIONS.filter(l => l.district === districtLabel);
 }
+
+// Named export so main.js can do: import { shopManager } from './shopManager.js'
+export const shopManager = {
+  init:       (saveManager) => initShops({ grantIntroBonus: !saveManager.get('meta','seenIntro') }),
+  reset:      resetAllShops,
+  open:       openShop,
+  close:      closeShop,
+  isOpen:     isShopOpen,
+  getActive:  getActiveShop,
+  getStatus:  getPlayerStatus,
+  onChange:   onShopChange,
+};
