@@ -28,6 +28,7 @@ import * as THREE                 from 'three';
 import { GROUPS }                 from '../engine/renderer.js';
 import { createBody }             from '../engine/physics.js';
 import { getDistrictAt }          from './city.js';
+import { saveManager as _defaultSave } from '../save/SaveManager.js';
 
 // ─── Board Data ───────────────────────────────────────────────────────────────
 
@@ -298,12 +299,13 @@ let _ready = false;
  * @param {object}      saveManager  — SaveManager singleton
  */
 export function initPOI(scene, world, saveManager) {
-  _save = saveManager;
+  _save = saveManager ?? _defaultSave ?? { get: (_k, d) => d };
 
-  const collectedBoards    = saveManager.get('collectedBoards',    []);
-  const discoveredLandmarks= saveManager.get('discoveredLandmarks',[]);
-  const claimedBarns       = saveManager.get('claimedBarns',       []);
-  const trapBests          = saveManager.get('speedTrapBests',      {});
+  const sm = _save;
+  const collectedBoards    = sm.get('collectedBoards',    []);
+  const discoveredLandmarks= sm.get('discoveredLandmarks',[]);
+  const claimedBarns       = sm.get('claimedBarns',       []);
+  const trapBests          = sm.get('speedTrapBests',      {});
 
   // ── Boards ───────────────────────────────────────────────────────────────
   const boardGeo = new THREE.PlaneGeometry(BOARD_GLOW_SIZE, BOARD_GLOW_SIZE);
