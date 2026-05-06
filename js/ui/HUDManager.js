@@ -224,12 +224,13 @@ export class HUDManager {
   async init() {
     this._injectBaseStyles();
     this._buildRootDOM();
+
+    // NotificationSystem must exist before _applySettings() touches it
+    this.notifications = new NotificationSystem();
+
     this._applySettings(this.settings);
     this._startResizeObserver();
     document.addEventListener('keydown', this._boundKeyDown);
-
-    // Instantiate NotificationSystem (no lazy load needed — always present)
-    this.notifications = new NotificationSystem();
 
     // Remaining modules are loaded lazily when first needed to keep
     // initial bundle small. See _lazyLoad() calls in each public method.
@@ -493,11 +494,12 @@ export class HUDManager {
     });
 
     // Radio chatter on/off
-    if (s.radioChatter === false) {
-      // Swap showRadio to a no-op so callsites don't need branching
-      this.notifications.showRadio = () => {};
-    } else {
-      this.notifications.showRadio = NotificationSystem.prototype.showRadio.bind(this.notifications);
+    if (this.notifications) {
+      if (s.radioChatter === false) {
+        this.notifications.showRadio = () => {};
+      } else {
+        this.notifications.showRadio = NotificationSystem.prototype.showRadio.bind(this.notifications);
+      }
     }
 
     // Minimap rotation mode
