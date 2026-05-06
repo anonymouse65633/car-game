@@ -28,8 +28,8 @@
 
 'use strict';
 
-import { saveManager }    from '../save/SaveManager.js';
-import { economyManager } from '../shops/EconomyManager.js';
+import { saveManager } from '../save/SaveManager.js';
+import { earn }        from '../shops/Economy.js';
 
 // ─── Day 1–4 Fixed Rewards ────────────────────────────────────────────────────
 
@@ -302,7 +302,7 @@ class DailyRewardManager {
     this._eventBonusDone = true;
     this._saveState();
 
-    economyManager.addCredits(FIRST_EVENT_CREDITS, 'first_daily_event_bonus');
+    earn(FIRST_EVENT_CREDITS, 'first_daily_event_bonus');
     this._progression?.awardXP('first_daily_event_bonus', FIRST_EVENT_XP);
 
     this._notify?.show({
@@ -351,8 +351,7 @@ class DailyRewardManager {
   _dispatchReward(reward) {
     switch (reward.type) {
       case 'credits':
-        // economyManager is the EconomyManager singleton (imported at top)
-        economyManager.addCredits(reward.amount, 'daily_login_reward');
+        earn(reward.amount, 'daily_login_reward');
         break;
       case 'xp_boost':
         // XP boost is stored on the player save record
