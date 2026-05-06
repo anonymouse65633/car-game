@@ -506,7 +506,9 @@ function _initInstancedMeshes() {
   for (const arch of _manifest.archetypes) {
     // Placeholder geometry until GLBs load — replaced by _populateBuildingInstances
     const geo  = new THREE.BoxGeometry(arch.w || 20, arch.h || 40, arch.d || 20);
-    const mat  = new THREE.MeshStandardMaterial({ color: arch.color || 0x556677 });
+    // arch.color arrives as a JSON string like "0xe8802a"; parseInt handles the 0x prefix.
+    const colorVal = typeof arch.color === 'string' ? parseInt(arch.color) : (arch.color || 0x556677);
+    const mat  = new THREE.MeshStandardMaterial({ color: colorVal });
     const mesh = new THREE.InstancedMesh(geo, mat, arch.maxInstances || 256);
     mesh.name         = `inst_${arch.id}`;
     mesh.castShadow   = true;
@@ -597,8 +599,8 @@ export function getDistrictAt(x, z) {
       return d;
     }
   }
-  // Default to outskirts for areas outside district polygons
-  return DISTRICT_DATA.find(d => d.id === 'outskirts');
+  // Default to highway (was 'outskirts') for areas outside district polygons
+  return DISTRICT_DATA.find(d => d.id === 'highway') ?? DISTRICT_DATA[0];
 }
 
 /**

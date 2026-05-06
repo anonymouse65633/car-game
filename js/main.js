@@ -70,7 +70,7 @@ async function boot() {
   // X: -1800 (airstrip centre), Z: 1000 (mid-runway), Y: terrain height + car half-height
   const SPAWN_X = -1800;
   const SPAWN_Z =  1000;
-  const SPAWN_Y = getTerrainHeight(SPAWN_X, SPAWN_Z) + 1.5; // 1.5m = half chassis height
+  const SPAWN_Y = 1.5; // ground chunks are flat at y=0 — wire getTerrainHeight once chunk geo uses it
   const playerSpawnPos = new THREE.Vector3(SPAWN_X, SPAWN_Y, SPAWN_Z);
 
   const playerCar    = await createCar(playerCarDef, { scene, world, isPlayer: true, spawnPos: playerSpawnPos });
