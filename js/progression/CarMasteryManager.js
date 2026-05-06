@@ -365,7 +365,7 @@ export class CarMasteryManager extends EventTarget {
   // ── Private ──────────────────────────────────────────────────────────────
 
  _loadState() {
-    const saved = this._save.get('mastery', 'state') ?? {};
+    const saved = this._save.get('mastery', 'cars') ?? {};
     return new Proxy(saved, {
       get: (target, carId) => {
         if (!(carId in target)) {
@@ -377,7 +377,7 @@ export class CarMasteryManager extends EventTarget {
   }
 
   _persist() {
-    this._save.set('mastery', 'state', this._getRawState());
+    this._save.set('mastery', 'cars', this._getRawState());
   }
 
   _getRawState() {
@@ -411,19 +411,19 @@ export class CarMasteryManager extends EventTarget {
 
       case NODE_TYPE.XP_BONUS:
         carData.xpBonus = (carData.xpBonus ?? 0) + node.value;
-        this._save.mastery?.setCarEffects?.(carId, carData);
+        this._save.set('mastery', `effects_${carId}`, carData);
         break;
 
       case NODE_TYPE.DISCOUNT:
         carData.partsDiscount = (carData.partsDiscount ?? 0) + node.value;
-        this._save.mastery?.setCarEffects?.(carId, carData);
+        this._save.set('mastery', `effects_${carId}`, carData);
         break;
 
       case NODE_TYPE.STAT_BONUS: {
         const { stat, amount } = node.value;
         if (!carData.statBonuses) carData.statBonuses = {};
         carData.statBonuses[stat] = (carData.statBonuses[stat] ?? 0) + amount;
-        this._save.mastery?.setCarEffects?.(carId, carData);
+        this._save.set('mastery', `effects_${carId}`, carData);
         break;
       }
 
