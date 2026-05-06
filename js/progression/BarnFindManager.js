@@ -11,15 +11,17 @@
  *  - NPC hint system — unlocks one vague hint per find, in sequence
  *  - UI query helpers for the Phone Menu "Barn Finds" tab
  *
- * Dependencies (all accessed via global singletons):
- *  - SaveManager       — persist discovered / restored state
- *  - NotificationSystem — toast + fanfare
- *  - AccoladeManager   — report('barn_found', 1), report('all_barns_found', 1)
- *  - EconomyManager    — deductCredits(), getBalance()
- *  - ProgressionManager — addXP()
- *  - AudioManager      — play barn fanfare sting
+ * Dependencies (injected via constructor):
+ *  - saveManager        — persist discovered / restored state
+ *  - notificationSystem — toast + fanfare
+ *  - accoladeManager    — report('barn_found', 1), report('all_barns_found', 1)
+ *  - progressionManager — addXP()
+ *
+ * Economy functions (imported directly from Economy.js):
+ *  - getBalance, spend, canAfford
  *
  * Usage:
+ *  const barnFindManager = new BarnFindManager({ saveManager, progressionManager, accoladeManager, notificationSystem });
  *  barnFindManager.tick(playerPos);          // called every frame from game loop
  *  barnFindManager.tryInteract(playerPos);   // called on player pressing F / X
  *  barnFindManager.tryRestore(barnId);       // called from Garage / Parts Shop UI
@@ -29,7 +31,8 @@
 
 'use strict';
 
-import { saveManager } from '../save/SaveManager.js';
+import { getBalance, spend, canAfford } from '../shops/Economy.js';
+import { audioManager }                 from '../engine/audio.js';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -273,14 +276,26 @@ const BARN_CATALOGUE = [
 
 // ─── BarnFindManager Class ────────────────────────────────────────────────────
 
-class BarnFindManager {
-  constructor() {
+export class BarnFindManager {
+  /**
+   * @param {object} opts
+   * @param {object}   opts.saveManager        – SaveManager singleton
+   * @param {object}   opts.progressionManager – ProgressionManager instance
+   * @param {object}   opts.accoladeManager    – AccoladeManager instance
+   * @param {object}   opts.notificationSystem – NotificationSystem instance
+   */
+  constructor({ saveManager, progressionManager, accoladeManager, notificationSystem }) {
+    this._save          = saveManager;
+    this._progression   = progressionManager;
+    this._accolades     = accoladeManager;
+    this._notifications = notificationSystem;
+
     // Working copy — merged with save data in _loadState()
     this._barns = BARN_CATALOGUE.map(b => ({ ...b, car: { ...b.car } }));
 
     // Proximity state (updated each tick — not persisted)
-    this._nearbyBarn    = null;  // barn within GLOW_RADIUS_M
-    this._interactable  = null;  // barn within INTERACT_RADIUS_M
+    this._nearbyBarn     = null;  // barn within GLOW_RADIUS_M
+    this._interactable   = null;  // barn within INTERACT_RADIUS_M
     this._glowingBarnIds = new Set();
 
     this._loadState();
@@ -292,12 +307,12 @@ class BarnFindManager {
   // ─── Save / Load ──────────────────────────────────────────────────────────
 
   _loadState() {
-    const saved = saveManager.get('barnFinds', '_mgr') || {};
+    const saved = this._save.get('barnFinds', '_mgr') ?? {};
     for (const barn of this._barns) {
       if (saved[barn.id]) {
-        barn.discovered    = saved[barn.id].discovered    ?? false;
-        barn.restored      = saved[barn.id].restored      ?? false;
-        barn.hintUnlocked  = saved[barn.id].hintUnlocked  ?? false;
+        barn.discovered   = saved[barn.id].discovered   ?? false;
+        barn.restored     = saved[barn.id].restored     ?? false;
+        barn.hintUnlocked = saved[barn.id].hintUnlocked ?? false;
       }
     }
   }
@@ -311,7 +326,7 @@ class BarnFindManager {
         hintUnlocked: barn.hintUnlocked,
       };
     }
-    saveManager.set('barnFinds', '_mgr', data);
+    this._save.set('barnFinds', '_mgr', data);
   }
 
   // ─── Hint Unlock Logic ────────────────────────────────────────────────────
@@ -416,15 +431,15 @@ class BarnFindManager {
     this._glowingBarnIds.delete(barn.id);
 
     // Add car to player's garage in unrestored state
-    saveManager.inventory.addCar({ ...barn.car, isUnrestored: true });
+    this._save.inventory.addCar({ ...barn.car, isUnrestored: true });
 
     // Progression rewards
-    ProgressionManager.addXP(DISCOVERY_XP, 'barn_find_discovery');
-    AccoladeManager.report('barn_found', 1);
+    this._progression.addXP(DISCOVERY_XP, 'barn_find_discovery');
+    this._accolades.report('barn_found', 1);
 
     // Check all-barns-found
     if (this._barns.every(b => b.discovered)) {
-      AccoladeManager.report('all_barns_found', 1);
+      this._accolades.report('all_barns_found', 1);
     }
 
     // Unlock any hints that this discovery gates
@@ -432,12 +447,10 @@ class BarnFindManager {
     this._saveState();
 
     // Fanfare
-    if (typeof AudioManager !== 'undefined') {
-      AudioManager.play('sfx_barn_discovery');
-    }
+    audioManager.play?.('sfx_barn_discovery');
 
     // Toast notification
-    NotificationSystem.show({
+    this._notifications.show({
       type:    'barn_find',
       title:   '🏚️ Barn Find Discovered!',
       body:    `${barn.car.year} ${barn.car.make} ${barn.car.model} — Needs Restoration`,
@@ -468,9 +481,8 @@ class BarnFindManager {
     if (!barn.discovered) return { success: false, reason: 'This barn has not been discovered yet.' };
     if (barn.restored)    return { success: false, reason: 'Already restored.' };
 
-    const balance = EconomyManager.getBalance();
-    if (balance < barn.restorationCost) {
-      const shortfall = barn.restorationCost - balance;
+    if (!canAfford(barn.restorationCost)) {
+      const shortfall = barn.restorationCost - getBalance();
       return {
         success: false,
         reason: `Not enough credits. You need ${this._formatCR(shortfall)} CR more.`,
@@ -478,21 +490,21 @@ class BarnFindManager {
     }
 
     // Charge the player
-    EconomyManager.deductCredits(barn.restorationCost, `Barn restoration: ${barn.car.make} ${barn.car.model}`);
+    spend(barn.restorationCost, `barn_restoration`, `Barn restoration: ${barn.car.make} ${barn.car.model}`);
 
     // Mark the car as restored in garage and in barn state
     barn.restored = true;
-    const _barnCar = saveManager.inventory.getCarById(barn.car.id);
-    if (_barnCar) { Object.assign(_barnCar, { isUnrestored: false }); saveManager.markDirty(); }
+    const _barnCar = this._save.inventory.getCarById(barn.car.id);
+    if (_barnCar) { Object.assign(_barnCar, { isUnrestored: false }); this._save.markDirty(); }
 
     this._saveState();
 
     // Rewards
-    ProgressionManager.addXP(500, 'barn_restoration');
-    AccoladeManager.report('barn_restored', 1);
+    this._progression.addXP(500, 'barn_restoration');
+    this._accolades.report('barn_restored', 1);
 
     // Notification
-    NotificationSystem.show({
+    this._notifications.show({
       type:    'barn_restored',
       title:   '🔧 Restoration Complete!',
       body:    `${barn.car.year} ${barn.car.make} ${barn.car.model} is ready to race.`,
@@ -576,9 +588,7 @@ class BarnFindManager {
         car:             `${barn.car.year} ${barn.car.make} ${barn.car.model}`,
         carClass:        barn.car.class,
         restorationCost: barn.restored ? 0 : barn.restorationCost,
-        canAffordRestore: barn.restored
-          ? false
-          : EconomyManager.getBalance() >= barn.restorationCost,
+        canAffordRestore: barn.restored ? false : canAfford(barn.restorationCost),
         lore:            barn.lore,
         hintUnlocked:    true,
         hint:            barn.npc.dialogue,
@@ -681,9 +691,3 @@ class BarnFindManager {
     return amount.toLocaleString('en-US');
   }
 }
-
-// ─── Singleton Export ─────────────────────────────────────────────────────────
-
-const barnFindManager = new BarnFindManager();
-
-export { BarnFindManager, barnFindManager };
