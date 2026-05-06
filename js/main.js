@@ -122,8 +122,10 @@ async function boot() {
   })();
   applyPostSettings(_savedPreset);
 
-  // Part 18 — Lens effects: splice into composer after PostFX is built
-  initLensEffects(getComposer(), renderer.domElement);
+  // Part 18 — Lens effects: splice into composer after PostFX is built (skip on low)
+  if (_savedPreset !== 'low') {
+    initLensEffects(getComposer(), renderer.domElement);
+  }
 
   // Anisotropy follows the saved preset (low=1, medium=4, high=8, ultra/extreme=16)
   const _anisoMap = { low: 1, medium: 4, high: 8, ultra: 16, extreme: 16 };
@@ -186,12 +188,14 @@ async function boot() {
     getRoadSurface,
   });
 
-  // Part 16 — Water System
-  await initWaterSystem(scene, renderer, {
-    getTerrainHeight,
-    getSunDirection: typeof getSunDirection !== 'undefined' ? getSunDirection : undefined,
-    getWeather:      typeof getWeather      !== 'undefined' ? getWeather      : undefined,
-  });
+  // Part 16 — Water System (skip on low — ocean shaders are heavy)
+  if (_savedPreset !== 'low') {
+    await initWaterSystem(scene, renderer, {
+      getTerrainHeight,
+      getSunDirection: typeof getSunDirection !== 'undefined' ? getSunDirection : undefined,
+      getWeather:      typeof getWeather      !== 'undefined' ? getWeather      : undefined,
+    });
+  }
 
   initPOI(scene, world, saveManager);
   initNPCs(scene, world, getRoadSplines());
@@ -329,8 +333,10 @@ async function boot() {
     // from driving.js is already set before we apply the FX layer on top)
     updateCameraFX(camera, playerCar, drivingController, dt);
 
-    // Part 16 — Water System: animate ocean/lakes/rivers, foam, bow waves, underwater fog
-    updateWaterSystem(performance.now() * 0.001, camera, playerCar, drivingController);
+    // Part 16 — Water System: animate ocean/lakes/rivers (skipped on low)
+    if (_savedPreset !== 'low') {
+      updateWaterSystem(performance.now() * 0.001, camera, playerCar, drivingController);
+    }
 
     // Part 15 — Vegetation wind + grass LOD
     updateVegetation(performance.now() * 0.001, camera);
@@ -366,14 +372,16 @@ async function boot() {
       isNight:     night,
     });
 
-    // Part 18 — Lens effects: dirt, haze, grain, vignette, speed lines, flare
-    updateLensEffects(dt, {
-      speedKph: playerCar.speedKmh ?? 0,
-      isNight:  night,
-      biome:    typeof getBiome !== 'undefined'
-                  ? getBiome(playerCar.position?.x ?? 0, playerCar.position?.z ?? 0)
-                  : '',
-    });
+    // Part 18 — Lens effects (skipped on low)
+    if (_savedPreset !== 'low') {
+      updateLensEffects(dt, {
+        speedKph: playerCar.speedKmh ?? 0,
+        isNight:  night,
+        biome:    typeof getBiome !== 'undefined'
+                    ? getBiome(playerCar.position?.x ?? 0, playerCar.position?.z ?? 0)
+                    : '',
+      });
+    }
 
     // Part 6 — god ray sun shaft update
     const sunDir = getSunDirection ? getSunDirection() : new THREE.Vector3(0.5, 0.8, 0.2);

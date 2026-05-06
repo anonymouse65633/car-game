@@ -641,7 +641,7 @@ export async function initVegetation(scene, opts = {}) {
   console.log('[Vegetation] Building grass …');
 
   _grassMesh = _buildGrass(_getH, _getBiome, _getRoadSurface);
-  group.add(_grassMesh);
+  if (_grassMesh) group.add(_grassMesh); // null on low preset (GRASS_MAX=0)
 
   scene.add(group);
 

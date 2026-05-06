@@ -216,8 +216,12 @@ export const CITY_BOUNDS = Object.freeze({ minX: -5000, maxX: 5000, minZ: -5000,
 /** Side length of one streaming chunk in metres. */
 export const CHUNK_SIZE = 500;
 
-/** How many chunks each side to keep loaded around the player. */
-const STREAM_RADIUS = 2; // 5×5 grid = 25 chunks
+/** How many chunks each side to keep loaded around the player.
+ *  Low = 1 (3×3 = 9 chunks), Medium = 1, High+ = 2 (5×5 = 25 chunks) */
+const _CITY_PRESET    = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+const STREAM_RADIUS   = (_CITY_PRESET === 'low' || _CITY_PRESET === 'medium') ? 1 : 2;
+/** True when we should use flat/Lambert materials instead of PBR */
+const _FLAT_MATERIALS = (_CITY_PRESET === 'low');
 
 /** Distance at which a chunk switches to simplified LOD mesh. */
 const LOD_NEAR = 150;
@@ -484,15 +488,13 @@ function _buildRoadMesh() {
   );
   roadGeo.rotateX(-Math.PI / 2);
 
-  const roadMat = new THREE.MeshStandardMaterial({
-    color:     0x222222,
-    roughness: 0.85,
-    metalness: 0.05,
-  });
+  const roadMat = _FLAT_MATERIALS
+    ? new THREE.MeshLambertMaterial({ color: 0x333333 })
+    : new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.85, metalness: 0.05 });
 
   const roadMesh       = new THREE.Mesh(roadGeo, roadMat);
   roadMesh.name        = 'road_base';
-  roadMesh.receiveShadow = true;
+  roadMesh.receiveShadow = !_FLAT_MATERIALS;
   roadMesh.position.set(0, -0.02, 0); // Slightly below chunk floors to avoid z-fight
 
   GROUPS.world.add(roadMesh);
@@ -676,26 +678,24 @@ function _buildPlaceholderChunk(group, cx, cz) {
   const groundGeo = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE);
   groundGeo.rotateX(-Math.PI / 2);
   const district  = getDistrictAt(worldX + CHUNK_SIZE / 2, worldZ + CHUNK_SIZE / 2);
-  const groundMat = new THREE.MeshStandardMaterial({
-    color:     new THREE.Color(district.color).multiplyScalar(0.4),
-    roughness: 0.9,
-  });
+  const groundMat = _FLAT_MATERIALS
+    ? new THREE.MeshLambertMaterial({ color: new THREE.Color(district.color).multiplyScalar(0.4) })
+    : new THREE.MeshStandardMaterial({ color: new THREE.Color(district.color).multiplyScalar(0.4), roughness: 0.9 });
 
   const lod0 = new THREE.Group(); lod0.name = 'lod0';
   const lod1 = new THREE.Group(); lod1.name = 'lod1'; lod1.visible = false;
   const lod2 = new THREE.Group(); lod2.name = 'lod2'; lod2.visible = false;
 
   const ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.receiveShadow = true;
+  ground.receiveShadow = !_FLAT_MATERIALS;
   ground.position.set(CHUNK_SIZE / 2, 0, CHUNK_SIZE / 2);
   lod0.add(ground);
   lod1.add(ground.clone());
 
   // Scatter a few placeholder buildings in the chunk
-  const bldMat = new THREE.MeshStandardMaterial({
-    color:     new THREE.Color(district.color).multiplyScalar(0.7),
-    roughness: 0.7,
-  });
+  const bldMat = _FLAT_MATERIALS
+    ? new THREE.MeshLambertMaterial({ color: new THREE.Color(district.color).multiplyScalar(0.7) })
+    : new THREE.MeshStandardMaterial({ color: new THREE.Color(district.color).multiplyScalar(0.7), roughness: 0.7 });
 
   const RNG_SEED = (cx * 73856093) ^ (cz * 19349663);
   const rng = _seededRNG(RNG_SEED);
@@ -710,8 +710,8 @@ function _buildPlaceholderChunk(group, cx, cz) {
 
     const bldGeo  = new THREE.BoxGeometry(w, h, d);
     const bldMesh = new THREE.Mesh(bldGeo, bldMat);
-    bldMesh.castShadow    = true;
-    bldMesh.receiveShadow = true;
+    bldMesh.castShadow    = !_FLAT_MATERIALS;
+    bldMesh.receiveShadow = !_FLAT_MATERIALS;
     bldMesh.position.set(bx, h / 2, bz);
     lod0.add(bldMesh);
 

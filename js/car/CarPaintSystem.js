@@ -71,16 +71,19 @@ export function initCarPaintSystem(scene, renderer) {
   // Build the procedural dirt texture
   _dirtTex = _buildDirtTexture();
 
-  // Build the CubeCamera (512 px cube — good quality, not too heavy)
-  _cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
-    format:           THREE.RGBAFormat,
-    type:             THREE.HalfFloatType,
-    generateMipmaps:  true,
-    minFilter:        THREE.LinearMipmapLinearFilter,
-  });
-  _cubeCamera = new THREE.CubeCamera(0.5, 500, _cubeRenderTarget);
-  _cubeCamera.name = 'CarPaintCubeCamera';
-  scene.add(_cubeCamera);
+  // Low preset skips CubeCamera entirely — flat Lambert materials don't need env maps
+  const _paintPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+  if (_paintPreset !== 'low' && _paintPreset !== 'medium') {
+    _cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512, {
+      format:           THREE.RGBAFormat,
+      type:             THREE.HalfFloatType,
+      generateMipmaps:  true,
+      minFilter:        THREE.LinearMipmapLinearFilter,
+    });
+    _cubeCamera = new THREE.CubeCamera(0.5, 500, _cubeRenderTarget);
+    _cubeCamera.name = 'CarPaintCubeCamera';
+    scene.add(_cubeCamera);
+  }
 
   _ready = true;
   console.log('[CarPaintSystem] ✅ Part 7 PBR car paint initialised.');
@@ -97,6 +100,17 @@ export function initCarPaintSystem(scene, renderer) {
  * @returns {THREE.MeshPhysicalMaterial}
  */
 export function createPBRBodyMat(hexColor = 0xcc2222, paintType = 'metallic') {
+  // ── Low preset: flat Lambert material — no shader compilation, no PBR ──────
+  const _preset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+  if (_preset === 'low' || _preset === 'medium') {
+    const flatMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(hexColor) });
+    flatMat.userData.uDirt = 0;
+    flatMat.userData.uDamageRoughness = 0;
+    flatMat.userData.uDamageWarp = 0;
+    _bodyMaterials.add(flatMat);
+    return flatMat;
+  }
+
   const { roughness, metalness, clearcoat, clearcoatRoughness, reflectivity } =
     _paintTypeParams(paintType);
 
@@ -108,11 +122,9 @@ export function createPBRBodyMat(hexColor = 0xcc2222, paintType = 'metallic') {
     clearcoatRoughness,
     reflectivity,
     envMapIntensity:    1.8,
-    // envMap wired in after CubeCamera is ready (updateCarReflection)
   });
 
   // ── Dirt / damage shader injection ────────────────────────────────────────
-  // We use onBeforeCompile to add two uniforms without writing a full custom
   // ShaderMaterial — this keeps THREE.js PBR lighting intact.
   mat.userData.uDirt            = 0;   // 0 = clean, 1 = fully dirty
   mat.userData.uDamageRoughness = 0;  // extra roughness from impacts
@@ -122,12 +134,18 @@ export function createPBRBodyMat(hexColor = 0xcc2222, paintType = 'metallic') {
   mat.onBeforeCompile = (shader) => {
     mat.userData._shaderRef = shader;
 
-    // Inject uniforms
+    // Inject uniforms (JS side)
     shader.uniforms.uDirt            = { value: mat.userData.uDirt };
     shader.uniforms.uDirtMap         = { value: _dirtTex };
     shader.uniforms.uDamageRoughness = { value: mat.userData.uDamageRoughness };
-    shader.uniforms.uHueShift        = { value: 0 }; // chameleon paint
+    shader.uniforms.uHueShift        = { value: 0 };
     shader.uniforms.uDamageWarp      = { value: mat.userData.uDamageWarp };
+
+    // Declare uniforms in GLSL (required — adding to shader.uniforms alone is not enough)
+    shader.vertexShader = 'uniform float uDamageWarp;\n' + shader.vertexShader;
+    shader.fragmentShader =
+      'uniform float uDirt;\nuniform sampler2D uDirtMap;\nuniform float uDamageRoughness;\nuniform float uHueShift;\n'
+      + shader.fragmentShader;
 
     // After the standard map_fragment chunk, blend in dirt colour
     shader.fragmentShader = shader.fragmentShader.replace(
