@@ -78,7 +78,7 @@ async function boot() {
     notificationSystem,
   });
 
-  const dailyRewardManager = new DailyRewardManager();
+  const dailyRewardManager = new DailyRewardManager({ progressionManager, notificationSystem });
   dailyRewardManager.checkOnStartup();
 
   const festivalPlaylistManager = new FestivalPlaylistManager({ saveManager, progressionManager, accoladeManager, notificationSystem });
@@ -89,6 +89,7 @@ async function boot() {
   // init() is async and builds the full DOM overlay + child modules.
   const hudManager = new HUDManager({
     canvas:       renderer.domElement,
+    saveManager,
     onPauseGame:  () => { /* pause physics / input if needed */ },
     onResumeGame: () => { /* resume physics / input if needed */ },
   });
