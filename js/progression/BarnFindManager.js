@@ -434,7 +434,7 @@ export class BarnFindManager {
     this._save.inventory.addCar({ ...barn.car, isUnrestored: true });
 
     // Progression rewards
-    this._progression.addXP(DISCOVERY_XP, 'barn_find_discovery');
+    this._progression.awardXP('barn_find_discovery', DISCOVERY_XP);
     this._accolades.report('barn_found', 1);
 
     // Check all-barns-found
@@ -500,7 +500,7 @@ export class BarnFindManager {
     this._saveState();
 
     // Rewards
-    this._progression.addXP(500, 'barn_restoration');
+    this._progression.awardXP('barn_restoration', 500);
     this._accolades.report('barn_restored', 1);
 
     // Notification
