@@ -422,11 +422,13 @@ function _buildMainComposer(W, H) {
     _mainComposer.addPass(_fxaaPass);
   }
 
-  // ── Pass 5: Bloom composite ───────────────────────────────────────────────
-  _bloomMixPass = new ShaderPass(BloomMixShader);
-  _bloomMixPass.uniforms.tBloom.value   = _bloomComposer.readBuffer.texture;
-  _bloomMixPass.uniforms.uStrength.value = 1.0;
-  _mainComposer.addPass(_bloomMixPass);
+  // ── Pass 5: Bloom composite — only added when bloom sub-composer exists ──
+  if (_bloomComposer) {
+    _bloomMixPass = new ShaderPass(BloomMixShader);
+    _bloomMixPass.uniforms.tBloom.value    = _bloomComposer.readBuffer.texture;
+    _bloomMixPass.uniforms.uStrength.value = 1.0;
+    _mainComposer.addPass(_bloomMixPass);
+  }
 
   // ── Pass 6: Motion blur ───────────────────────────────────────────────────
   _motionBlurPass = new ShaderPass(MotionBlurShader);

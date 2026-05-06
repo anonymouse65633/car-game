@@ -104,6 +104,11 @@ export let AMBIENT = null;
 
 // ─── INTERNAL STATE ──────────────────────────────────────────────────────────
 
+// Read preset once at module load — all _init* functions share these flags.
+const _bootPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+const _isLow      = _bootPreset === 'low';
+const _isMed      = _bootPreset === 'medium';
+
 /** @type {HTMLCanvasElement} */
 let _canvas = null;
 
@@ -172,12 +177,6 @@ function _initRenderer(canvas) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // cap at 2x (preset overrides below)
   renderer.setSize(window.innerWidth, window.innerHeight);
 
-  // Read saved preset NOW (before any heavy GPU work) so low-end devices
-  // skip shadow map allocation entirely.
-  const _bootPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
-  const _isLow      = _bootPreset === 'low';
-  const _isMed      = _bootPreset === 'medium';
-
   // Pixel ratio: low=0.75, medium=1, high/ultra/extreme cap at 2
   const _prMap = { low: 0.75, medium: 1.0, high: 1.5, ultra: 2.0, extreme: 2.0 };
   renderer.setPixelRatio(Math.min(_prMap[_bootPreset] ?? 0.75, window.devicePixelRatio));
@@ -192,9 +191,6 @@ function _initRenderer(canvas) {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
   }
-
-  // Use physically correct lighting model (matches the car paint shader)
-  renderer.useLegacyLights = false;
 
   // sRGB output — colours look correct without manual gamma correction
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -212,11 +208,9 @@ function _initRenderer(canvas) {
 function _initScene() {
   scene = new THREE.Scene();
 
-  // Fog: light haze that hides chunk pop-in at the LOD edge (~300m)
-  // On low preset, tighter fog drastically reduces geometry drawn each frame
-  const _fogPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
-  const _fogStart  = _fogPreset === 'low' ? 80  : _fogPreset === 'medium' ? 150 : 250;
-  const _fogEnd    = _fogPreset === 'low' ? 200 : _fogPreset === 'medium' ? 300 : 500;
+  // Fog: draw distance scaled to preset — tighter fog on low = fewer objects rendered
+  const _fogStart  = _isLow ? 80  : _isMed ? 150 : 250;
+  const _fogEnd    = _isLow ? 200 : _isMed ? 300 : 500;
   scene.fog = new THREE.Fog(
     0xc8d8e8,  // cool blue-grey — matches daytime sky
     _fogStart,
@@ -241,11 +235,10 @@ function _initScene() {
  * Third-person chase camera defaults.
  * driving.js updates camera position every frame — these are just initial values.
  */
-const CAM_FOV    = 65;    // degrees — wider than default gives a sense of speed
-const CAM_NEAR   = 0.5;   // metres
-// Far plane: low=200m (fewer draw calls), high/ultra=600m
-const _camPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
-const CAM_FAR    = _camPreset === 'low' ? 200 : _camPreset === 'medium' ? 350 : 600;
+const CAM_FOV    = 65;
+const CAM_NEAR   = 0.5;
+// Far plane scaled to preset — shorter on low = fewer GPU draw calls
+const CAM_FAR    = _isLow ? 200 : _isMed ? 350 : 600;
 
 function _initCamera() {
   camera = new THREE.PerspectiveCamera(
