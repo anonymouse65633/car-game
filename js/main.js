@@ -114,10 +114,20 @@ async function boot() {
   // Part 5 — Full post-processing stack (replaces legacy bloom+FXAA)
   initPostFX(renderer, scene, camera);
   hookPostFX(renderPostFX, resizePostFX);
-  applyPostSettings('ultra');   // default to Ultra preset
+
+  // Part 11 / Preset — apply saved graphics preset (defaults to 'low' for
+  // compatibility; player can raise it in Settings → Graphics).
+  const _savedPreset = (() => {
+    try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch (_) { return 'low'; }
+  })();
+  applyPostSettings(_savedPreset);
+
   // Part 18 — Lens effects: splice into composer after PostFX is built
   initLensEffects(getComposer(), renderer.domElement);
-  setAnisoLevel(16);            // Part 11 — Ultra/Extreme → 16x anisotropy
+
+  // Anisotropy follows the saved preset (low=1, medium=4, high=8, ultra/extreme=16)
+  const _anisoMap = { low: 1, medium: 4, high: 8, ultra: 16, extreme: 16 };
+  setAnisoLevel(_anisoMap[_savedPreset] ?? 1);
 
   // Initialise economy (grants intro bonus on first run)
   initEconomy();

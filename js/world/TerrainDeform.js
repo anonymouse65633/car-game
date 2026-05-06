@@ -261,6 +261,12 @@ export function registerDirtBurstCallback(fn) {
  * @param {128|256|512|1024} resolution
  */
 export function setDeformResolution(resolution) {
+  // 0 means "disabled" on Low preset — skip RT rebuild to avoid WebGL crash
+  if (resolution === 0) {
+    RT_SIZE = 0;
+    console.log('[TerrainDeform] Deformation disabled (Low preset)');
+    return;
+  }
   if (!_ready) { RT_SIZE = resolution; return; }
   RT_SIZE = resolution;
   _rtA.dispose();

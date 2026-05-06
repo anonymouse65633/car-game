@@ -53,7 +53,7 @@ const LIFE_DUST_MIN  = 1.2;
 const LIFE_DUST_MAX  = 2.8;    // dust lingers longer
 
 // ─── Quality presets (spawn count multiplier) ────────────────────────────────
-const QUALITY_SCALE = { low: 0.25, medium: 0.5, high: 0.85, ultra: 1.0 };
+const QUALITY_SCALE = { low: 0.025, medium: 0.125, high: 0.375, ultra: 0.75, extreme: 1.0 };
 
 // ─── Wheel offsets (mirror car.js WHEEL_OFFSETS) ─────────────────────────────
 const WHEEL_LABELS = ['FL', 'FR', 'RL', 'RR'];

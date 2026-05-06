@@ -593,6 +593,7 @@ export class HUDManager {
 
 // ─── Default settings ─────────────────────────────────────────────────────────
 const DEFAULT_SETTINGS = {
+  graphicsPreset:      'low',         // safe default for all hardware
   uiScale:             '100%',
   colourBlindMode:     'Off',
   reduceMotion:        false,

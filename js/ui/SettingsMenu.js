@@ -669,7 +669,7 @@ export class SettingsMenu {
     const presetRow = document.createElement('div');
     presetRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;';
     const PRESETS = ['low', 'medium', 'high', 'ultra', 'extreme'];
-    const savedPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'ultra'; } catch(_) { return 'ultra'; } })();
+    const savedPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch(_) { return 'low'; } })();
 
     PRESETS.forEach(name => {
       const btn = document.createElement('button');
