@@ -169,17 +169,37 @@ function _initRenderer(canvas) {
     depth: true,
   });
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // cap at 2x
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // cap at 2x (preset overrides below)
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+
+  // Read saved preset NOW (before any heavy GPU work) so low-end devices
+  // skip shadow map allocation entirely.
+  const _bootPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+  const _isLow      = _bootPreset === 'low';
+  const _isMed      = _bootPreset === 'medium';
+
+  // Pixel ratio: low=0.75, medium=1, high/ultra/extreme cap at 2
+  const _prMap = { low: 0.75, medium: 1.0, high: 1.5, ultra: 2.0, extreme: 2.0 };
+  renderer.setPixelRatio(Math.min(_prMap[_bootPreset] ?? 0.75, window.devicePixelRatio));
+
+  // Shadows: disabled on low (massive GPU saving), basic on medium
+  if (_isLow) {
+    renderer.shadowMap.enabled = false;
+  } else if (_isMed) {
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type    = THREE.BasicShadowMap;   // cheapest filtering
+  } else {
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+  }
 
   // Use physically correct lighting model (matches the car paint shader)
   renderer.useLegacyLights = false;
 
   // sRGB output — colours look correct without manual gamma correction
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping      = THREE.ACESFilmicToneMapping;
+  // ACES Filmic is expensive on low-end GPUs — use Linear on low preset
+  renderer.toneMapping      = _isLow ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
 
   // Part 4 — PMREMGenerator created once here; SkySystem consumes it
@@ -193,10 +213,14 @@ function _initScene() {
   scene = new THREE.Scene();
 
   // Fog: light haze that hides chunk pop-in at the LOD edge (~300m)
+  // On low preset, tighter fog drastically reduces geometry drawn each frame
+  const _fogPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+  const _fogStart  = _fogPreset === 'low' ? 80  : _fogPreset === 'medium' ? 150 : 250;
+  const _fogEnd    = _fogPreset === 'low' ? 200 : _fogPreset === 'medium' ? 300 : 500;
   scene.fog = new THREE.Fog(
     0xc8d8e8,  // cool blue-grey — matches daytime sky
-    250,       // fog start distance (m)
-    500        // fog end distance (matches LOD billboard transition)
+    _fogStart,
+    _fogEnd
   );
 
   // Background matches fog colour so the horizon blends
@@ -219,7 +243,9 @@ function _initScene() {
  */
 const CAM_FOV    = 65;    // degrees — wider than default gives a sense of speed
 const CAM_NEAR   = 0.5;   // metres
-const CAM_FAR    = 600;   // metres — just beyond the billboard LOD edge
+// Far plane: low=200m (fewer draw calls), high/ultra=600m
+const _camPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+const CAM_FAR    = _camPreset === 'low' ? 200 : _camPreset === 'medium' ? 350 : 600;
 
 function _initCamera() {
   camera = new THREE.PerspectiveCamera(
@@ -249,8 +275,8 @@ function _initLighting() {
 
   // Shadow map — covers the area immediately around the player
   const s = SUN.shadow;
-  s.mapSize.width  = 2048;
-  s.mapSize.height = 2048;
+  s.mapSize.width  = _isLow ? 0 : (_isMed ? 512 : 2048);
+  s.mapSize.height = _isLow ? 0 : (_isMed ? 512 : 2048);
   s.camera.near    = 1;
   s.camera.far     = 600;
   s.camera.left    = -80;

@@ -35,11 +35,11 @@
 // that coordinates all subsystems — PostFX, particles, deform RT, anisotropy.
 
 export const GRAPHICS_PRESETS = {
-  low:     { particles: 2000,  shadowRes: 512,  cascades: 1, ssao: false, ssr: false, aniso: 1,  deformRes: 0    },
-  medium:  { particles: 10000, shadowRes: 1024, cascades: 2, ssao: false, ssr: true,  aniso: 4,  deformRes: 128  },
-  high:    { particles: 30000, shadowRes: 2048, cascades: 3, ssao: true,  ssr: true,  aniso: 8,  deformRes: 256  },
-  ultra:   { particles: 60000, shadowRes: 2048, cascades: 3, ssao: true,  ssr: true,  aniso: 16, deformRes: 512  },
-  extreme: { particles: 80000, shadowRes: 4096, cascades: 4, ssao: true,  ssr: true,  aniso: 16, deformRes: 1024 },
+  low:     { particles: 0,     shadowRes: 0,    cascades: 0, ssao: false, ssr: false, aniso: 1,  deformRes: 0,    pixelRatio: 0.75, shadows: false },
+  medium:  { particles: 5000,  shadowRes: 512,  cascades: 1, ssao: false, ssr: false, aniso: 1,  deformRes: 0,    pixelRatio: 1.0,  shadows: true  },
+  high:    { particles: 20000, shadowRes: 1024, cascades: 2, ssao: false, ssr: false, aniso: 8,  deformRes: 128,  pixelRatio: 1.0,  shadows: true  },
+  ultra:   { particles: 50000, shadowRes: 2048, cascades: 3, ssao: true,  ssr: true,  aniso: 16, deformRes: 512,  pixelRatio: 1.5,  shadows: true  },
+  extreme: { particles: 80000, shadowRes: 4096, cascades: 4, ssao: true,  ssr: true,  aniso: 16, deformRes: 1024, pixelRatio: 2.0,  shadows: true  },
 };
 
 /**
@@ -77,6 +77,18 @@ export async function applyPreset(presetName) {
     const { setAnisoLevel } = await import('../fx/AnisoFX.js');
     setAnisoLevel(p.aniso);
   } catch (e) { console.warn('[SettingsMenu] AnisoFX preset error:', e); }
+
+  // 5. Shadow map + pixel ratio (applied via renderer graphics settings)
+  try {
+    const { applyGraphicsSettings } = await import('../engine/renderer.js');
+    applyGraphicsSettings({
+      shadowMapSize: p.shadows ? p.shadowRes : 0,
+      pixelRatio:    p.pixelRatio ?? 1.0,
+    });
+    // Disable shadow map entirely on low for maximum speedup
+    const { renderer } = await import('../engine/renderer.js');
+    if (renderer) renderer.shadowMap.enabled = !!p.shadows;
+  } catch (e) { console.warn('[SettingsMenu] renderer settings error:', e); }
 
   // Persist selection
   try { localStorage.setItem('graphicsPreset', presetName); } catch (_) {}

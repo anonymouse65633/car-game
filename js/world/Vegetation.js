@@ -26,7 +26,11 @@ const WORLD_MIN_X   = -6000;
 const WORLD_MIN_Z   = -6000;
 const WORLD_SIZE    = 12000;
 const TREE_MAX      = 8000;    // instances per archetype (GPU budget)
-const GRASS_MAX     = 400000;  // total grass blade instances
+// Grass count scaled to graphics preset — read at module load so InstancedMesh
+// is never over-allocated.  Low=0 (no grass), medium=1000, high=20000, ultra=100000, extreme=400000
+const _GRASS_BY_PRESET = { low: 0, medium: 1000, high: 20000, ultra: 100000, extreme: 400000 };
+const _SAVED_PRESET    = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+const GRASS_MAX     = _GRASS_BY_PRESET[_SAVED_PRESET] ?? 0;
 const GRASS_FULL_R  = 80;      // metres: full density band
 const GRASS_HALF_R  = 160;     // metres: half density band
 const ROAD_EXCL_R   = 10;      // metres: no vegetation near road samples
@@ -544,6 +548,8 @@ function _buildGrassMat() {
 }
 
 function _buildGrass(getH, getBiome, getRoadSurface) {
+  // Skip entirely on low preset — no GPU budget for grass
+  if (GRASS_MAX === 0) return null;
   // Single quad blade: 5 cm wide, 8 cm tall
   const bladeGeo = new THREE.PlaneGeometry(0.05, 0.08, 1, 3);
   bladeGeo.translate(0, 0.04, 0);  // pivot at base

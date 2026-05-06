@@ -323,7 +323,11 @@ export function initPostFX(renderer, scene, camera) {
   const W = window.innerWidth;
   const H = window.innerHeight;
 
-  _buildBloomComposer(W, H);
+  // Skip expensive bloom sub-composer on low/medium — halves render calls per frame
+  const _initPresetBoot = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+  if (_initPresetBoot !== 'low' && _initPresetBoot !== 'medium') {
+    _buildBloomComposer(W, H);
+  }
   _buildMainComposer(W, H);
 
   console.log('[PostFX] ✅ Part 5 — full post-processing stack ready');
@@ -372,17 +376,23 @@ function _buildMainComposer(W, H) {
   const renderPass = new RenderPass(_scene, _camera);
   _mainComposer.addPass(renderPass);
 
-  // ── Pass 2: SSAO ──────────────────────────────────────────────────────────
-  _ssaoPass = new SSAOPass(_scene, _camera, W, H);
-  _ssaoPass.kernelRadius  = 1.8;     // metres — covers car underbody, rock crevices
-  _ssaoPass.minDistance   = 0.001;
-  _ssaoPass.maxDistance   = 0.08;
-  _ssaoPass.output        = SSAOPass.OUTPUT.Default;
-  _ssaoPass.enabled       = true;
-  _mainComposer.addPass(_ssaoPass);
+  // Detect saved preset at init time to skip heavy passes on low-end hardware
+  const _initPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+  const _skipHeavy  = (_initPreset === 'low' || _initPreset === 'medium');
+
+  // ── Pass 2: SSAO — skip entirely on low/medium (saves shader compile + VRAM) ──
+  if (!_skipHeavy) {
+    _ssaoPass = new SSAOPass(_scene, _camera, W, H);
+    _ssaoPass.kernelRadius  = 1.8;     // metres — covers car underbody, rock crevices
+    _ssaoPass.minDistance   = 0.001;
+    _ssaoPass.maxDistance   = 0.08;
+    _ssaoPass.output        = SSAOPass.OUTPUT.Default;
+    _ssaoPass.enabled       = true;
+    _mainComposer.addPass(_ssaoPass);
+  }
 
   // ── Pass 3: SSR (optional — needs SSRPass) ────────────────────────────────
-  if (SSRPass) {
+  if (SSRPass && !_skipHeavy) {
     _ssrPass = new SSRPass({
       renderer:  _renderer,
       scene:     _scene,
@@ -402,7 +412,7 @@ function _buildMainComposer(W, H) {
     _taaPass = new TAARenderPass(_scene, _camera);
     _taaPass.sampleLevel = 2;          // 4 jittered samples — good quality/perf balance
     _taaPass.unbiased    = false;
-    _taaPass.enabled     = true;
+    _taaPass.enabled     = !_skipHeavy;  // disabled on low/medium
     _mainComposer.addPass(_taaPass);
   } catch (e) {
     // Fallback: FXAA if TAA not available
@@ -452,13 +462,13 @@ function _buildMainComposer(W, H) {
  */
 export function renderPostFX() {
   // ── Step 1: Render emissive (bloom) layer ─────────────────────────────────
-  // Temporarily hide everything except layer 1 objects
-  _camera.layers.set(BLOOM_LAYER);
-  _bloomComposer.render();
-  _camera.layers.set(0);            // restore: layer 0 = all default objects
-
-  // Update the mix pass texture reference (RT may have swapped internally)
-  _bloomMixPass.uniforms.tBloom.value = _bloomComposer.readBuffer.texture;
+  // Skip bloom pass entirely on low/medium — saves a full scene re-render each frame
+  if (_bloomComposer && _bloomMixPass) {
+    _camera.layers.set(BLOOM_LAYER);
+    _bloomComposer.render();
+    _camera.layers.set(0);            // restore: layer 0 = all default objects
+    _bloomMixPass.uniforms.tBloom.value = _bloomComposer.readBuffer.texture;
+  }
 
   // ── Step 2: Render full scene + all post passes ───────────────────────────
   _camera.layers.enableAll();       // ensure main pass sees everything

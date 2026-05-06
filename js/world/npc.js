@@ -26,8 +26,12 @@ import { getDistrictAt }      from './city.js';
 
 // ─── Tuning Constants ─────────────────────────────────────────────────────────
 
-const MAX_TRAFFIC       = 40;    // hard pool ceiling
-const MAX_PEDS          = 30;    // hard pool ceiling
+// Scale NPC pool to graphics preset — lower = fewer physics/draw objects
+const _NPC_PRESET   = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+const _TRAFFIC_MAP  = { low: 5, medium: 15, high: 25, ultra: 40, extreme: 40 };
+const _PEDS_MAP     = { low: 0, medium: 8,  high: 15, ultra: 30, extreme: 30 };
+const MAX_TRAFFIC   = _TRAFFIC_MAP[_NPC_PRESET] ?? 5;
+const MAX_PEDS      = _PEDS_MAP[_NPC_PRESET]    ?? 0;
 const TRAFFIC_SPEED_MIN = 8;     // m/s  (~29 km/h)
 const TRAFFIC_SPEED_MAX = 18;    // m/s  (~65 km/h)
 const PED_SPEED_MIN     = 0.8;   // m/s  (slow stroll)

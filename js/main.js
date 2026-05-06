@@ -149,7 +149,8 @@ async function boot() {
 
   // Part 7 — PBR Car Paint (must be after initRenderer so WebGL is ready)
   initCarPaintSystem(scene, renderer);
-  applyReflectionPreset('ultra');
+  // Low preset skips cube-camera reflections (expensive per-frame render)
+  applyReflectionPreset(_savedPreset === 'low' ? 'low' : _savedPreset === 'medium' ? 'medium' : 'ultra');
 
   // Part 6 — Cascaded Shadow Maps (init before city geometry so materials get registered)
   await initCSM(scene, camera, renderer);
@@ -166,7 +167,10 @@ async function boot() {
   applyAnisoToScene(scene);
 
   // Part 6 — God rays (inserted into the existing PostFX composer)
-  initLightShafts(renderer, scene, camera, getComposer());
+  // Skip on low — god rays require an extra scene render pass every frame
+  if (_savedPreset !== 'low') {
+    initLightShafts(renderer, scene, camera, getComposer());
+  }
 
   // Part 6 — World lights
   const streetLamps = spawnStreetLamps(scene);
@@ -373,7 +377,7 @@ async function boot() {
 
     // Part 6 — god ray sun shaft update
     const sunDir = getSunDirection ? getSunDirection() : new THREE.Vector3(0.5, 0.8, 0.2);
-    updateLightShafts(sunDir, hour, dt);
+    if (_savedPreset !== 'low') updateLightShafts(sunDir, hour, dt);
   }, LOOP_PHASE.LATE);
 
   document.getElementById('hc-loading-screen').style.display = 'none';
