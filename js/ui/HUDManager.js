@@ -180,8 +180,9 @@ export class HUDManager {
    * @param {Function}          [opts.onPauseGame] – called when HUD pauses the game world
    * @param {Function}          [opts.onResumeGame]– called when HUD resumes the game world
    */
-  constructor({ canvas, settings = {}, onPauseGame = () => {}, onResumeGame = () => {} }) {
+  constructor({ canvas, saveManager = null, settings = {}, onPauseGame = () => {}, onResumeGame = () => {} }) {
     this.canvas       = canvas;
+    this._save        = saveManager;   // needed by WheelspinUI / RaceSetupScreen
     this.settings     = { ...DEFAULT_SETTINGS, ...settings };
     this.onPauseGame  = onPauseGame;
     this.onResumeGame = onResumeGame;
@@ -410,7 +411,9 @@ export class HUDManager {
   async showRaceSetup(raceData, opponents, onConfirm, onCancel) {
     if (!this.raceSetup) {
       const { RaceSetupScreen } = await import('./RaceSetupScreen.js');
-      this.raceSetup = new RaceSetupScreen({ container: this.menuLayer });
+      // RaceSetupScreen expects positional args: (hudRoot, settingsStore, raceManager)
+      // raceManager is null here — it will be supplied per-race via showRaceSetup()
+      this.raceSetup = new RaceSetupScreen(this.menuLayer, this.settings, null);
     }
     this._setLayer(HUD_LAYER.SETUP);
     this.raceSetup.show(raceData, opponents, onConfirm, onCancel);
@@ -442,7 +445,8 @@ export class HUDManager {
   async showWheelspin(prizes, count = 1, onClaim = () => {}) {
     if (!this.wheelspin) {
       const { WheelspinUI } = await import('./WheelspinUI.js');
-      this.wheelspin = new WheelspinUI({ container: this.menuLayer });
+      // WheelspinUI expects positional args: (hudRoot, inventoryStore, settingsStore)
+      this.wheelspin = new WheelspinUI(this.root, this._save?.inventory ?? null, this.settings);
     }
     this._setLayer(HUD_LAYER.WHEELSPIN);
     this.wheelspin.show(prizes, count, onClaim);
