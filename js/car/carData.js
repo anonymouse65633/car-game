@@ -310,43 +310,6 @@ export const CARS = [
     description: 'A Le Mans prototype that\'s been given number plates and sent to the city. Street legal by the absolute minimum margin. Wings, splitters, and slicks optional.',
     modelFile: 'delta_corsa_xx_lm.glb', thumbnailFile: 'delta_corsa_xx_lm.jpg',
   },
-];
-
-// ── Lookup helpers ─────────────────────────────────────────────────────────────
-
-/** @param {string} id */
-export function getCarById(id) {
-  return CARS.find(c => c.id === id) ?? null;
-}
-
-/** @param {string} cls 'D'|'C'|'B'|'A'|'S1'|'S2' */
-export function getCarsByClass(cls) {
-  return CARS.filter(c => c.class === cls);
-}
-
-/** @param {string} brand */
-export function getCarsByBrand(brand) {
-  return CARS.filter(c => c.brand.toLowerCase() === brand.toLowerCase());
-}
-
-/** @param {string} category e.g. 'sport', 'muscle', 'rally' */
-export function getCarsByCategory(category) {
-  return CARS.filter(c => c.category === category);
-}
-
-/** All unique brand names, sorted. */
-export function getAllBrands() {
-  return [...new Set(CARS.map(c => c.brand))].sort();
-}
-
-/** All unique categories. */
-export function getAllCategories() {
-  return [...new Set(CARS.map(c => c.category))].sort();
-}
-
-/** All unique drivetrain types. */
-export function getAllDrivetrains() {
-  return [...new Set(CARS.map(c => c.drivetrain))
 
   // ═══════════════════════════════════════════════════════════════════════════
   // EXPANSION PACK — FH5 Mexico Recreation additions
@@ -384,11 +347,11 @@ export function getAllDrivetrains() {
     class: 'D', category: 'truck', drivetrain: '4WD', bodyStyle: 'Pickup Truck',
     pr: 270, price: 28_000,
     stats: { speed: 35, handling: 38, acceleration: 40, braking: 32, offroad: 72 },
-    description: 'A lifted V8 pickup with off-road tyres that\'s equally happy on sand dunes and highway ring roads.',
+    description: 'A lifted V8 pickup with off-road tyres equally happy on sand dunes and highway ring roads.',
     modelFile: 'conquistador_pickup_v8.glb', thumbnailFile: 'conquistador_pickup_v8.jpg',
   },
   {
-    id: 'duna_crawler_4x4', brand: 'Duna', name: 'Crawler 4×4', year: 2018,
+    id: 'duna_crawler_4x4', brand: 'Duna', name: 'Crawler 4x4', year: 2018,
     class: 'D', category: 'offroad', drivetrain: '4WD', bodyStyle: 'SUV',
     pr: 245, price: 32_000,
     stats: { speed: 30, handling: 40, acceleration: 36, braking: 34, offroad: 85 },
@@ -427,7 +390,7 @@ export function getAllDrivetrains() {
     class: 'B', category: 'classic_muscle', drivetrain: 'RWD', bodyStyle: 'Coupe',
     pr: 590, price: 130_000,
     stats: { speed: 60, handling: 46, acceleration: 68, braking: 52, offroad: 16 },
-    description: 'Wide, menacing, and historically significant. This Charger has the signature fastback roofline and a 440 that screams at 6500rpm.',
+    description: 'Wide, menacing, and historically significant. A 440 that screams at 6500rpm with the signature fastback roofline.',
     modelFile: 'frontier_charger_440.glb', thumbnailFile: 'frontier_charger_440.jpg',
   },
   {
@@ -435,7 +398,7 @@ export function getAllDrivetrains() {
     class: 'B', category: 'classic_muscle', drivetrain: 'RWD', bodyStyle: 'Muscle Car',
     pr: 610, price: 145_000,
     stats: { speed: 62, handling: 48, acceleration: 70, braking: 54, offroad: 18 },
-    description: 'The heaviest hitter in classic muscle. A 426 Hemi that has no business being this fast and all the authority in the world.',
+    description: 'The heaviest hitter in classic muscle. A 426 Hemi that has no business being this fast.',
     modelFile: 'meridian_boss_hemi.glb', thumbnailFile: 'meridian_boss_hemi.jpg',
   },
 
@@ -454,7 +417,7 @@ export function getAllDrivetrains() {
     class: 'S2', category: 'hypercar', drivetrain: 'RWD', bodyStyle: 'Hypercar',
     pr: 940, price: 2_800_000,
     stats: { speed: 96, handling: 88, acceleration: 96, braking: 94, offroad: 12 },
-    description: 'Named after the volcano it was designed to conquer. A mid-engine V12 track car with 1,350bhp — only 30 made.',
+    description: 'Named after the volcano it was designed to conquer. A mid-engine V12 with 1,350bhp — only 30 made.',
     modelFile: 'delta_caldera_s.glb', thumbnailFile: 'delta_caldera_s.jpg',
   },
   {
@@ -462,7 +425,7 @@ export function getAllDrivetrains() {
     class: 'S1', category: 'hypercar', drivetrain: 'AWD', bodyStyle: 'Hypercar',
     pr: 850, price: 980_000,
     stats: { speed: 90, handling: 86, acceleration: 98, braking: 92, offroad: 22 },
-    description: 'A 1,900bhp all-electric hypercar. 0-100kph in 1.7 seconds. The torque delivery is either terrifying or exhilarating depending on your constitution.',
+    description: 'A 1,900bhp all-electric hypercar. 0-100kph in 1.7 seconds. The torque delivery is terrifying.',
     modelFile: 'rexon_phantom_ev.glb', thumbnailFile: 'rexon_phantom_ev.jpg',
   },
   {
@@ -478,18 +441,18 @@ export function getAllDrivetrains() {
     class: 'S1', category: 'hypercar', drivetrain: 'AWD', bodyStyle: 'Hypercar',
     pr: 820, price: 850_000,
     stats: { speed: 86, handling: 84, acceleration: 90, braking: 88, offroad: 28 },
-    description: 'An American hypercar built to conquer both Baja desert and track. Hybrid V8, carbon everything, surprisingly livable.',
+    description: 'An American hypercar built for both Baja desert and track. Hybrid V8, carbon everything.',
     modelFile: 'obsidian_mach_x.glb', thumbnailFile: 'obsidian_mach_x.jpg',
   },
 
-  // ── BUGGIES / OPEN WHEEL (C class) ─────────────────────────────────────────
+  // ── BUGGIES (C/B class) ────────────────────────────────────────────────────
 
   {
     id: 'tropico_buggy_xt', brand: 'Tropico', name: 'Jungle Buggy XT', year: 2017,
     class: 'C', category: 'buggy', drivetrain: 'RWD', bodyStyle: 'Buggy',
     pr: 430, price: 58_000,
     stats: { speed: 50, handling: 65, acceleration: 62, braking: 52, offroad: 82 },
-    description: 'Stripped back, wide-arched, and built for the jungle trail. Light enough that it skips over roots and ruts.',
+    description: 'Stripped back, wide-arched, and built for the jungle trail. Light enough to skip over roots and ruts.',
     modelFile: 'tropico_buggy_xt.glb', thumbnailFile: 'tropico_buggy_xt.jpg',
   },
   {
@@ -497,7 +460,7 @@ export function getAllDrivetrains() {
     class: 'B', category: 'buggy', drivetrain: 'RWD', bodyStyle: 'Buggy',
     pr: 550, price: 88_000,
     stats: { speed: 62, handling: 70, acceleration: 72, braking: 60, offroad: 86 },
-    description: 'A high-horsepower off-road racer with long-travel suspension. At home going 160kph across the Dunas.',
+    description: 'A high-horsepower off-road racer with long-travel suspension. At home doing 160kph across the Dunas.',
     modelFile: 'caldera_dune_racer.glb', thumbnailFile: 'caldera_dune_racer.jpg',
   },
 
@@ -508,7 +471,7 @@ export function getAllDrivetrains() {
     class: 'A', category: 'gran_tourer', drivetrain: 'AWD', bodyStyle: 'Grand Tourer',
     pr: 750, price: 320_000,
     stats: { speed: 78, handling: 76, acceleration: 78, braking: 80, offroad: 30 },
-    description: 'A long-legged GT that\'s as comfortable crossing a continent as it is on a race circuit. The ideal Riviera car.',
+    description: 'A long-legged GT equally comfortable crossing a continent or on a race circuit. The ideal Riviera car.',
     modelFile: 'verano_grand_turismo.glb', thumbnailFile: 'verano_grand_turismo.jpg',
   },
   {
@@ -520,6 +483,42 @@ export function getAllDrivetrains() {
     modelFile: 'meridian_sprint_rs.glb', thumbnailFile: 'meridian_sprint_rs.jpg',
   },
 ];
+
+// ── Lookup helpers ─────────────────────────────────────────────────────────────
+
+/** @param {string} id */
+export function getCarById(id) {
+  return CARS.find(c => c.id === id) ?? null;
+}
+
+/** @param {string} cls 'D'|'C'|'B'|'A'|'S1'|'S2' */
+export function getCarsByClass(cls) {
+  return CARS.filter(c => c.class === cls);
+}
+
+/** @param {string} brand */
+export function getCarsByBrand(brand) {
+  return CARS.filter(c => c.brand.toLowerCase() === brand.toLowerCase());
+}
+
+/** @param {string} category e.g. 'sport', 'muscle', 'rally' */
+export function getCarsByCategory(category) {
+  return CARS.filter(c => c.category === category);
+}
+
+/** All unique brand names, sorted. */
+export function getAllBrands() {
+  return [...new Set(CARS.map(c => c.brand))].sort();
+}
+
+/** All unique categories. */
+export function getAllCategories() {
+  return [...new Set(CARS.map(c => c.category))].sort();
+}
+
+/** All unique drivetrain types. */
+export function getAllDrivetrains() {
+  return [...new Set(CARS.map(c => c.drivetrain))];
 }
 
 /** Minimum price in the catalog. */
