@@ -28,7 +28,8 @@
 
 'use strict';
 
-import { saveManager } from '../save/SaveManager.js';
+import { saveManager }    from '../save/SaveManager.js';
+import { economyManager } from '../shops/EconomyManager.js';
 
 // ─── Day 1–4 Fixed Rewards ────────────────────────────────────────────────────
 
@@ -125,7 +126,9 @@ function pickRotatingReward(dayNumber) {
 // ─── DailyRewardManager Class ─────────────────────────────────────────────────
 
 class DailyRewardManager {
-  constructor() {
+  constructor({ progressionManager = null, notificationSystem = null } = {}) {
+    this._progression = progressionManager;
+    this._notify      = notificationSystem;
     // Loaded from SaveManager in _loadState()
     this._streak          = 0;       // current consecutive login streak
     this._lastLoginDate   = null;    // YYYY-MM-DD of last login reward claim
@@ -240,7 +243,7 @@ class DailyRewardManager {
     if (this._streak > 0 && this._streak % 7 === 0) {
       this._dispatchReward(STREAK_MILESTONE_REWARD);
       streakMilestone = true;
-      NotificationSystem.show({
+      this._notify?.show({
         type:     'streak_milestone',
         title:    '🔥 7-Day Streak!',
         body:     'You\'ve logged in 7 days in a row — here\'s a Super Wheelspin!',
@@ -253,7 +256,7 @@ class DailyRewardManager {
     this._saveState();
 
     // Main toast
-    NotificationSystem.show({
+    this._notify?.show({
       type:     'daily_login',
       title:    `📅 Day ${this._streak} Login Reward`,
       body:     reward.label,
@@ -299,10 +302,10 @@ class DailyRewardManager {
     this._eventBonusDone = true;
     this._saveState();
 
-    EconomyManager.addCredits(FIRST_EVENT_CREDITS, 'first_daily_event_bonus');
-    ProgressionManager.addXP(FIRST_EVENT_XP, 'first_daily_event_bonus');
+    economyManager.addCredits(FIRST_EVENT_CREDITS, 'first_daily_event_bonus');
+    this._progression?.awardXP('first_daily_event_bonus', FIRST_EVENT_XP);
 
-    NotificationSystem.show({
+    this._notify?.show({
       type:     'first_event_bonus',
       title:    '⚡ First Event Bonus!',
       body:     `+${FIRST_EVENT_XP.toLocaleString()} XP  ·  +${FIRST_EVENT_CREDITS.toLocaleString()} CR`,
@@ -348,16 +351,18 @@ class DailyRewardManager {
   _dispatchReward(reward) {
     switch (reward.type) {
       case 'credits':
-        EconomyManager.addCredits(reward.amount, 'daily_login_reward');
+        // economyManager is the EconomyManager singleton (imported at top)
+        economyManager.addCredits(reward.amount, 'daily_login_reward');
         break;
       case 'xp_boost':
-        ProgressionManager.activateXPBoost(30 * 60 * 1000); // 30 minutes in ms
+        // XP boost is stored on the player save record
+        saveManager.player.activateXPBoost(30 * 60 * 1000); // 30 minutes in ms
         break;
       case 'wheelspin':
-        ProgressionManager.addWheelspin(reward.amount, 'daily_login_reward');
+        saveManager.inventory.addWheelspin(reward.amount);
         break;
       case 'super_wheelspin':
-        ProgressionManager.addSuperWheelspin(reward.amount, 'daily_login_reward');
+        saveManager.inventory.addSuperWheelspin(reward.amount);
         break;
       default:
         console.warn('[DailyRewardManager] Unknown reward type:', reward.type);
@@ -461,8 +466,9 @@ class DailyRewardManager {
   }
 }
 
-// ─── Singleton Export ─────────────────────────────────────────────────────────
+// ─── Export ───────────────────────────────────────────────────────────────────
+// NOTE: No singleton is pre-created here.
+// Instantiate in main.js AFTER saveManager.load() so _loadState() reads valid data:
+//   const dailyRewardManager = new DailyRewardManager({ progressionManager, notificationSystem });
 
-const dailyRewardManager = new DailyRewardManager();
-
-export { DailyRewardManager, dailyRewardManager };
+export { DailyRewardManager };
