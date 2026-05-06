@@ -475,7 +475,6 @@ export class SettingsMenu {
   }) {
     this._settings     = { ...settings };
     this._onChange     = onChange;
-    this._
     this._keybinds     = { ...Object.fromEntries(DEFAULT_KEYBINDS.map(b => [b.action, b.key])), ...keybinds };
     this._onRebind     = onRebind;
 
