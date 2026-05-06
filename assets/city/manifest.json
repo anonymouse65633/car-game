@@ -1,0 +1,3842 @@
+{
+  "version": 2,
+  "bounds": {
+    "minX": -5000,
+    "maxX": 5000,
+    "minZ": -5000,
+    "maxZ": 5000
+  },
+  "chunkSize": 500,
+  "archetypes": [
+    {
+      "id": "colonial_tall",
+      "w": 16,
+      "h": 22,
+      "d": 14,
+      "color": "0xe8802a",
+      "maxInstances": 300
+    },
+    {
+      "id": "colonial_low",
+      "w": 12,
+      "h": 10,
+      "d": 12,
+      "color": "0xd4a044",
+      "maxInstances": 400
+    },
+    {
+      "id": "church",
+      "w": 24,
+      "h": 36,
+      "d": 32,
+      "color": "0xf0e0c0",
+      "maxInstances": 20
+    },
+    {
+      "id": "resort_hotel",
+      "w": 40,
+      "h": 50,
+      "d": 30,
+      "color": "0xffffff",
+      "maxInstances": 60
+    },
+    {
+      "id": "beach_hut",
+      "w": 8,
+      "h": 6,
+      "d": 8,
+      "color": "0xd4a832",
+      "maxInstances": 200
+    },
+    {
+      "id": "warehouse_mx",
+      "w": 35,
+      "h": 14,
+      "d": 25,
+      "color": "0x667755",
+      "maxInstances": 120
+    },
+    {
+      "id": "garage_baja",
+      "w": 18,
+      "h": 8,
+      "d": 14,
+      "color": "0x886644",
+      "maxInstances": 100
+    },
+    {
+      "id": "festival_tent",
+      "w": 20,
+      "h": 12,
+      "d": 20,
+      "color": "0xff6600",
+      "maxInstances": 80
+    },
+    {
+      "id": "jungle_ruin",
+      "w": 14,
+      "h": 18,
+      "d": 14,
+      "color": "0x445533",
+      "maxInstances": 60
+    },
+    {
+      "id": "farm_silo",
+      "w": 10,
+      "h": 30,
+      "d": 10,
+      "color": "0xaaaa88",
+      "maxInstances": 80
+    },
+    {
+      "id": "farm_barn",
+      "w": 20,
+      "h": 14,
+      "d": 30,
+      "color": "0x993322",
+      "maxInstances": 100
+    },
+    {
+      "id": "volcano_rock",
+      "w": 12,
+      "h": 8,
+      "d": 12,
+      "color": "0x554433",
+      "maxInstances": 200
+    }
+  ],
+  "chunks": [
+    {
+      "cx": -10,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -10,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -9,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -8,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -7,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -6,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -5,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -4,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -3,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "garage_baja",
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -2,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": -1,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "festival_tent"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 0,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 1,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 2,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 3,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "farm_silo",
+        "farm_barn"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 4,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "colonial_tall",
+        "colonial_low",
+        "church"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 5,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "jungle_ruin"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 6,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 7,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 8,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": -10,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": -9,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": -8,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": -7,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": -6,
+      "file": null,
+      "dominantArchetypes": [
+        "volcano_rock"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": -5,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": -4,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": -3,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": -2,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": -1,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": 0,
+      "file": null,
+      "dominantArchetypes": [
+        "resort_hotel",
+        "beach_hut"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": 1,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": 2,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": 3,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": 4,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": 5,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": 6,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": 7,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": 8,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    },
+    {
+      "cx": 9,
+      "cz": 9,
+      "file": null,
+      "dominantArchetypes": [
+        "warehouse_mx"
+      ],
+      "buildings": []
+    }
+  ]
+}

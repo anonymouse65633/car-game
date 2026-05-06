@@ -46,161 +46,180 @@ const DESPAWN_DIST      = 260;   // m  — cull when too far
 const _v3 = (x, z) => new THREE.Vector3(x, 0.4, z);
 
 export const TRAFFIC_PATHS = Object.freeze([
-  // ── Downtown inner ring ──────────────────────────────────────────────────
+  // ── Guanajuato city center tight loop ─────────────────────────────────────
   {
-    id:    'dt_ring',
-    label: 'Downtown Ring',
-    district: 'downtown',
-    speed: 10,
+    id: 'gua_plaza_loop', label: 'Guanajuato Plaza Loop', district: 'guanajuato', speed: 10,
     waypoints: [
-      _v3(-300,  300), _v3( 300,  300), _v3( 400,    0),
-      _v3( 300, -300), _v3(-300, -300), _v3(-400,    0),
+      _v3(1600,-2400), _v3(1900,-2300), _v3(2100,-2000), _v3(2200,-1700),
+      _v3(2000,-1500), _v3(1700,-1600), _v3(1500,-1900), _v3(1400,-2200),
     ],
   },
-  // ── Downtown outer ring ──────────────────────────────────────────────────
+  // ── Guanajuato upper hillside circuit ─────────────────────────────────────
   {
-    id:    'dt_outer',
-    label: 'Downtown Outer',
-    district: 'downtown',
-    speed: 13,
+    id: 'gua_hillside', label: 'Guanajuato Hillside', district: 'guanajuato', speed: 9,
     waypoints: [
-      _v3(-450,  450), _v3(   0,  480), _v3( 450,  450),
-      _v3( 480,    0), _v3( 450, -450), _v3(   0, -480),
-      _v3(-450, -450), _v3(-480,    0),
+      _v3(2400,-2800), _v3(2700,-2600), _v3(2800,-2200), _v3(2600,-1800),
+      _v3(2200,-1900), _v3(2000,-2300),
     ],
   },
-  // ── Downtown cross boulevard ─────────────────────────────────────────────
+  // ── Guanajuato main boulevard ──────────────────────────────────────────────
   {
-    id:    'dt_cross',
-    label: 'Downtown Cross',
-    district: 'downtown',
-    speed: 11,
+    id: 'downtown_gua', label: 'Guanajuato Boulevard', district: 'guanajuato', speed: 13,
     waypoints: [
-      _v3(-480,   0), _v3(-200,   0), _v3(   0,   0),
-      _v3( 200,   0), _v3( 480,   0), _v3( 200,   0),
-      _v3(   0,   0), _v3(-200,   0),
+      _v3( 700,-1200), _v3(1100,-1300), _v3(1500,-1400), _v3(1900,-1500),
+      _v3(2300,-1600), _v3(2600,-1800), _v3(2700,-2000), _v3(2400,-2200),
     ],
   },
-
-  // ── Waterfront promenade ──────────────────────────────────────────────────
+  // ── Riviera north coastal road ─────────────────────────────────────────────
   {
-    id:    'wf_promenade',
-    label: 'Waterfront Promenade',
-    district: 'waterfront',
-    speed: 14,
+    id: 'riviera_coast_n', label: 'Riviera Coast North', district: 'riviera', speed: 18,
     waypoints: [
-      _v3( 600, -400), _v3( 900, -300), _v3(1200, -200),
-      _v3(1500, -100), _v3(1800,    0), _v3(1900,  200),
-      _v3(1800,  400), _v3(1500,  300), _v3(1200,  200),
-      _v3( 900,  100), _v3( 600,    0), _v3( 700, -200),
+      _v3(2800,-2200), _v3(3200,-2100), _v3(3600,-1900), _v3(4000,-1700),
+      _v3(4400,-1500), _v3(4700,-1200), _v3(4800, -900), _v3(4700, -600),
     ],
   },
-  // ── Waterfront harbor loop ────────────────────────────────────────────────
+  // ── Riviera south coastal road ─────────────────────────────────────────────
   {
-    id:    'wf_harbor',
-    label: 'Harbor Loop',
-    district: 'waterfront',
-    speed: 16,
+    id: 'riviera_coast_s', label: 'Riviera Coast South', district: 'riviera', speed: 16,
     waypoints: [
-      _v3( 800, -500), _v3(1300, -450), _v3(1800, -350),
-      _v3(1900,  -50), _v3(1700,  450), _v3(1200,  400),
-      _v3( 700,  300), _v3( 600,   50),
+      _v3(4700, -300), _v3(4500,  -50), _v3(4200,  150), _v3(3800,  300),
+      _v3(3400,  350), _v3(3000,  250), _v3(2700,   50), _v3(2600, -200),
     ],
   },
-
-  // ── Industrial throughway ─────────────────────────────────────────────────
+  // ── Riviera harbor dockside ────────────────────────────────────────────────
   {
-    id:    'in_throughway',
-    label: 'Industrial Throughway',
-    district: 'industrial',
-    speed: 12,
+    id: 'harbor_dock', label: 'Riviera Harbor Dock', district: 'riviera', speed: 12,
     waypoints: [
-      _v3(-600,  800), _v3(-900,  700), _v3(-1200,  600),
-      _v3(-1500,  400), _v3(-1800,  200), _v3(-1900, -100),
-      _v3(-1700, -300), _v3(-1300, -200), _v3(-900,  -100),
-      _v3(-600,  200),
+      _v3(3600,  -600), _v3(3900,  -500), _v3(4100,  -300),
+      _v3(4000,  -100), _v3(3700,  -200), _v3(3500,  -400),
     ],
   },
-  // ── Industrial yard loop ──────────────────────────────────────────────────
+  // ── Caldera volcano approach switchbacks ───────────────────────────────────
   {
-    id:    'in_yard',
-    label: 'Industrial Yard',
-    district: 'industrial',
-    speed: 9,
+    id: 'caldera_approach', label: 'Caldera Approach', district: 'caldera', speed: 11,
     waypoints: [
-      _v3(-800,  300), _v3(-1100,  500), _v3(-1400,  400),
-      _v3(-1600,  200), _v3(-1600, -100), _v3(-1300, -200),
-      _v3(-1000, -100), _v3( -800,   50),
+      _v3(2000,-2800), _v3(2300,-3000), _v3(2600,-3300), _v3(2900,-3600),
+      _v3(3100,-3900), _v3(3300,-4100), _v3(3400,-3900), _v3(3200,-3600),
+      _v3(2900,-3300), _v3(2600,-3000),
     ],
   },
-
-  // ── Suburbs winding route ─────────────────────────────────────────────────
+  // ── Caldera summit crater road ─────────────────────────────────────────────
   {
-    id:    'sb_winds',
-    label: 'Suburbs Winding',
-    district: 'suburbs',
-    speed: 10,
+    id: 'caldera_summit', label: 'Caldera Summit Road', district: 'caldera', speed: 8,
     waypoints: [
-      _v3( 200,  700), _v3( 350,  900), _v3( 500, 1100),
-      _v3( 650, 1300), _v3( 700, 1500), _v3( 600, 1700),
-      _v3( 400, 1800), _v3( 250, 1600), _v3( 200, 1400),
-      _v3( 300, 1200), _v3( 200, 1000), _v3( 150,  800),
+      _v3(3300,-3800), _v3(3600,-3700), _v3(3800,-3900),
+      _v3(3700,-4200), _v3(3400,-4300), _v3(3200,-4100),
     ],
   },
-  // ── Suburbs main street ───────────────────────────────────────────────────
+  // ── Festival grounds perimeter road ───────────────────────────────────────
   {
-    id:    'sb_main',
-    label: 'Suburbs Main Street',
-    district: 'suburbs',
-    speed: 11,
+    id: 'festival_ring', label: 'Festival Ring Road', district: 'festival', speed: 15,
     waypoints: [
-      _v3( 100,  700), _v3( 400,  700), _v3( 700,  700),
-      _v3( 900,  900), _v3( 900, 1200), _v3( 700, 1500),
-      _v3( 500, 1700), _v3( 300, 1700), _v3( 100, 1500),
-      _v3( 100, 1200), _v3( 100,  900),
+      _v3(-2800, 700), _v3(-2200, 700), _v3(-1600, 800),
+      _v3(-1000, 700), _v3( -400, 800), _v3( -400,1400),
+      _v3(-1000,1600), _v3(-1800,1600), _v3(-2600,1500),
+      _v3(-2800,1200),
     ],
   },
-
-  // ── Racing district service road ──────────────────────────────────────────
+  // ── Airstrip straight + return ─────────────────────────────────────────────
   {
-    id:    'rd_service',
-    label: 'Racing District Service Road',
-    district: 'racing',
-    speed: 15,
+    id: 'festival_airstrip', label: 'Festival Airstrip', district: 'festival', speed: 22,
     waypoints: [
-      _v3( 700,  700), _v3(1000,  700), _v3(1300,  700),
-      _v3(1600,  900), _v3(1800, 1200), _v3(1700, 1600),
-      _v3(1400, 1800), _v3(1000, 1900), _v3( 700, 1700),
-      _v3( 700, 1400), _v3( 700, 1100),
+      _v3(-2400,1000), _v3(-1800,1000),
+      _v3(-1200,1000), _v3( -600,1000),
     ],
   },
-
-  // ── Outskirts highway north ───────────────────────────────────────────────
+  // ── Baja north-south highway ───────────────────────────────────────────────
   {
-    id:    'ok_highway_n',
-    label: 'Outskirts Highway North',
-    district: 'outskirts',
-    speed: 18,
+    id: 'baja_highway_ns', label: 'Baja Highway N-S', district: 'baja', speed: 20,
     waypoints: [
-      _v3(-1800, -800),  _v3(-1000, -1000), _v3(   0, -1100),
-      _v3( 1000, -1000), _v3( 1800,  -800), _v3( 1800, -1200),
-      _v3( 1000, -1400), _v3(    0, -1600), _v3(-1000, -1400),
-      _v3(-1800, -1200),
+      _v3(-3000, -800), _v3(-3200, -400), _v3(-3400,  0),
+      _v3(-3500,  400), _v3(-3400, 800), _v3(-3200, 1200),
+      _v3(-3000, 1600), _v3(-2800, 1900),
     ],
   },
-  // ── Outskirts ring road ───────────────────────────────────────────────────
+  // ── Baja mesa top loop ─────────────────────────────────────────────────────
   {
-    id:    'ok_ring',
-    label: 'Outskirts Ring Road',
-    district: 'outskirts',
-    speed: 17,
+    id: 'baja_mesa_loop', label: 'Baja Mesa Loop', district: 'baja', speed: 14,
     waypoints: [
-      _v3(-1900, -1900), _v3(    0, -1950), _v3( 1900, -1900),
-      _v3( 1950, -1000), _v3( 1950,     0), _v3( 1900,  1900),
-      _v3(    0,  1950), _v3(-1900,  1900), _v3(-1950,  -100),
+      _v3(-4200,  200), _v3(-4500,  400), _v3(-4600,  700),
+      _v3(-4400, 1000), _v3(-4100,  800), _v3(-3900,  500),
+    ],
+  },
+  // ── Canyon floor road ──────────────────────────────────────────────────────
+  {
+    id: 'canyon_road', label: 'Canyon Road', district: 'baja', speed: 13,
+    waypoints: [
+      _v3(-1200,-1400), _v3(-1400,-1200), _v3(-1600,-1000),
+      _v3(-1400, -800), _v3(-1200, -700), _v3(-1000, -900),
+    ],
+  },
+  // ── Dunas sand road ────────────────────────────────────────────────────────
+  {
+    id: 'dunas_track', label: 'Dunas Sand Track', district: 'dunas', speed: 11,
+    waypoints: [
+      _v3(-4000,-3200), _v3(-3600,-3000), _v3(-3200,-2800),
+      _v3(-2800,-2600), _v3(-2400,-2800), _v3(-2200,-3200),
+      _v3(-2600,-3600), _v3(-3200,-3800),
+    ],
+  },
+  // ── Farmland country crossroads ────────────────────────────────────────────
+  {
+    id: 'farmland_lanes', label: 'Farmland Lanes', district: 'farmland', speed: 10,
+    waypoints: [
+      _v3( 200, -600), _v3( 600, -600), _v3(1000, -400),
+      _v3(1400, -200), _v3(1600,  200), _v3(1400,  600),
+      _v3(1000,  800), _v3( 600,  600),
+    ],
+  },
+  // ── Jungle muddy trail ─────────────────────────────────────────────────────
+  {
+    id: 'jungle_trail', label: 'La Selva Jungle Trail', district: 'jungle', speed: 9,
+    waypoints: [
+      _v3( 800, 1400), _v3(1200, 1600), _v3(1600, 1900),
+      _v3(2000, 2200), _v3(2300, 2600), _v3(2100, 3000),
+      _v3(1700, 3200), _v3(1300, 2900),
+    ],
+  },
+  // ── Eastern highway ring segment ───────────────────────────────────────────
+  {
+    id: 'highway_east', label: 'Highway East', district: 'highway', speed: 24,
+    waypoints: [
+      _v3(4800,-4800), _v3(4800,-4000), _v3(4800,-3000),
+      _v3(4800,-2000), _v3(4800,-1000), _v3(4800,    0),
+      _v3(4800, 1000), _v3(4800, 2000), _v3(4800, 3000),
+      _v3(4800, 4000),
+    ],
+  },
+  // ── Western highway ring segment ───────────────────────────────────────────
+  {
+    id: 'highway_west', label: 'Highway West', district: 'highway', speed: 24,
+    waypoints: [
+      _v3(-4800, 4000), _v3(-4800, 3000), _v3(-4800, 2000),
+      _v3(-4800, 1000), _v3(-4800,    0), _v3(-4800,-1000),
+      _v3(-4800,-2000), _v3(-4800,-3000), _v3(-4800,-4000),
+      _v3(-4800,-4800),
+    ],
+  },
+  // ── Northern highway ring segment ──────────────────────────────────────────
+  {
+    id: 'highway_north', label: 'Highway North', district: 'highway', speed: 24,
+    waypoints: [
+      _v3(-4800,-4800), _v3(-3000,-4800), _v3(-1000,-4800),
+      _v3( 1000,-4800), _v3( 3000,-4800), _v3( 4800,-4800),
+    ],
+  },
+  // ── Southern highway ring segment ──────────────────────────────────────────
+  {
+    id: 'highway_south', label: 'Highway South', district: 'highway', speed: 24,
+    waypoints: [
+      _v3( 4800, 4800), _v3( 3000, 4800), _v3( 1000, 4800),
+      _v3(-1000, 4800), _v3(-3000, 4800), _v3(-4800, 4800),
     ],
   },
 ]);
+
+
 
 // ─── Pedestrian Patrol Paths ──────────────────────────────────────────────────
 // Peds walk an A→B→A patrol. segment is [posA, posB].
@@ -208,27 +227,23 @@ export const TRAFFIC_PATHS = Object.freeze([
 const _pv = (x, z) => new THREE.Vector3(x, 0.1, z);
 
 export const PED_PATHS = Object.freeze([
-  // Downtown sidewalks
-  { id: 'ped_dt_01', segment: [_pv(-100, -120), _pv( 100, -120)] },
-  { id: 'ped_dt_02', segment: [_pv( 200,  -60), _pv( 200,  180)] },
-  { id: 'ped_dt_03', segment: [_pv(-200, -200), _pv(-200,  200)] },
-  { id: 'ped_dt_04', segment: [_pv( -50,  300), _pv( 250,  300)] },
-  { id: 'ped_dt_05', segment: [_pv( 300, -100), _pv( 450, -100)] },
-  { id: 'ped_dt_06', segment: [_pv(-400,  100), _pv(-150,  100)] },
-  { id: 'ped_dt_07', segment: [_pv(  80, -350), _pv( 300, -350)] },
-  { id: 'ped_dt_08', segment: [_pv(-300,  400), _pv(-100,  400)] },
-  // Waterfront harbour walk
-  { id: 'ped_wf_01', segment: [_pv( 650, -180), _pv(1100, -180)] },
-  { id: 'ped_wf_02', segment: [_pv(1200,  200), _pv(1700,  200)] },
-  { id: 'ped_wf_03', segment: [_pv( 800,  350), _pv(1400,  350)] },
-  // Festival Plaza cluster
-  { id: 'ped_fp_01', segment: [_pv( -80,  -80), _pv(  80,  -80)] },
-  { id: 'ped_fp_02', segment: [_pv( -60, -160), _pv(  60, -160)] },
-  { id: 'ped_fp_03', segment: [_pv(-120,    0), _pv( 120,    0)] },
-  // Suburbs pavement
-  { id: 'ped_sb_01', segment: [_pv( 150,  750), _pv( 450,  750)] },
-  { id: 'ped_sb_02', segment: [_pv( 300, 1000), _pv( 600, 1000)] },
+  // ── Guanajuato market stalls ──────────────────────────────────────────────
+  { id: 'ped_gua_01', segment: [_pv(1700,-2100), _pv(1900,-2100)] },
+  { id: 'ped_gua_02', segment: [_pv(2000,-1800), _pv(2000,-2000)] },
+  { id: 'ped_gua_03', segment: [_pv(1600,-1900), _pv(1800,-1700)] },
+  // ── Riviera promenade ─────────────────────────────────────────────────────
+  { id: 'ped_riv_01', segment: [_pv(3200, -800), _pv(3600, -800)] },
+  { id: 'ped_riv_02', segment: [_pv(4000,-1000), _pv(4400,-1000)] },
+  // ── Festival grounds crowds ────────────────────────────────────────────────
+  { id: 'ped_fes_01', segment: [_pv(-1600,1400), _pv(-1200,1400)] },
+  { id: 'ped_fes_02', segment: [_pv(-2000,1200), _pv(-2000,1600)] },
+  { id: 'ped_fes_03', segment: [_pv(-1400,1000), _pv(-1800,1200)] },
+  // ── Farmland locals ────────────────────────────────────────────────────────
+  { id: 'ped_frm_01', segment: [_pv(  800, -300), _pv(1100, -300)] },
+  { id: 'ped_frm_02', segment: [_pv( 1200,  400), _pv( 800,  400)] },
 ]);
+
+
 
 // ─── Car Archetypes (procedural meshes until GLBs are ready) ─────────────────
 

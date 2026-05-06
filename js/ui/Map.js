@@ -27,13 +27,13 @@
 'use strict';
 
 // ─── World → screen coordinate system ────────────────────────────────────────
-// Horizon City is 4 km × 4 km, origin at centre.
+// Horizon City is 10 km × 10 km, origin at centre.
 // World coords: X = east, Z = north (matches Three.js XZ plane).
-// Map canvas maps world [-2000, 2000] onto canvas pixels at current zoom/pan.
+// Map canvas maps world [-5000, 5000] onto canvas pixels at current zoom/pan.
 
-const WORLD_SIZE   = 4000; // metres across
-const ZOOM_LEVELS  = [0.12, 0.22, 0.40, 0.70, 1.20]; // px per metre
-const ZOOM_DEFAULT = 1;    // index into ZOOM_LEVELS (city overview)
+const WORLD_SIZE   = 10000; // metres across
+const ZOOM_LEVELS  = [0.05, 0.10, 0.20, 0.40, 0.80]; // px per metre — rescaled for 10km
+const ZOOM_DEFAULT = 1;    // index into ZOOM_LEVELS (map overview)
 
 // ─── District definitions ─────────────────────────────────────────────────────
 

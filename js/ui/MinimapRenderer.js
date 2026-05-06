@@ -26,7 +26,7 @@ export class MinimapRenderer {
   static EXPANDED_DIAMETER = 300;
 
   /** World-space radius shown on the minimap at default zoom (metres). */
-  static DEFAULT_WORLD_RADIUS = 400;
+  static DEFAULT_WORLD_RADIUS = 1000;
 
   /** Tapping M within this many ms opens full map instead of expanding. */
   static TAP_THRESHOLD_MS = 250;

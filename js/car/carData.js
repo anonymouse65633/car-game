@@ -346,7 +346,180 @@ export function getAllCategories() {
 
 /** All unique drivetrain types. */
 export function getAllDrivetrains() {
-  return [...new Set(CARS.map(c => c.drivetrain))];
+  return [...new Set(CARS.map(c => c.drivetrain))
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EXPANSION PACK — FH5 Mexico Recreation additions
+  // 20 new cars: offroad/truck, classic muscle, hypercars, buggies
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ── OFFROAD / BAJA TRUCKS (D/C class) ─────────────────────────────────────
+
+  {
+    id: 'thornfield_baja_racer', brand: 'Thornfield', name: 'Baja Racer Pro', year: 2019,
+    class: 'C', category: 'truck', drivetrain: 'RWD', bodyStyle: 'Baja Truck',
+    pr: 420, price: 65_000,
+    stats: { speed: 46, handling: 52, acceleration: 55, braking: 48, offroad: 90 },
+    description: 'A purpose-built Baja racing truck. Long travel suspension, enormous tyres, and a supercharged V8 that loves dirt more than tarmac.',
+    modelFile: 'thornfield_baja_racer.glb', thumbnailFile: 'thornfield_baja_racer.jpg',
+  },
+  {
+    id: 'sandstorm_buggy_rs', brand: 'Sandstorm', name: 'Desert Buggy RS', year: 2021,
+    class: 'C', category: 'buggy', drivetrain: 'RWD', bodyStyle: 'Buggy',
+    pr: 395, price: 55_000,
+    stats: { speed: 48, handling: 58, acceleration: 60, braking: 45, offroad: 88 },
+    description: 'An open-wheel desert buggy with motorcycle DNA. Featherlight and planted in deep sand.',
+    modelFile: 'sandstorm_buggy_rs.glb', thumbnailFile: 'sandstorm_buggy_rs.jpg',
+  },
+  {
+    id: 'karsten_rally_xt', brand: 'Karsten', name: 'Rally XT', year: 2016,
+    class: 'B', category: 'rally', drivetrain: 'AWD', bodyStyle: 'Estate',
+    pr: 560, price: 95_000,
+    stats: { speed: 55, handling: 68, acceleration: 62, braking: 60, offroad: 78 },
+    description: 'A turbocharged AWD estate that dominates every surface. Stage winner in the Dunas Blancas rally series.',
+    modelFile: 'karsten_rally_xt.glb', thumbnailFile: 'karsten_rally_xt.jpg',
+  },
+  {
+    id: 'conquistador_pickup_v8', brand: 'Conquistador', name: 'Maverick V8', year: 2014,
+    class: 'D', category: 'truck', drivetrain: '4WD', bodyStyle: 'Pickup Truck',
+    pr: 270, price: 28_000,
+    stats: { speed: 35, handling: 38, acceleration: 40, braking: 32, offroad: 72 },
+    description: 'A lifted V8 pickup with off-road tyres that\'s equally happy on sand dunes and highway ring roads.',
+    modelFile: 'conquistador_pickup_v8.glb', thumbnailFile: 'conquistador_pickup_v8.jpg',
+  },
+  {
+    id: 'duna_crawler_4x4', brand: 'Duna', name: 'Crawler 4×4', year: 2018,
+    class: 'D', category: 'offroad', drivetrain: '4WD', bodyStyle: 'SUV',
+    pr: 245, price: 32_000,
+    stats: { speed: 30, handling: 40, acceleration: 36, braking: 34, offroad: 85 },
+    description: 'A slow-moving off-road SUV that can climb anything the Caldera throws at it. Not fast. Unstoppable.',
+    modelFile: 'duna_crawler_4x4.glb', thumbnailFile: 'duna_crawler_4x4.jpg',
+  },
+
+  // ── CLASSIC MUSCLE (C/B class) ─────────────────────────────────────────────
+
+  {
+    id: 'ironhorse_wildcat_427', brand: 'Ironhorse', name: 'Wildcat 427', year: 1969,
+    class: 'B', category: 'classic_muscle', drivetrain: 'RWD', bodyStyle: 'Muscle Car',
+    pr: 580, price: 120_000,
+    stats: { speed: 58, handling: 44, acceleration: 65, braking: 50, offroad: 20 },
+    description: 'A fire-breathing 1969 muscle car with a 427 cubic inch V8. More character than sense. Perfect on the festival airstrip.',
+    modelFile: 'ironhorse_wildcat_427.glb', thumbnailFile: 'ironhorse_wildcat_427.jpg',
+  },
+  {
+    id: 'aldridge_stallion_ss', brand: 'Aldridge', name: 'Stallion SS', year: 1970,
+    class: 'C', category: 'classic_muscle', drivetrain: 'RWD', bodyStyle: 'Muscle Car',
+    pr: 460, price: 75_000,
+    stats: { speed: 50, handling: 40, acceleration: 58, braking: 46, offroad: 18 },
+    description: 'The original pony car icon from 1970. Oversteers early, forgives late, and sounds like the apocalypse.',
+    modelFile: 'aldridge_stallion_ss.glb', thumbnailFile: 'aldridge_stallion_ss.jpg',
+  },
+  {
+    id: 'verano_torino_v8', brand: 'Verano', name: 'Torino V8', year: 1972,
+    class: 'C', category: 'classic_muscle', drivetrain: 'RWD', bodyStyle: 'Fastback',
+    pr: 440, price: 68_000,
+    stats: { speed: 48, handling: 42, acceleration: 55, braking: 44, offroad: 15 },
+    description: 'A big-block fastback that makes up for modest handling with sheer, brutish forward thrust.',
+    modelFile: 'verano_torino_v8.glb', thumbnailFile: 'verano_torino_v8.jpg',
+  },
+  {
+    id: 'frontier_charger_440', brand: 'Frontier', name: 'Charger 440', year: 1968,
+    class: 'B', category: 'classic_muscle', drivetrain: 'RWD', bodyStyle: 'Coupe',
+    pr: 590, price: 130_000,
+    stats: { speed: 60, handling: 46, acceleration: 68, braking: 52, offroad: 16 },
+    description: 'Wide, menacing, and historically significant. This Charger has the signature fastback roofline and a 440 that screams at 6500rpm.',
+    modelFile: 'frontier_charger_440.glb', thumbnailFile: 'frontier_charger_440.jpg',
+  },
+  {
+    id: 'meridian_boss_hemi', brand: 'Meridian', name: 'Boss Hemi', year: 1971,
+    class: 'B', category: 'classic_muscle', drivetrain: 'RWD', bodyStyle: 'Muscle Car',
+    pr: 610, price: 145_000,
+    stats: { speed: 62, handling: 48, acceleration: 70, braking: 54, offroad: 18 },
+    description: 'The heaviest hitter in classic muscle. A 426 Hemi that has no business being this fast and all the authority in the world.',
+    modelFile: 'meridian_boss_hemi.glb', thumbnailFile: 'meridian_boss_hemi.jpg',
+  },
+
+  // ── HYPERCARS (S1/S2 class) ────────────────────────────────────────────────
+
+  {
+    id: 'voltex_apex_gtr', brand: 'Voltex', name: 'Apex GTR', year: 2023,
+    class: 'S1', category: 'hypercar', drivetrain: 'AWD', bodyStyle: 'Hypercar',
+    pr: 870, price: 1_200_000,
+    stats: { speed: 88, handling: 90, acceleration: 92, braking: 90, offroad: 20 },
+    description: 'A Japanese hypercar of the modern era. Sequential twin-turbo V6 hybrid producing 1,100bhp. Built for the Caldera summit run.',
+    modelFile: 'voltex_apex_gtr.glb', thumbnailFile: 'voltex_apex_gtr.jpg',
+  },
+  {
+    id: 'delta_caldera_s', brand: 'Delta', name: 'Caldera S', year: 2022,
+    class: 'S2', category: 'hypercar', drivetrain: 'RWD', bodyStyle: 'Hypercar',
+    pr: 940, price: 2_800_000,
+    stats: { speed: 96, handling: 88, acceleration: 96, braking: 94, offroad: 12 },
+    description: 'Named after the volcano it was designed to conquer. A mid-engine V12 track car with 1,350bhp — only 30 made.',
+    modelFile: 'delta_caldera_s.glb', thumbnailFile: 'delta_caldera_s.jpg',
+  },
+  {
+    id: 'rexon_phantom_ev', brand: 'Rexon', name: 'Phantom EV', year: 2024,
+    class: 'S1', category: 'hypercar', drivetrain: 'AWD', bodyStyle: 'Hypercar',
+    pr: 850, price: 980_000,
+    stats: { speed: 90, handling: 86, acceleration: 98, braking: 92, offroad: 22 },
+    description: 'A 1,900bhp all-electric hypercar. 0-100kph in 1.7 seconds. The torque delivery is either terrifying or exhilarating depending on your constitution.',
+    modelFile: 'rexon_phantom_ev.glb', thumbnailFile: 'rexon_phantom_ev.jpg',
+  },
+  {
+    id: 'stratos_velocity_t', brand: 'Stratos', name: 'Velocity T', year: 2021,
+    class: 'S2', category: 'hypercar', drivetrain: 'RWD', bodyStyle: 'Track Car',
+    pr: 950, price: 3_200_000,
+    stats: { speed: 98, handling: 92, acceleration: 95, braking: 96, offroad: 8 },
+    description: 'The fastest production car on the Riviera coastal sprint leaderboard. A naturally aspirated V10 shrieking to 9,200rpm.',
+    modelFile: 'stratos_velocity_t.glb', thumbnailFile: 'stratos_velocity_t.jpg',
+  },
+  {
+    id: 'obsidian_mach_x', brand: 'Obsidian', name: 'Mach X', year: 2020,
+    class: 'S1', category: 'hypercar', drivetrain: 'AWD', bodyStyle: 'Hypercar',
+    pr: 820, price: 850_000,
+    stats: { speed: 86, handling: 84, acceleration: 90, braking: 88, offroad: 28 },
+    description: 'An American hypercar built to conquer both Baja desert and track. Hybrid V8, carbon everything, surprisingly livable.',
+    modelFile: 'obsidian_mach_x.glb', thumbnailFile: 'obsidian_mach_x.jpg',
+  },
+
+  // ── BUGGIES / OPEN WHEEL (C class) ─────────────────────────────────────────
+
+  {
+    id: 'tropico_buggy_xt', brand: 'Tropico', name: 'Jungle Buggy XT', year: 2017,
+    class: 'C', category: 'buggy', drivetrain: 'RWD', bodyStyle: 'Buggy',
+    pr: 430, price: 58_000,
+    stats: { speed: 50, handling: 65, acceleration: 62, braking: 52, offroad: 82 },
+    description: 'Stripped back, wide-arched, and built for the jungle trail. Light enough that it skips over roots and ruts.',
+    modelFile: 'tropico_buggy_xt.glb', thumbnailFile: 'tropico_buggy_xt.jpg',
+  },
+  {
+    id: 'caldera_dune_racer', brand: 'Caldera', name: 'Dune Racer 800', year: 2023,
+    class: 'B', category: 'buggy', drivetrain: 'RWD', bodyStyle: 'Buggy',
+    pr: 550, price: 88_000,
+    stats: { speed: 62, handling: 70, acceleration: 72, braking: 60, offroad: 86 },
+    description: 'A high-horsepower off-road racer with long-travel suspension. At home going 160kph across the Dunas.',
+    modelFile: 'caldera_dune_racer.glb', thumbnailFile: 'caldera_dune_racer.jpg',
+  },
+
+  // ── ADDITIONAL ROAD CARS ────────────────────────────────────────────────────
+
+  {
+    id: 'verano_grand_turismo', brand: 'Verano', name: 'Grand Turismo', year: 2020,
+    class: 'A', category: 'gran_tourer', drivetrain: 'AWD', bodyStyle: 'Grand Tourer',
+    pr: 750, price: 320_000,
+    stats: { speed: 78, handling: 76, acceleration: 78, braking: 80, offroad: 30 },
+    description: 'A long-legged GT that\'s as comfortable crossing a continent as it is on a race circuit. The ideal Riviera car.',
+    modelFile: 'verano_grand_turismo.glb', thumbnailFile: 'verano_grand_turismo.jpg',
+  },
+  {
+    id: 'meridian_sprint_rs', brand: 'Meridian', name: 'Sprint RS', year: 2019,
+    class: 'A', category: 'sport', drivetrain: 'RWD', bodyStyle: 'Coupe',
+    pr: 720, price: 280_000,
+    stats: { speed: 76, handling: 84, acceleration: 80, braking: 84, offroad: 22 },
+    description: 'A finely tuned rear-drive sports coupe with a naturally aspirated flat-six. The Guanajuato streets were made for this car.',
+    modelFile: 'meridian_sprint_rs.glb', thumbnailFile: 'meridian_sprint_rs.jpg',
+  },
+];
 }
 
 /** Minimum price in the catalog. */

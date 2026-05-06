@@ -49,230 +49,198 @@ const DISCOVERY_XP      = 1500; // XP awarded on first discovery
 //   { make, model, year, class, pi, top_speed_kmh, acceleration, handling, braking }
 
 const BARN_CATALOGUE = [
-  // ─────────────────────────────────────────────────────────
-  // Barn 1 — Industrial Zone (District 3)
-  // Hidden behind the container yard, down a narrow service alley
-  // ─────────────────────────────────────────────────────────
+  // ─── 1. Caldera Bunker — Ferrari Testarossa 1984 ────────────────────────────
   {
-    id: 'barn_001',
-    name: 'The Forgotten Racer',
-    district: 3,
-    districtName: 'Industrial Zone',
-    worldPos: { x: -680, y: 0, z: 420 },   // behind container yard, east end
-    restorationCost: 45000,
-
-    // NPC who gives the hint — name + dialogue line
+    id: 'barn_001', name: 'The Caldera Bunker',
+    district: 'caldera', districtName: 'Gran Caldera',
+    worldPos: { x: 3200, y: 420, z: -3800 },
+    restorationCost: 120_000,
     npc: {
-      id: 'npc_dock_worker_miro',
-      name: 'Miro',
-      dialogue: 'Worked here fifteen years. There\'s a locked-up unit behind the crane yard — old racing plates on the door. Never seen anyone open it.',
+      id: 'npc_caldera_geologist',
+      name: 'Dr. Reyes',
+      dialogue: 'There\'s an old military observation post near the volcano rim. Sealed up decades ago. I swear I saw a rear wing through the rusted door.',
     },
-
-    // The car inside
     car: {
-      id: 'car_bf_001',
-      make: 'Lancia',
-      model: 'Stratos HF',
-      year: 1974,
-      class: 'B',
-      pi: 580,
-      top_speed_kmh: 230,
-      acceleration: 7,
-      handling: 8,
-      braking: 7,
-      unrestoredAppearance: 'rust_panel_lancia_stratos',
-      restoredAppearance: 'default_lancia_stratos',
+      id: 'car_bf_001', make: 'Ferrari', model: 'Testarossa', year: 1984,
+      class: 'A', pi: 720, top_speed_kmh: 291, acceleration: 8, handling: 72, braking: 78,
+      description: 'A flat-12 supercar icon from the 1980s, found sealed inside a volcanic observation bunker.',
     },
-
-    // Lore card shown in the Barn Find details screen
-    lore: {
-      title: 'A Rally Legend, Quietly Rusting',
-      body: 'Horizon City Docks records show this Lancia Stratos arrived by freight in 1981, consigned to a driver named "E. Carver" — no further address. Carver\'s name appears in three local race programme booklets between 1981 and 1983. After that, nothing. The car was never collected. Dock management eventually moved it to long-term storage and forgot about it entirely. The fuel still smells like race day.',
-    },
-
-    // Hint unlock condition — which barn must be found first (null = always available)
-    requiresBarnFirst: null,
-    hintUnlocked: false,
-    discovered: false,
-    restored: false,
+    hints: ['Somewhere near the caldera rim, above the treeline.', 'Look for a concrete structure with military markings.'],
+    discovered: false, restored: false,
   },
-
-  // ─────────────────────────────────────────────────────────
-  // Barn 2 — Suburbs & Hillside (District 4)
-  // Tucked into a residential side-street behind a row of garages
-  // ─────────────────────────────────────────────────────────
+  // ─── 2. Dunas Ruins — Ford GT40 1968 ───────────────────────────────────────
   {
-    id: 'barn_002',
-    name: 'The Hillside Secret',
-    district: 4,
-    districtName: 'Suburbs & Hillside',
-    worldPos: { x: 320, y: 85, z: -560 },  // elevated hillside lane
-    restorationCost: 80000,
-
+    id: 'barn_002', name: 'The Dunas Ruins',
+    district: 'dunas', districtName: 'Dunas Blancas',
+    worldPos: { x: -3400, y: 80, z: -2800 },
+    restorationCost: 180_000,
     npc: {
-      id: 'npc_gardener_priya',
-      name: 'Priya',
-      dialogue: 'The old Nakamura place up the hill — they sold it years ago but left a car behind. I\'ve seen it through the hedge. Covered in dust. Beautiful shape, though.',
+      id: 'npc_dunas_nomad',
+      name: 'Rosa',
+      dialogue: 'My grandfather used to tell a story about a racing car buried in the dune valley. He saw it in the 70s. The sand drifts cover everything out there.',
     },
-
     car: {
-      id: 'car_bf_002',
-      make: 'Toyota',
-      model: '2000GT',
-      year: 1967,
-      class: 'C',
-      pi: 510,
-      top_speed_kmh: 215,
-      acceleration: 6,
-      handling: 7,
-      braking: 6,
-      unrestoredAppearance: 'rust_panel_toyota_2000gt',
-      restoredAppearance: 'default_toyota_2000gt',
+      id: 'car_bf_002', make: 'Ford', model: 'GT40', year: 1968,
+      class: 'S1', pi: 820, top_speed_kmh: 328, acceleration: 9, handling: 80, braking: 82,
+      description: 'Le Mans legend, half-swallowed by the white dunes of Dunas Blancas.',
     },
-
-    lore: {
-      title: 'The Nakamura House',
-      body: 'The 2000GT was a retirement gift — Kenji Nakamura bought it the year the factory closed production, swearing he\'d restore it "properly" when time allowed. He spent thirty years as the city\'s most respected driving instructor, never finding that time. His daughter sold the property in 2018. She said her father asked only one thing: that the car go to someone who would drive it. She didn\'t know it was still there.',
-    },
-
-    requiresBarnFirst: null,
-    hintUnlocked: false,
-    discovered: false,
-    restored: false,
+    hints: ['Deep in the dune valley, west side of Dunas Blancas.', 'The sand drift almost covers the roof — look for the shadow at golden hour.'],
+    discovered: false, restored: false,
   },
-
-  // ─────────────────────────────────────────────────────────
-  // Barn 3 — Waterfront & Harbor (District 2)
-  // Beneath the Grand Bridge access road, in a maintenance bay
-  // ─────────────────────────────────────────────────────────
+  // ─── 3. Jungle Temple — Lamborghini Countach 1982 ───────────────────────────
   {
-    id: 'barn_003',
-    name: 'Under the Bridge',
-    district: 2,
-    districtName: 'Waterfront & Harbor',
-    worldPos: { x: -120, y: -8, z: 890 },  // under bridge strut, maintenance bay
-    restorationCost: 150000,
-
+    id: 'barn_003', name: 'The Jungle Temple',
+    district: 'jungle', districtName: 'La Selva',
+    worldPos: { x: 1800, y: 30, z: 3200 },
+    restorationCost: 140_000,
     npc: {
-      id: 'npc_harbourmaster_felix',
-      name: 'Felix',
-      dialogue: 'Bridge maintenance crew found a car locked up in the old service bay years back. Nobody claimed it. They just... bricked up the access, mostly. There\'s still a gap on the east side if you look.',
+      id: 'npc_jungle_guide',
+      name: 'Tomás',
+      dialogue: 'Tourists never go south of the old aqueduct trail. The ruins back there aren\'t on any map. I saw headlights one night — didn\'t know ruins had headlights.',
     },
-
     car: {
-      id: 'car_bf_003',
-      make: 'Ferrari',
-      model: '250 GTO',
-      year: 1962,
-      class: 'A',
-      pi: 720,
-      top_speed_kmh: 280,
-      acceleration: 8,
-      handling: 8,
-      braking: 7,
-      unrestoredAppearance: 'rust_panel_ferrari_250gto',
-      restoredAppearance: 'default_ferrari_250gto',
+      id: 'car_bf_003', make: 'Lamborghini', model: 'Countach LP400S', year: 1982,
+      class: 'A', pi: 760, top_speed_kmh: 296, acceleration: 8, handling: 75, braking: 76,
+      description: 'A scissor-door icon, half-consumed by jungle growth inside a Mayan-style ruin.',
     },
-
-    lore: {
-      title: 'Chassis 3223 GT',
-      body: 'Motorsport historians have argued for decades about whether a factory 250 GTO made it to this part of the world. Here is your answer. Race logbooks in the glovebox record entries at six now-defunct hillclimb events between 1963 and 1968, signed by a driver identified only as "D.V." The car\'s provenance after that is a mystery the bridge\'s concrete has kept very well indeed.',
-    },
-
-    requiresBarnFirst: 'barn_001',  // NPC only hints after first barn found
-    hintUnlocked: false,
-    discovered: false,
-    restored: false,
+    hints: ['South of the main jungle trail, past the waterfall.', 'The ruin has three stone arches — the car is through the middle one.'],
+    discovered: false, restored: false,
   },
-
-  // ─────────────────────────────────────────────────────────
-  // Barn 4 — Outskirts & Highway Ring (District 6)
-  // A derelict petrol station forecourt, around the back
-  // ─────────────────────────────────────────────────────────
+  // ─── 4. Baja Mesa — Dodge Viper GTS 1996 ───────────────────────────────────
   {
-    id: 'barn_004',
-    name: 'The Last Stop',
-    district: 6,
-    districtName: 'Outskirts & Highway Ring',
-    worldPos: { x: 1100, y: 2, z: 680 },   // disused petrol station, north ring
-    restorationCost: 60000,
-
+    id: 'barn_004', name: 'The Baja Mesa',
+    district: 'baja', districtName: 'Baja Desert',
+    worldPos: { x: -3800, y: 120, z: 600 },
+    restorationCost: 55_000,
     npc: {
-      id: 'npc_roadside_vendor_sal',
-      name: 'Sal',
-      dialogue: 'That old Shell station on the ring road — closed in \'02. Something big under a tarp out back. Nobody\'s touched it. The owner\'s long gone. Might be worth a look.',
+      id: 'npc_baja_mechanic',
+      name: 'Eduardo',
+      dialogue: 'There\'s an old trading post up on the mesa flat. Abandoned in the 90s. The owner just walked away — left everything inside.',
     },
-
     car: {
-      id: 'car_bf_004',
-      make: 'Dodge',
-      model: 'Charger R/T',
-      year: 1969,
-      class: 'B',
-      pi: 610,
-      top_speed_kmh: 250,
-      acceleration: 7,
-      handling: 6,
-      braking: 6,
-      unrestoredAppearance: 'rust_panel_dodge_charger_69',
-      restoredAppearance: 'default_dodge_charger_69',
+      id: 'car_bf_004', make: 'Dodge', model: 'Viper GTS', year: 1996,
+      class: 'A', pi: 730, top_speed_kmh: 290, acceleration: 9, handling: 70, braking: 74,
+      description: 'A raw V10 brute from the desert, waiting in a sun-bleached trading post on the Baja mesa.',
     },
-
-    lore: {
-      title: 'End of the Road',
-      body: 'The petrol station\'s last owner, Roy Hess, bought the Charger in 1987 for what he called "emergency getaway money" — he planned to sell it if things got bad. Things didn\'t get bad; they just got slow. He ran the pumps solo for fifteen years, using the Charger as his office chair while he read paperbacks. When the lease expired he drove away in a pickup truck and left the Charger exactly where it sat. The paperback is still on the passenger seat.',
-    },
-
-    requiresBarnFirst: 'barn_002',
-    hintUnlocked: false,
-    discovered: false,
-    restored: false,
+    hints: ['High up on the western mesa, near the abandoned trading route.', 'Follow the dirt road to the flat-top — you\'ll see the garage door.'],
+    discovered: false, restored: false,
   },
-
-  // ─────────────────────────────────────────────────────────
-  // Barn 5 — Downtown Core (District 1)
-  // Sub-basement of a derelict office block, pre-demolition zone
-  // ─────────────────────────────────────────────────────────
+  // ─── 5. Riviera Boathouse — Ferrari 308 GTB 1977 ────────────────────────────
   {
-    id: 'barn_005',
-    name: 'The Urban Vault',
-    district: 1,
-    districtName: 'Downtown Core',
-    worldPos: { x: 55, y: -12, z: 80 },    // sub-basement, west of Central Tower
-    restorationCost: 20000,
-
+    id: 'barn_005', name: 'The Riviera Boathouse',
+    district: 'riviera', districtName: 'Riviera Maya',
+    worldPos: { x: 3800, y: 5, z: -800 },
+    restorationCost: 85_000,
     npc: {
-      id: 'npc_security_guard_brenda',
-      name: 'Brenda',
-      dialogue: 'That condemned block near Central Tower — before they stripped it, someone parked a car in the B2 level. Never got towed. Demolition\'s been delayed three years. Might still be there.',
+      id: 'npc_riviera_sailor',
+      name: 'Capitán Vela',
+      dialogue: 'Old boat storage shed at the south marina. Locked since \'92. Nobody knows what\'s inside — but the owner paid boat storage rent until 2019.',
     },
-
     car: {
-      id: 'car_bf_005',
-      make: 'Mini',
-      model: 'Cooper S',
-      year: 1967,
-      class: 'D',
-      pi: 380,
-      top_speed_kmh: 160,
-      acceleration: 6,
-      handling: 9,
-      braking: 7,
-      unrestoredAppearance: 'rust_panel_mini_cooper_s_67',
-      restoredAppearance: 'default_mini_cooper_s_67',
+      id: 'car_bf_005', make: 'Ferrari', model: '308 GTB', year: 1977,
+      class: 'B', pi: 640, top_speed_kmh: 240, acceleration: 7, handling: 74, braking: 72,
+      description: 'The car that made Magnum famous. Found locked in a Riviera boathouse, smelling of salt and nostalgia.',
     },
-
-    lore: {
-      title: 'Small Car, Big Stories',
-      body: 'Building permits from 1968 list this Mini as belonging to one "Clara Morrow, Journalist." City archive photographs show a Mini matching this exact colour — pale blue, white roof — at five major civic events between 1968 and 1972. What it was doing in the basement of a financial services block forty years later is anyone\'s guess. Clara\'s last known article was published in 1974. She wrote about a road trip. She said small cars see everything.',
+    hints: ['The south marina — look for the green boathouse near the old jetty.', 'The padlock is rusted through. One good bump should do it.'],
+    discovered: false, restored: false,
+  },
+  // ─── 6. Farmland Silo — Porsche 911 Carrera RS 1973 ────────────────────────
+  {
+    id: 'barn_006', name: 'The Farmland Silo',
+    district: 'farmland', districtName: 'Expedición',
+    worldPos: { x: 800, y: 10, z: -400 },
+    restorationCost: 200_000,
+    npc: {
+      id: 'npc_farmland_elder',
+      name: 'Señora Herrera',
+      dialogue: 'My husband worked in Germany in the 70s. Drove his Porsche all the way home when they finished. Parked it in the grain silo and never took it out again.',
     },
-
-    requiresBarnFirst: 'barn_003',
-    hintUnlocked: false,
-    discovered: false,
-    restored: false,
+    car: {
+      id: 'car_bf_006', make: 'Porsche', model: '911 Carrera RS 2.7', year: 1973,
+      class: 'B', pi: 680, top_speed_kmh: 240, acceleration: 8, handling: 85, braking: 80,
+      description: 'The most celebrated 911 ever built. Hidden behind a working grain silo for fifty years.',
+    },
+    hints: ['The old Herrera farm, east side of the farmland district.', 'The silo is behind the main barn — there\'s a duck pond.'],
+    discovered: false, restored: false,
+  },
+  // ─── 7. Festival Old Hangar — Ford Escort RS1600 1970 ────────────────────────
+  {
+    id: 'barn_007', name: 'The Old Hangar',
+    district: 'festival', districtName: 'Festival Grounds',
+    worldPos: { x: -2000, y: 20, z: 1600 },
+    restorationCost: 40_000,
+    npc: {
+      id: 'npc_festival_groundskeeper',
+      name: 'Pepe',
+      dialogue: 'Airstrip\'s been here since the 60s. Old maintenance hangar at the far end hasn\'t been used since we switched to modern equipment. There\'s something under the tarp.',
+    },
+    car: {
+      id: 'car_bf_007', make: 'Ford', model: 'Escort RS1600', year: 1970,
+      class: 'C', pi: 540, top_speed_kmh: 190, acceleration: 8, handling: 82, braking: 78,
+      description: 'The original rally icon, sitting under an oilstained tarp in the airstrip\'s forgotten maintenance hangar.',
+    },
+    hints: ['West end of the airstrip — the old hangar with the blue corrugated roof.', 'It\'s not locked, just stuck.'],
+    discovered: false, restored: false,
+  },
+  // ─── 8. Guanajuato Cellar — Alfa Romeo GTA 1965 ─────────────────────────────
+  {
+    id: 'barn_008', name: 'The Guanajuato Cellar',
+    district: 'guanajuato', districtName: 'Guanajuato',
+    worldPos: { x: 1600, y: 60, z: -2000 },
+    restorationCost: 95_000,
+    npc: {
+      id: 'npc_guanajuato_innkeeper',
+      name: 'Miguel',
+      dialogue: 'This colonial building has been in my family for generations. The lower cellar? That\'s always been locked. Father said the key was lost before he was born.',
+    },
+    car: {
+      id: 'car_bf_008', make: 'Alfa Romeo', model: 'Giulia GTA', year: 1965,
+      class: 'C', pi: 560, top_speed_kmh: 218, acceleration: 8, handling: 88, braking: 80,
+      description: 'A lightweight homologation special from a golden age of Italian racing. Found in the cellar of a 300-year-old colonial townhouse.',
+    },
+    hints: ['One of the oldest buildings in Guanajuato, near the cathedral steps.', 'The cellar entrance is around the back, behind the fountain.'],
+    discovered: false, restored: false,
+  },
+  // ─── 9. Canyon Hideout — Lancia Stratos 1974 ────────────────────────────────
+  {
+    id: 'barn_009', name: 'The Canyon Hideout',
+    district: 'highway', districtName: 'Canyon',
+    worldPos: { x: -800, y: 200, z: -1600 },
+    restorationCost: 160_000,
+    npc: {
+      id: 'npc_canyon_hiker',
+      name: 'Andrea',
+      dialogue: 'I do trail running in the canyon. There\'s a cave cut into the cliff wall partway up — sealed with a metal shutter. I\'ve always wondered what\'s inside.',
+    },
+    car: {
+      id: 'car_bf_009', make: 'Lancia', model: 'Stratos HF', year: 1974,
+      class: 'B', pi: 660, top_speed_kmh: 230, acceleration: 8, handling: 90, braking: 82,
+      description: 'The purpose-built rally weapon that won everything. Hidden in a canyon cliff cache for unknown reasons.',
+    },
+    hints: ['The canyon below the overlook — there\'s a cut in the east cliff face.', 'You need to approach from the canyon floor, not the road above.'],
+    discovered: false, restored: false,
+  },
+  // ─── 10. Coastal Cliff — Toyota 2000GT 1967 ─────────────────────────────────
+  {
+    id: 'barn_010', name: 'The Coastal Cliff Garage',
+    district: 'riviera', districtName: 'Riviera Maya',
+    worldPos: { x: 3200, y: 80, z: -1600 },
+    restorationCost: 250_000,
+    npc: {
+      id: 'npc_cliff_villa_owner',
+      name: 'Señor Ito',
+      dialogue: 'My father was a Japanese engineer who fell in love with this coastline in 1969. He built a villa on the cliff. There is a room beneath the villa. He said it was just storage.',
+    },
+    car: {
+      id: 'car_bf_010', make: 'Toyota', model: '2000GT', year: 1967,
+      class: 'B', pi: 600, top_speed_kmh: 220, acceleration: 7, handling: 86, braking: 80,
+      description: 'Japan\'s first supercar and rarest road car — found in a cliff-side vault above the Riviera coast.',
+    },
+    hints: ['The white villa on the cliff north of the marina.', 'The garage is below cliff level — enter from the beach path, not the road.'],
+    discovered: false, restored: false,
   },
 ];
+
 
 // ─── BarnFindManager Class ────────────────────────────────────────────────────
 

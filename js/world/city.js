@@ -46,94 +46,148 @@ import { createBody, removeBody } from '../engine/physics.js';
  *  landmark    — { id, label, position: THREE.Vector3 }
  */
 export const DISTRICT_DATA = Object.freeze([
+  // ── Guanajuato — colonial hilltop city, warm tarmac streets ───────────────
   {
-    id:         'downtown',
-    name:       'Downtown Core',
-    color:      '#00bfff',
-    bounds:     { x1: -500, z1: -500, x2: 500, z2: 500 },
+    id:         'guanajuato',
+    name:       'Guanajuato',
+    color:      '#e8a020',
+    bounds:     { x1: 500,   z1: -3000, x2: 3000,  z2: -1000 },
     roadType:   'smooth_tarmac',
-    ambientTag: 'downtown',
-    shopIds:    ['autoshow_main', 'festival_hub', 'clothing_boutique', 'livery_shop'],
+    ambientTag: 'city',
+    shopIds:    ['autoshow_main', 'clothing_boutique', 'livery_shop', 'race_hq'],
     raceTier:   'C',
     landmark: {
-      id:       'central_tower',
-      label:    'Central Tower',
-      position: new THREE.Vector3(0, 0, -200),
+      id:       'guanajuato_cathedral',
+      label:    'Guanajuato Cathedral',
+      position: new THREE.Vector3(1800, 80, -2200),
     },
   },
+  // ── Gran Caldera — active volcano, volcanic dirt roads, extreme elevation ──
   {
-    id:         'waterfront',
-    name:       'Waterfront & Harbor',
-    color:      '#1e90ff',
-    bounds:     { x1: 500, z1: -1000, x2: 2000, z2: 500 },
+    id:         'caldera',
+    name:       'Gran Caldera',
+    color:      '#8b3a00',
+    bounds:     { x1: 1500,  z1: -5000, x2: 5000,  z2: -2500 },
+    roadType:   'volcanic_dirt',
+    ambientTag: 'volcano',
+    shopIds:    [],
+    raceTier:   'A',
+    landmark: {
+      id:       'caldera_summit',
+      label:    'Caldera Summit',
+      position: new THREE.Vector3(3500, 800, -4000),
+    },
+  },
+  // ── Riviera Maya — beach hotels, marina, flat sea-level tarmac ───────────
+  {
+    id:         'riviera',
+    name:       'Riviera Maya',
+    color:      '#00bfff',
+    bounds:     { x1: 2500,  z1: -2500, x2: 5000,  z2:  500 },
     roadType:   'smooth_tarmac',
-    ambientTag: 'harbor',
+    ambientTag: 'beach',
     shopIds:    ['drag_strip'],
     raceTier:   'B',
     landmark: {
-      id:       'grand_bridge',
-      label:    'The Grand Bridge',
-      position: new THREE.Vector3(1200, 0, -300),
+      id:       'riviera_lighthouse',
+      label:    'Riviera Lighthouse',
+      position: new THREE.Vector3(4200, 20, -1200),
     },
   },
+  // ── Dunas Blancas — white sand dunes, loose surface ──────────────────────
   {
-    id:         'industrial',
-    name:       'Industrial Zone',
-    color:      '#b8860b',
-    bounds:     { x1: -2000, z1: -500, x2: -500, z2: 1000 },
-    roadType:   'mixed',          // tarmac + gravel + concrete
-    ambientTag: 'industrial',
-    shopIds:    ['parts_shop_main', 'drift_arena'],
-    raceTier:   'D',
+    id:         'dunas',
+    name:       'Dunas Blancas',
+    color:      '#f5deb3',
+    bounds:     { x1: -5000, z1: -4000, x2: -1000, z2: -1000 },
+    roadType:   'sand',
+    ambientTag: 'dunes',
+    shopIds:    [],
+    raceTier:   'B',
     landmark: {
-      id:       'chimney_stack',
-      label:    'The Chimney Stack',
-      position: new THREE.Vector3(-1400, 0, 300),
+      id:       'dunas_crest',
+      label:    'Dunas Crest',
+      position: new THREE.Vector3(-3200, 120, -2600),
     },
   },
+  // ── Baja Desert — dry scrub, mesa plateaus, dirt tracks ──────────────────
   {
-    id:         'suburbs',
-    name:       'Suburbs & Hillside',
-    color:      '#32cd32',
-    bounds:     { x1: -500, z1: 500, x2: 1000, z2: 2000 },
+    id:         'baja',
+    name:       'Baja Desert',
+    color:      '#c8a060',
+    bounds:     { x1: -5000, z1: -1000, x2: -500,  z2: 2000 },
+    roadType:   'dirt',
+    ambientTag: 'desert',
+    shopIds:    ['parts_shop_main'],
+    raceTier:   'B',
+    landmark: {
+      id:       'baja_mesa',
+      label:    'Baja Mesa',
+      position: new THREE.Vector3(-3800, 120, 600),
+    },
+  },
+  // ── Expedición Farmland — flat green fields, narrow country lanes ─────────
+  {
+    id:         'farmland',
+    name:       'Expedición',
+    color:      '#5a8a30',
+    bounds:     { x1: -500,  z1: -2000, x2: 2500,  z2: 1500 },
     roadType:   'narrow_tarmac',
-    ambientTag: 'suburbs',
-    shopIds:    ['autoshow_used', 'clothing_boutique_2'],
+    ambientTag: 'countryside',
+    shopIds:    [],
     raceTier:   'C',
     landmark: {
-      id:       'hillside_lookout',
-      label:    'Hillside Lookout',
-      position: new THREE.Vector3(600, 120, 1600),
+      id:       'farmland_windmill',
+      label:    'Farmland Windmill',
+      position: new THREE.Vector3(800, 10, -400),
     },
   },
+  // ── Festival Grounds — airstrip, tents, race tarmac ──────────────────────
   {
-    id:         'racing',
-    name:       'Racing District',
+    id:         'festival',
+    name:       'Festival Grounds',
     color:      '#ff4500',
-    bounds:     { x1: 500, z1: 500, x2: 2000, z2: 2000 },
+    bounds:     { x1: -3000, z1:  500,  x2:  500,  z2: 3000 },
     roadType:   'race_tarmac',
-    ambientTag: 'racing',
-    shopIds:    ['race_hq', 'pit_garage'],
-    raceTier:   'S',
+    ambientTag: 'festival',
+    shopIds:    ['festival_hub', 'drift_arena', 'drag_strip_airstrip'],
+    raceTier:   'D',
     landmark: {
-      id:       'grand_circuit',
-      label:    'The Grand Circuit',
-      position: new THREE.Vector3(1300, 0, 1200),
+      id:       'airstrip_tower',
+      label:    'Airstrip Control Tower',
+      position: new THREE.Vector3(-1500, 20, 1500),
     },
   },
+  // ── La Selva — dense jungle, muddy undulating tracks ─────────────────────
   {
-    id:         'outskirts',
-    name:       'Outskirts & Highway Ring',
-    color:      '#808080',
-    bounds:     { x1: -2000, z1: -2000, x2: 2000, z2: -1000 },
+    id:         'jungle',
+    name:       'La Selva',
+    color:      '#2d6a2d',
+    bounds:     { x1:  500,  z1: 1000,  x2: 3500,  z2: 4000 },
+    roadType:   'muddy',
+    ambientTag: 'jungle',
+    shopIds:    [],
+    raceTier:   'B',
+    landmark: {
+      id:       'jungle_temple',
+      label:    'Jungle Temple Ruin',
+      position: new THREE.Vector3(1800, 30, 3200),
+    },
+  },
+  // ── Highway Ring — outer loop tying all zones together ───────────────────
+  {
+    id:         'highway',
+    name:       'Highway Ring',
+    color:      '#444444',
+    bounds:     { x1: -5000, z1: -5000, x2: 5000,  z2: 5000 },
     roadType:   'highway',
     ambientTag: 'outskirts',
-    shopIds:    ['rest_stop_kiosk'],
+    shopIds:    [],
     raceTier:   'A',
     landmark: {
-      id:       'overpass_stack',
-      label:    'The Overpass Stack',
-      position: new THREE.Vector3(-800, 20, -1600),
+      id:       'canyon_overlook',
+      label:    'Canyon Overlook',
+      position: new THREE.Vector3(-800, 200, -1600),
     },
   },
 ]);
@@ -144,23 +198,26 @@ const ROAD_GRIP = Object.freeze({
   race_tarmac:    1.10,
   highway:        0.95,
   narrow_tarmac:  0.90,
-  mixed:          0.75,   // average; poi.js / buildings.js tag specific patches
+  mixed:          0.75,
   gravel:         0.55,
   concrete:       0.80,
   dirt:           0.50,
   wet_tarmac:     0.65,   // environment.js swaps this in during rain
+  volcanic_dirt:  0.45,   // loose volcanic gravel, very slippy
+  sand:           0.38,   // deep Dunas sand — very low grip
+  muddy:          0.42,   // jungle mud — low grip, high drag
 });
 
 // ─── City Constants ───────────────────────────────────────────────────────────
 
 /** Full map extents in metres. */
-export const CITY_BOUNDS = Object.freeze({ minX: -2000, maxX: 2000, minZ: -2000, maxZ: 2000 });
+export const CITY_BOUNDS = Object.freeze({ minX: -5000, maxX: 5000, minZ: -5000, maxZ: 5000 });
 
 /** Side length of one streaming chunk in metres. */
 export const CHUNK_SIZE = 500;
 
 /** How many chunks each side to keep loaded around the player. */
-const STREAM_RADIUS = 1; // 3×3 grid = 9 chunks
+const STREAM_RADIUS = 2; // 5×5 grid = 25 chunks
 
 /** Distance at which a chunk switches to simplified LOD mesh. */
 const LOD_NEAR = 150;
@@ -174,12 +231,16 @@ const BUILDING_HEIGHT_MAX = 250;
 // ─── Fast Travel Points ───────────────────────────────────────────────────────
 
 const _FAST_TRAVEL = Object.freeze([
-  { id: 'hub_festival',    label: 'Festival Hub',        position: new THREE.Vector3(0,    0,  -180) },
-  { id: 'hub_harbor',      label: 'Harbor Front',        position: new THREE.Vector3(1100, 0,  -200) },
-  { id: 'hub_parts',       label: 'Parts Shop',          position: new THREE.Vector3(-900, 0,   200) },
-  { id: 'hub_hillside',    label: 'Hillside Lookout',    position: new THREE.Vector3(600, 120, 1600) },
-  { id: 'hub_racehq',      label: 'Race HQ',             position: new THREE.Vector3(1100, 0,  900)  },
-  { id: 'hub_highway_e',   label: 'Highway East Ramp',   position: new THREE.Vector3(1800, 0, -1500) },
+  { id: 'ft_festival',      label: 'Festival Grounds',       position: new THREE.Vector3(-1500,  20,  1500) },
+  { id: 'ft_guanajuato',    label: 'Guanajuato Plaza',       position: new THREE.Vector3( 1800,  80, -2000) },
+  { id: 'ft_caldera',       label: 'Caldera Summit',         position: new THREE.Vector3( 3500, 800, -4000) },
+  { id: 'ft_dunas',         label: 'Dunas Lookout',          position: new THREE.Vector3(-3200, 120, -2600) },
+  { id: 'ft_riviera',       label: 'Riviera Marina',         position: new THREE.Vector3( 3800,   5,  -800) },
+  { id: 'ft_jungle',        label: 'Jungle Outpost',         position: new THREE.Vector3( 1800,  30,  3200) },
+  { id: 'ft_baja',          label: 'Baja Crossroads',        position: new THREE.Vector3(-3000,  60,   400) },
+  { id: 'ft_farmland',      label: 'Farmland Hub',           position: new THREE.Vector3(  800,  10,  -400) },
+  { id: 'ft_canyon',        label: 'Canyon Overlook',        position: new THREE.Vector3( -800, 200, -1600) },
+  { id: 'ft_airstrip',      label: 'Airstrip',               position: new THREE.Vector3(-2000,  20,  1600) },
 ]);
 
 export function getFastTravelPoints() {
@@ -418,9 +479,8 @@ function _applyLOD(group, level) {
  */
 function _buildRoadMesh() {
   const roadGeo = new THREE.PlaneGeometry(
-    CITY_BOUNDS.maxX - CITY_BOUNDS.minX,
-    CITY_BOUNDS.maxZ - CITY_BOUNDS.minZ,
-    32, 32
+    10000, 10000,   // full 10km × 10km world
+    64, 64
   );
   roadGeo.rotateX(-Math.PI / 2);
 
@@ -595,8 +655,8 @@ function _disposeGroup(group) {
  */
 function _buildPlaceholderManifest() {
   const chunks = [];
-  for (let cx = -4; cx <= 4; cx++) {
-    for (let cz = -4; cz <= 4; cz++) {
+  for (let cx = -10; cx <= 10; cx++) {
+    for (let cz = -10; cz <= 10; cz++) {
       chunks.push({ cx, cz, file: null, buildings: [] });
     }
   }

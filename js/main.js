@@ -27,6 +27,8 @@ import { CarMasteryManager }                               from './progression/C
 import { BarnFindManager }                                 from './progression/BarnFindManager.js';
 import { DailyRewardManager }                              from './progression/DailyRewardManager.js';
 import { FestivalPlaylistManager }                         from './progression/FestivalPlaylistManager.js';
+import { getTerrainHeight }                                from './world/terrain.js';
+import * as THREE                                          from 'three';
 
 async function boot() {
   await initFirebase();
@@ -63,7 +65,15 @@ async function boot() {
   shopManager.init(saveManager);
 
   const playerCarDef = saveManager.get('player', 'activeCar') ?? CARS[0];
-  const playerCar    = await createCar(playerCarDef, { scene, world, isPlayer: true });
+
+  // ── Spawn position: Festival Grounds airstrip (FH5 style — game starts at the festival) ──
+  // X: -1800 (airstrip centre), Z: 1000 (mid-runway), Y: terrain height + car half-height
+  const SPAWN_X = -1800;
+  const SPAWN_Z =  1000;
+  const SPAWN_Y = getTerrainHeight(SPAWN_X, SPAWN_Z) + 1.5; // 1.5m = half chassis height
+  const playerSpawnPos = new THREE.Vector3(SPAWN_X, SPAWN_Y, SPAWN_Z);
+
+  const playerCar    = await createCar(playerCarDef, { scene, world, isPlayer: true, spawnPos: playerSpawnPos });
 
   const drivingController = new DrivingController(playerCar, inputState);
 
