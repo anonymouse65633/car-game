@@ -78,7 +78,7 @@ async function boot() {
     notificationSystem,
   });
 
-  const dailyRewardManager = new DailyRewardManager({ progressionManager, notificationSystem });
+  const dailyRewardManager = new DailyRewardManager();
   dailyRewardManager.checkOnStartup();
 
   const festivalPlaylistManager = new FestivalPlaylistManager({ saveManager, progressionManager, accoladeManager, notificationSystem });
@@ -89,7 +89,6 @@ async function boot() {
   // init() is async and builds the full DOM overlay + child modules.
   const hudManager = new HUDManager({
     canvas:       renderer.domElement,
-    saveManager,
     onPauseGame:  () => { /* pause physics / input if needed */ },
     onResumeGame: () => { /* resume physics / input if needed */ },
   });
@@ -100,7 +99,7 @@ async function boot() {
     drivingController.update(dt);
     playerCar.update(dt);
     barnFindManager.tick(playerCar.position);
-    tickNPCs(dt);
+    tickNPCs(dt, playerCar.position);
     hudManager.update(playerCar.getHUDState());
     renderFrame();
   }, LOOP_PHASE.UPDATE);
