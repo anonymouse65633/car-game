@@ -244,8 +244,8 @@ const TRIGGER_DEADZONE = 0.05;
  * Synchronous — no async needed.
  */
 export function initInput() {
-  window.addEventListener('keydown', _onKeyDown, { passive: true });
-  window.addEventListener('keyup',   _onKeyUp,   { passive: true });
+  window.addEventListener('keydown', _onKeyDown, { passive: false });
+  window.addEventListener('keyup',   _onKeyUp,   { passive: false });
   window.addEventListener('gamepadconnected',    _onGamepadConnected);
   window.addEventListener('gamepaddisconnected', _onGamepadDisconnected);
 
