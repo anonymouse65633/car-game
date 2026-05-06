@@ -30,6 +30,60 @@
  * (--pm-accent, --pm-border, --pm-muted, etc.) — no hard-coded colours.
  */
 
+// ─── Graphics presets ─────────────────────────────────────────────────────────
+// Mirrors the plan's preset table exactly. applyPreset() is the single call
+// that coordinates all subsystems — PostFX, particles, deform RT, anisotropy.
+
+export const GRAPHICS_PRESETS = {
+  low:     { particles: 2000,  shadowRes: 512,  cascades: 1, ssao: false, ssr: false, aniso: 1,  deformRes: 0    },
+  medium:  { particles: 10000, shadowRes: 1024, cascades: 2, ssao: false, ssr: true,  aniso: 4,  deformRes: 128  },
+  high:    { particles: 30000, shadowRes: 2048, cascades: 3, ssao: true,  ssr: true,  aniso: 8,  deformRes: 256  },
+  ultra:   { particles: 60000, shadowRes: 2048, cascades: 3, ssao: true,  ssr: true,  aniso: 16, deformRes: 512  },
+  extreme: { particles: 80000, shadowRes: 4096, cascades: 4, ssao: true,  ssr: true,  aniso: 16, deformRes: 1024 },
+};
+
+/**
+ * Apply a named graphics preset across all rendering subsystems.
+ * Called from the SettingsMenu preset segment row and can be called
+ * externally (e.g. from a first-boot wizard).
+ *
+ * @param {'low'|'medium'|'high'|'ultra'|'extreme'} presetName
+ */
+export async function applyPreset(presetName) {
+  const p = GRAPHICS_PRESETS[presetName];
+  if (!p) { console.warn('[SettingsMenu] Unknown preset:', presetName); return; }
+
+  // 1. Post-processing (SSAO, SSR, TAA, bloom, motion blur)
+  try {
+    const { applyPostSettings } = await import('../engine/PostFX.js');
+    applyPostSettings(presetName);
+  } catch (e) { console.warn('[SettingsMenu] PostFX preset error:', e); }
+
+  // 2. Particle quality — uses the handle exposed by main.js
+  try {
+    const { setParticleQuality } = await import('../fx/ParticleFX.js');
+    const handle = window.__particleFXHandle;
+    if (handle) setParticleQuality(handle, presetName);
+  } catch (e) { console.warn('[SettingsMenu] ParticleFX preset error:', e); }
+
+  // 3. Terrain deformation render-target resolution
+  try {
+    const { setDeformResolution } = await import('../world/TerrainDeform.js');
+    setDeformResolution(p.deformRes);
+  } catch (e) { console.warn('[SettingsMenu] TerrainDeform preset error:', e); }
+
+  // 4. Anisotropic filtering level
+  try {
+    const { setAnisoLevel } = await import('../fx/AnisoFX.js');
+    setAnisoLevel(p.aniso);
+  } catch (e) { console.warn('[SettingsMenu] AnisoFX preset error:', e); }
+
+  // Persist selection
+  try { localStorage.setItem('graphicsPreset', presetName); } catch (_) {}
+
+  console.log(`[SettingsMenu] Graphics preset applied: ${presetName}`, p);
+}
+
 // ─── Sub-tab definitions ──────────────────────────────────────────────────────
 
 const SUB_TABS = [
@@ -602,6 +656,36 @@ export class SettingsMenu {
   // ── Graphics ─────────────────────────────────────────────────────────────────
 
   _buildGraphics(panel) {
+    this._sectionHeading(panel, 'Graphics Preset');
+
+    // ── Preset selector ──────────────────────────────────────────────────────
+    const presetDesc = document.createElement('div');
+    presetDesc.style.cssText = 'font-size:12px;color:var(--pm-muted);margin-bottom:10px;line-height:1.5;';
+    presetDesc.textContent =
+      'Applies a coordinated quality level across all rendering subsystems. ' +
+      'Individual settings below override the preset.';
+    panel.appendChild(presetDesc);
+
+    const presetRow = document.createElement('div');
+    presetRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;';
+    const PRESETS = ['low', 'medium', 'high', 'ultra', 'extreme'];
+    const savedPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'ultra'; } catch(_) { return 'ultra'; } })();
+
+    PRESETS.forEach(name => {
+      const btn = document.createElement('button');
+      btn.className = 'sm-segment-btn' + (name === savedPreset ? ' active' : '');
+      btn.textContent = name[0].toUpperCase() + name.slice(1);
+      btn.style.cssText = 'flex:1;min-width:60px;padding:6px 8px;font-size:12px;text-transform:capitalize;';
+      btn.addEventListener('click', () => {
+        presetRow.querySelectorAll('.sm-segment-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyPreset(name);
+        this._set('graphicsPreset', name);
+      });
+      presetRow.appendChild(btn);
+    });
+    panel.appendChild(presetRow);
+
     this._sectionHeading(panel, 'Render Quality');
 
     this._selectRow(panel, {

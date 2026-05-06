@@ -24,6 +24,42 @@ import { ShaderPass }       from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader }       from 'three/addons/shaders/FXAAShader.js';
 import { OutputPass }       from 'three/addons/postprocessing/OutputPass.js';
 
+// Part 5 — PostFX pipeline.  Injected after initRenderer() via hookPostFX().
+// Kept as a lazy reference so renderer.js compiles without PostFX.js present.
+let _postFXRender  = null;  // renderPostFX()
+let _postFXResize  = null;  // resizePostFX(w, h)
+
+/**
+ * Connect the Part 5 PostFX pipeline.
+ * Call from main.js after initPostFX():
+ *
+ *   import { initPostFX, renderPostFX, resizePostFX } from './engine/PostFX.js';
+ *   initPostFX(renderer, scene, camera);
+ *   hookPostFX(renderPostFX, resizePostFX);
+ *
+ * Once hooked, renderFrame() and resize() delegate to PostFX automatically.
+ *
+ * @param {function} renderFn   PostFX.renderPostFX
+ * @param {function} resizeFn   PostFX.resizePostFX
+ */
+export function hookPostFX(renderFn, resizeFn) {
+  _postFXRender = renderFn;
+  _postFXResize = resizeFn;
+  console.log('[renderer] Part 5 PostFX pipeline hooked.');
+}
+
+// Part 4 — SkySystem is an optional peer.  We import lazily so renderer.js
+// can still be used standalone (unit tests, demos) without the sky addon.
+// Call setSkySystemHook(updateFn) from main.js after initSkySystem().
+let _skyUpdateHook = null;
+/**
+ * Register the SkySystem update function so renderer.js can forward
+ * setTimeOfDay() calls to the physically-based sky dome.
+ *
+ * @param {function(dt: number, hour: number): void} fn
+ */
+export function setSkySystemHook(fn) { _skyUpdateHook = fn; }
+
 // ─── EXPORTED SINGLETONS ─────────────────────────────────────────────────────
 // Populated by initRenderer(). Import these anywhere after init is awaited.
 
@@ -31,6 +67,14 @@ export let scene    = null;
 export let camera   = null;
 export let renderer = null;
 export let composer = null;
+
+/**
+ * PMREMGenerator — exported so SkySystem and other Part 4+ systems can
+ * bake environment maps without creating a second generator instance.
+ * Populated by initRenderer(); null before that.
+ * @type {THREE.PMREMGenerator|null}
+ */
+export let pmremGenerator = null;
 
 /**
  * Scene group hierarchy — all systems mount their meshes here rather than
@@ -137,6 +181,10 @@ function _initRenderer(canvas) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping      = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
+
+  // Part 4 — PMREMGenerator created once here; SkySystem consumes it
+  pmremGenerator = new THREE.PMREMGenerator(renderer);
+  pmremGenerator.compileEquirectangularShader();
 }
 
 // ─── SCENE ───────────────────────────────────────────────────────────────────
@@ -291,6 +339,11 @@ export function resize() {
   if (_bloomPass) {
     _bloomPass.resolution.set(w, h);
   }
+
+  // Part 5 — PostFX handles its own pass resizing when hooked
+  if (_postFXResize) {
+    _postFXResize(w, h);
+  }
 }
 
 // ─── GRAPHICS SETTINGS API ───────────────────────────────────────────────────
@@ -340,7 +393,14 @@ export function applyGraphicsSettings(opts = {}) {
  * @param {number} t  0.0 – 1.0 (fraction of a full day)
  */
 export function setTimeOfDay(t) {
-  // Map t to angle (0=midnight at bottom, 0.5=noon at top)
+  // Part 4 — if SkySystem is hooked in, delegate to it.
+  // SkySystem expects hour (0–24); t is normalised [0,1].
+  if (_skyUpdateHook) {
+    _skyUpdateHook(0.016, t * 24);
+    return;
+  }
+
+  // ── Fallback: legacy flat-colour sky (used before Part 4 init) ────────────
   const angle = (t * Math.PI * 2) - Math.PI * 0.5;
   const radius = 400;
 
@@ -397,5 +457,12 @@ export function setTimeOfDay(t) {
  * Uses EffectComposer so all post-processing passes run automatically.
  */
 export function renderFrame() {
+  // Part 5 — if PostFX pipeline is hooked, delegate entirely to it.
+  // PostFX runs the bloom sub-composer then the main multi-pass composer.
+  if (_postFXRender) {
+    _postFXRender();
+    return;
+  }
+  // Fallback: legacy single-composer render (before Part 5 init)
   composer.render();
 }

@@ -577,6 +577,8 @@ export function initNPCs(scene, world) {
   }
 
   _ready = true;
+  // Expose pool for DayNightSystem (Part 17) NPC SpotLight assignment
+  window.__npcTrafficPool = _trafficPool;
   console.log(`[npc] initNPCs() — pool: ${MAX_TRAFFIC} traffic, ${MAX_PEDS} peds`);
 }
 

@@ -33,6 +33,16 @@ import * as THREE from 'three';
 import { SuspensionSystem }         from './suspension.js';
 import { Transmission, createTransmission } from './Transmission.js';
 
+// Part 7 — PBR Car Paint System
+import {
+  createPBRBodyMat, createGlassMat, createTyreMat,
+  createRimMat, createCalliperMat, createChromeTrimMat,
+  setDirtLevel    as _setDirtUniform,
+  applyImpactDamage as _applyImpactDamage,
+  updateBrakeThermal, washCar, setPaintColor, setPaintType,
+  repairPaint,
+} from './CarPaintSystem.js';
+
 // ─── PR / Class System ────────────────────────────────────────────────────────
 
 export const CAR_CLASS_THRESHOLDS = Object.freeze([
@@ -349,13 +359,9 @@ export class Car {
   // ─── Mesh Init ────────────────────────────────────────────────────────────
 
   _initMesh(scene) {
-    // ── Body mesh ─────────────────────────────────────────────────────────
+    // ── Body mesh — Part 7: MeshPhysicalMaterial with clearcoat ──────────
     const bodyGeo = makeChassisGeometry(this.def);
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color:     this.paintColor,
-      roughness: this._paintRoughness(),
-      metalness: this._paintMetalness(),
-    });
+    const bodyMat = createPBRBodyMat(this.paintColor, this.paintType);
     this._bodyMat  = bodyMat;
     this._bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
     this._bodyMesh.castShadow    = true;
@@ -363,34 +369,53 @@ export class Car {
     this._bodyMesh.name = 'carBody';
     this.mesh.add(this._bodyMesh);
 
-    // ── Windshield glass ──────────────────────────────────────────────────
+    // ── Windshield glass — Part 7: transmission material ─────────────────
     const screenGeo = new THREE.BoxGeometry(
       (this.def.bodyWidth ?? 2.0) * 0.9,
       (this.def.bodyHeight ?? 0.56) * 0.45,
       0.04,
     );
-    const screenMat = new THREE.MeshStandardMaterial({
-      color:       0x88ccff,
-      roughness:   0.05,
-      metalness:   0.0,
-      transparent: true,
-      opacity:     0.35,
-    });
-    this._windshield = new THREE.Mesh(screenGeo, screenMat);
+    this._windshield = new THREE.Mesh(screenGeo, createGlassMat(this.windowTint));
     this._windshield.position.set(0, (this.def.bodyHeight ?? 0.56) * 0.4, (this.def.bodyLength ?? 4.4) * 0.28);
     this._windshield.rotation.x = -0.25;
     this.mesh.add(this._windshield);
 
-    // ── Wheels ────────────────────────────────────────────────────────────
+    // ── Wheels — Part 7: PBR rim + tyre materials ─────────────────────────
     const wheelRadius = this.def.wheelRadius ?? 0.32;
     const wheelWidth  = this.def.wheelWidth  ?? 0.24;
 
+    this._calliperMats = [];  // [FL, FR, RL, RR] — for brake thermal
+
     WHEEL_OFFSETS.forEach((off, i) => {
-      const w = makeWheelMesh(wheelRadius, wheelWidth, this.wheelConfig.rimColor);
-      w.name = `wheel_${off.label}`;
-      w.position.set(off.x, off.y, off.z);
-      this._wheelMeshes.push(w);
-      this.mesh.add(w);
+      // Tyre (outer rubber ring — slightly larger radius)
+      const tyreGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth * 0.85, 20);
+      tyreGeo.rotateZ(Math.PI / 2);
+      const tyreMesh = new THREE.Mesh(tyreGeo, createTyreMat());
+      tyreMesh.name  = `tyre_${off.label}`;
+
+      // Rim (inner disc — slightly smaller)
+      const rimGeo  = new THREE.CylinderGeometry(wheelRadius * 0.68, wheelRadius * 0.68, wheelWidth * 0.5, 16);
+      rimGeo.rotateZ(Math.PI / 2);
+      const rimMesh = new THREE.Mesh(rimGeo, createRimMat(this.wheelConfig.rimColor, 'gloss'));
+      rimMesh.name  = `rim_${off.label}`;
+
+      // Brake calliper (small box behind rim)
+      const calGeo  = new THREE.BoxGeometry(wheelWidth * 0.3, wheelRadius * 0.32, wheelRadius * 0.38);
+      const calMat  = createCalliperMat();
+      const calMesh = new THREE.Mesh(calGeo, calMat);
+      calMesh.name  = `calliper_${off.label}`;
+      calMesh.position.set(off.x > 0 ? -wheelWidth * 0.3 : wheelWidth * 0.3, -wheelRadius * 0.1, 0);
+      calMesh.layers.enable(1);  // bloom layer — glows under hard braking
+
+      this._calliperMats.push(calMat);
+
+      const wheelGroup = new THREE.Group();
+      wheelGroup.add(tyreMesh, rimMesh, calMesh);
+      wheelGroup.position.set(off.x, off.y, off.z);
+      wheelGroup.name = `wheel_${off.label}`;
+
+      this._wheelMeshes.push(wheelGroup);
+      this.mesh.add(wheelGroup);
     });
 
     // ── Brake lights ──────────────────────────────────────────────────────
@@ -638,10 +663,8 @@ export class Car {
     this.paintColor = hexColor;
     this.paintType  = type;
     if (this._bodyMat) {
-      this._bodyMat.color.setHex(hexColor);
-      this._bodyMat.roughness = this._paintRoughness();
-      this._bodyMat.metalness = this._paintMetalness();
-      this._bodyMat.needsUpdate = true;
+      setPaintColor(this._bodyMat, hexColor);
+      setPaintType(this._bodyMat, type);
     }
   }
 
@@ -773,10 +796,28 @@ export class Car {
       this.dirtLevel + (rate - cleanRate) * dt,
     ));
 
+    // Part 7 — drive the shader uniform instead of tweaking roughness directly
     if (this._bodyMat) {
-      // Blend towards 0.9 roughness as dirty
-      this._bodyMat.roughness = this._paintRoughness() + this.dirtLevel * 0.5;
-      this._bodyMat.needsUpdate = true;
+      _setDirtUniform(this._bodyMat, this.dirtLevel);
+    }
+  }
+
+  // ─── Part 7: Damage & Repair API ─────────────────────────────────────────
+
+  /**
+   * Apply crash damage to the paint.
+   * @param {number} severity  0 (scratch) – 1 (heavy impact)
+   */
+  applyPaintDamage(severity) {
+    if (this._bodyMat) {
+      _applyImpactDamage(this._bodyMat, severity);
+    }
+  }
+
+  /** Repair car at garage — restore clearcoat and remove damage roughness. */
+  repairPaint() {
+    if (this._bodyMat) {
+      repairPaint(this._bodyMat, this.paintType);
     }
   }
 

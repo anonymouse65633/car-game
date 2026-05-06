@@ -33,6 +33,30 @@ import { scene, GROUPS }    from '../engine/renderer.js';
 import { setTimeOfDay }     from '../engine/renderer.js';
 import { audioManager }     from '../engine/audio.js';
 
+// Part 4 — SkySystem (HDR sky dome, clouds, PMREM).  Import lazily so the
+// game still runs if SkySystem.js hasn't been added yet.
+let _skyUpdate  = null;
+let _skyStars   = null;
+let _skyEnsure  = null;
+
+/**
+ * Wire in the SkySystem once it has been initialised in main.js.
+ * Call this from main.js after initSkySystem():
+ *
+ *   import { updateSky, updateStars, ensureStars } from './world/SkySystem.js';
+ *   environment.connectSkySystem(updateSky, updateStars, ensureStars);
+ *
+ * @param {function} updateFn   SkySystem.updateSky
+ * @param {function} starsFn    SkySystem.updateStars
+ * @param {function} ensureFn   SkySystem.ensureStars
+ */
+export function connectSkySystem(updateFn, starsFn, ensureFn) {
+  _skyUpdate = updateFn;
+  _skyStars  = starsFn;
+  _skyEnsure = ensureFn;
+  console.log('[environment] SkySystem connected (Part 4).');
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 /** How many real seconds equal one in-game hour.  20 min day = 50 s/hr. */
@@ -267,6 +291,17 @@ export function tick(dt) {
   if (_weatherBlend >= 1.0 && _weatherCurrent !== _weatherTarget) {
     _weatherCurrent = _weatherTarget;
     _updateAmbientAudio();
+  }
+
+  // ── Part 4: SkySystem — HDR sky dome, clouds, PMREM ────────────────────────
+  if (_skyUpdate) {
+    _skyUpdate(dt, _hour);
+  }
+  if (_skyEnsure) {
+    _skyEnsure();
+  }
+  if (_skyStars) {
+    _skyStars(_hour);
   }
 
   // ── Push to renderer ─────────────────────────────────────────────────────
