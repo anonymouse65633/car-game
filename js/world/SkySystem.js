@@ -121,13 +121,14 @@ function _buildSky() {
   _sky = new Sky();
   _sky.scale.setScalar(500_000);
   _sky.name = 'SkyDome';
-  // Frustum culling must be OFF: the sky sphere is always at camera position,
-  // so Three.js would otherwise cull it on short far-plane presets (low=200 m).
+  // Frustum culling OFF — sky follows the camera so Three.js would cull it.
   _sky.frustumCulled = false;
   _scene.add(_sky);
 
-  // Remove solid background — sky dome IS the background now
-  _scene.background = null;
+  // Keep a sky-blue fallback background — NEVER null.
+  // If the Sky shader fails to compile or tonemapping overexposes it,
+  // this colour shows instead of white-canvas bleedthrough.
+  _scene.background = new THREE.Color(0x87ceeb);
 
   const su = _sky.material.uniforms;
   su.turbidity.value        = 3.5;
@@ -354,9 +355,14 @@ export function updateSky(dt, gameHour) {
 
   const h = _currentHour;
 
-  // ── Sky dome follows camera (keeps it inside any frustum) ─────────────────
+  // ── Sky dome follows camera + scales to fit any far plane ─────────────────
   if (_sky && _camera) {
     _sky.position.copy(_camera.position);
+    // Scale sky to 90 % of the camera far plane so it is always within the
+    // depth range regardless of preset.  Clamped to 500 000 max (Preetham
+    // shader precision starts degrading beyond that).
+    const skyR = Math.min(500_000, _camera.far * 0.9);
+    _sky.scale.setScalar(skyR);
   }
 
   // ── Sky dome uniforms ───────────────────────────────────────────────────────

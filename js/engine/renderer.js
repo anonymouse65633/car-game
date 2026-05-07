@@ -172,6 +172,7 @@ function _initRenderer(canvas) {
     powerPreference: 'high-performance',
     stencil: false,         // not needed — saves some VRAM
     depth: true,
+    logarithmicDepthBuffer: true,  // keeps z-precision at sky-dome distances (1.5M far)
   });
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // cap at 2x (preset overrides below)
@@ -239,8 +240,10 @@ function _initScene() {
  */
 const CAM_FOV    = 65;
 const CAM_NEAR   = 0.5;
-// Far plane scaled to preset — shorter on low = fewer GPU draw calls
-const CAM_FAR    = _isLow ? 200 : _isMed ? 350 : 600;
+// Far plane: must exceed sky sphere radius (500 000) on ALL presets so the
+// sky dome is never depth-clipped.  Logarithmic depth buffer (set below)
+// keeps z-precision acceptable across this enormous range.
+const CAM_FAR    = 1_500_000;
 
 function _initCamera() {
   camera = new THREE.PerspectiveCamera(

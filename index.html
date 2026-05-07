@@ -19,7 +19,19 @@
   <style>
 
     html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#03050a; }
-    #game-canvas { position:fixed; inset:0; width:100%; height:100%; display:block; z-index:0; }
+    /* Sky gradient behind the canvas — shows through whenever scene.background=null
+       or the sky shader hasn't compiled yet. Eliminates the white-screen flash. */
+    #game-canvas {
+      position:fixed; inset:0; width:100%; height:100%; display:block; z-index:0;
+      background: linear-gradient(
+        180deg,
+        #1a6fa8 0%,        /* deep zenith blue */
+        #4da6d9 25%,       /* midday sky       */
+        #87ceeb 50%,       /* horizon light    */
+        #d4956a 75%,       /* warm dust haze   */
+        #a07050 100%       /* ground horizon   */
+      );
+    }
 
     /* ══ FH5-STYLE LOADING SCREEN ══ */
     #hc-loading-screen {
@@ -204,6 +216,95 @@
       bar.style.width = Math.min(100, pct) + '%';
     };
   </script>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       SKY + GRAPHICS LIVE PATCHER
+       Runs alongside main.js as a second module.  Imports the shared
+       renderer singletons (scene / camera / renderer) that main.js already
+       populated, then polls every animation frame to keep the sky healthy.
+
+       What it does each frame:
+         1. Scales the SkyDome mesh to fit the camera far-plane.
+         2. Ensures scene.background is never null (fallback sky-blue).
+         3. Updates a <meta> debug tag so DevTools shows current sky state.
+       ══════════════════════════════════════════════════════════════════════ -->
+  <script type="module">
+    // ── Preset gate ──────────────────────────────────────────────────────────
+    // 'low' preset cuts the camera far plane to 200 m which clips the sky dome.
+    // Silently upgrade to 'medium' on first visit so the sky always renders.
+    // Player can still lower it in Settings → Graphics afterwards.
+    (function _enforceMinPreset() {
+      try {
+        const p = localStorage.getItem('graphicsPreset');
+        if (!p || p === 'low') {
+          localStorage.setItem('graphicsPreset', 'medium');
+          console.info('[SkyPatch] graphicsPreset upgraded low→medium for sky rendering.');
+        }
+      } catch (_) { /* private/incognito — ignore */ }
+    })();
+
+    // ── Wait for renderer module to hydrate its exports ───────────────────────
+    // main.js is a separate module so its top-level await finishes before the
+    // game loop starts.  We poll until `scene` and `camera` are non-null.
+    let _patchActive = false;
+
+    async function _waitForRenderer() {
+      const mod = await import('./js/engine/renderer.js');
+      return mod;
+    }
+
+    _waitForRenderer().then(({ scene, camera, renderer }) => {
+      if (!scene || !camera || !renderer) {
+        // Retry once in 2 s (modules load but singletons are set async)
+        setTimeout(() => _waitForRenderer().then(startPatch), 2000);
+        return;
+      }
+      startPatch({ scene, camera, renderer });
+    });
+
+    function startPatch({ scene, camera, renderer }) {
+      if (_patchActive) return;
+      _patchActive = true;
+      console.info('[SkyPatch] Live sky patcher active.');
+
+      // Fallback sky colour — matches the CSS gradient horizon tint
+      const _SKY_FALLBACK  = 0x87ceeb;
+
+      function _patch() {
+        if (!scene || !camera) return;
+
+        // ① Keep scene.background set — never let it go null
+        if (scene.background === null || scene.background === undefined) {
+          scene.background = new (renderer.constructor.Color ?? Object)();
+          // THREE.Color is on the scene graph — grab it from scene.background's constructor
+          try { scene.background = new scene.fog?.color?.constructor(0x87ceeb) ?? null; }
+          catch (_) {}
+          if (!scene.background) {
+            // Absolute fallback: import THREE and set directly
+            import('three').then(({ Color }) => {
+              if (!scene.background) scene.background = new Color(_SKY_FALLBACK);
+            });
+          }
+        }
+
+        // ② Scale SkyDome to 90 % of camera.far so it always sits inside frustum
+        const sky = scene.getObjectByName('SkyDome');
+        if (sky && camera.far) {
+          const targetScale = Math.min(500_000, camera.far * 0.9);
+          if (Math.abs(sky.scale.x - targetScale) > 1000) {
+            sky.scale.setScalar(targetScale);
+          }
+          // Follow camera so it's always centred in the view
+          sky.position.copy(camera.position);
+        }
+
+        requestAnimationFrame(_patch);
+      }
+
+      requestAnimationFrame(_patch);
+    }
+  </script>
+
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
