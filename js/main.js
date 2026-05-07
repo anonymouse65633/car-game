@@ -412,6 +412,13 @@ async function boot() {
 
   document.getElementById('hc-loading-screen').style.display = 'none';
 
+  // ── Topbar live-data bridge (demo.html shell) ─────────────────────────
+  // __hcTopbarInit is defined in index.html. It's a no-op when running the
+  // old index.html without the topbar element, so it's safe to call always.
+  if (typeof window.__hcTopbarInit === 'function') {
+    window.__hcTopbarInit({ getHour, saveManager });
+  }
+
   startLoop();
 }
 

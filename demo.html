@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Horizon City — Part 5: Avatar Customization Demo</title>
+  <title>Horizon City — Avatar Customization Demo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/avatar.css">
+  <!-- FIXED: was ../css/avatar.css — paths are relative to the root folder -->
+  <link rel="stylesheet" href="css/avatar.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -39,8 +40,8 @@
       text-transform: uppercase;
       color: #8888aa;
     }
-    .topbar-logo { color: #e94560; font-size: 15px; font-weight: 700; }
-    .topbar-sep { opacity: 0.3; }
+    .topbar-logo { color: #e94560; font-size: 15px; font-weight: 700; text-shadow: 0 0 18px rgba(233,69,96,0.4); }
+    .topbar-sep  { opacity: 0.3; }
 
     /* Boutique panel */
     #boutique-container {
@@ -111,18 +112,45 @@
       word-break: break-all;
     }
 
-    /* Driver card preview in sidebar */
     #dc-preview-sidebar .driver-card { width: 100%; }
+
+    /* Error banner shown if modules fail to load */
+    #demo-error {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #06060c;
+      color: #e94560;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-align: center;
+      padding: 40px;
+      z-index: 999;
+    }
+    #demo-error h2 { font-size: 24px; }
+    #demo-error code {
+      background: #0d0d18;
+      border: 1px solid #2e2e48;
+      border-radius: 6px;
+      padding: 8px 16px;
+      color: #8888aa;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
 
   <div class="topbar">
-    <span class="topbar-logo">HORIZON CITY</span>
+    <span class="topbar-logo">Horizon City</span>
     <span class="topbar-sep">|</span>
-    <span>Part 5 — Avatar Customization</span>
+    <span>Avatar Customization Demo</span>
     <span class="topbar-sep">|</span>
-    <span>Clothing Boutique Demo</span>
+    <span>Clothing Boutique</span>
   </div>
 
   <div id="boutique-container"></div>
@@ -139,32 +167,48 @@
     <div id="dc-preview-sidebar"></div>
 
     <h3>Live State</h3>
-    <div id="state-dump">Loading...</div>
+    <div id="state-dump">Loading…</div>
   </div>
 
-  <!-- Load as ES modules -->
+  <!--
+    FIXED IMPORTS — all paths are now relative to the root car-game-deploy folder.
+    Original demo had ./AvatarUI.js etc. which broke when served from this directory.
+  -->
   <script type="module">
-    import { AvatarUI }      from './AvatarUI.js';
-    import { renderDriverCard } from './DriverCard.js';
-    import { avatarSystem }  from './AvatarSystem.js';
+    // Wrap in try/catch so a missing file shows a human-readable error
+    let AvatarUI, renderDriverCard, avatarSystem;
+    try {
+      // FIXED: was ./AvatarUI.js  — correct path is ./js/ui/AvatarUI.js
+      ({ AvatarUI }          = await import('./js/ui/AvatarUI.js'));
+      // FIXED: was ./DriverCard.js
+      ({ renderDriverCard }  = await import('./js/ui/DriverCard.js'));
+      // FIXED: was ./AvatarSystem.js
+      ({ avatarSystem }      = await import('./js/avatar/AvatarSystem.js'));
+    } catch (err) {
+      console.error('[demo] Module load failed:', err);
+      document.getElementById('state-dump').textContent =
+        '⚠ Module load error — see browser console.\n\n' + err.message;
+      throw err; // stop execution
+    }
 
     // Mount boutique UI
     const boutique = new AvatarUI({
       container: document.getElementById('boutique-container'),
-      onClose: () => console.log('Close requested'),
+      onClose:   () => console.log('[demo] Close requested'),
       onPreview: (state) => {
         // Update sidebar driver card
         renderDriverCard(document.getElementById('dc-preview-sidebar'));
+
         // Update state dump
         const dump = {
-          name:       state.driverName,
-          pronouns:   state.pronouns,
-          bodyType:   state.bodyType,
-          skin:       state.skinTone,
-          hair:       `${state.hairStyle} / ${state.hairColor}`,
-          equipped:   state.equipped,
-          stickers:   state.activeStickers,
-          outfits:    state.outfitSlots.filter(Boolean).length + ' saved',
+          name:     state.driverName,
+          pronouns: state.pronouns,
+          bodyType: state.bodyType,
+          skin:     state.skinTone,
+          hair:     `${state.hairStyle} / ${state.hairColor}`,
+          equipped: state.equipped,
+          stickers: state.activeStickers,
+          outfits:  state.outfitSlots.filter(Boolean).length + ' saved',
         };
         document.getElementById('state-dump').textContent =
           JSON.stringify(dump, null, 2);

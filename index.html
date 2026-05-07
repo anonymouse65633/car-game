@@ -6,12 +6,12 @@
   <title>Horizon City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 
-  <!-- Rajdhani font — preconnect for performance, then load -->
+  <!-- Rajdhani — the Forza-style racing font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- CSS — load order matters: main variables first, then layers -->
+  <!-- Game CSS — load order matters: main variables first, then layers -->
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/hud.css">
   <link rel="stylesheet" href="css/menus.css">
@@ -19,6 +19,135 @@
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/avatar.css">
   <link rel="stylesheet" href="css/shop.css">
+
+  <style>
+    /* ── Demo-shell chrome: Forza topbar layered over the canvas ─────── */
+    :root {
+      --shell-accent:   #e94560;
+      --shell-bar-bg:   rgba(13, 13, 24, 0.88);
+      --shell-border:   #2e2e48;
+      --shell-muted:    #8888aa;
+      --shell-dim:      #55556a;
+      --shell-topbar-h: 44px;
+    }
+
+    /* Topbar sits above HUD (z 800) but below menus (850+) */
+    #hc-topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--shell-topbar-h);
+      background: var(--shell-bar-bg);
+      backdrop-filter: blur(10px) saturate(1.4);
+      -webkit-backdrop-filter: blur(10px) saturate(1.4);
+      border-bottom: 1px solid var(--shell-border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 20px;
+      z-index: 810;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--shell-muted);
+      pointer-events: none;
+      user-select: none;
+    }
+    #hc-topbar .tb-logo {
+      color: var(--shell-accent);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 18px rgba(233, 69, 96, 0.55);
+    }
+    #hc-topbar .tb-sep { opacity: 0.2; font-size: 14px; }
+    #hc-topbar .tb-district { color: #c8c8dc; transition: color 0.6s; }
+    #hc-topbar .tb-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    #hc-topbar .tb-time-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #ffee88;
+      margin-right: 5px;
+      vertical-align: middle;
+      transition: background 1s;
+    }
+    #hc-topbar .tb-cr  { color: #FFD700; font-weight: 700; }
+    #hc-topbar .tb-xp  { color: #00BFFF; }
+
+    /* Push every game overlay down by the topbar height */
+    #hc-hud-root,
+    #hc-phone-menu,
+    #hc-map-container,
+    #hc-shop-container,
+    #hc-race-setup,
+    #hc-race-results,
+    #hc-countdown-overlay {
+      top: var(--shell-topbar-h) !important;
+    }
+
+    /* ── Loading screen in Horizon style ──────────────────────────────── */
+    #hc-loading-screen {
+      background: #06060c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      font-family: 'Rajdhani', sans-serif;
+    }
+    .hc-loading-logo {
+      font-size: clamp(2rem, 8vw, 5rem);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: #fff;
+      text-transform: uppercase;
+    }
+    .hc-loading-logo em {
+      color: var(--shell-accent);
+      font-style: normal;
+    }
+    .hc-loading-sub {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--shell-dim);
+      text-transform: uppercase;
+    }
+    .hc-loading-bar-track {
+      width: clamp(180px, 38vw, 380px);
+      height: 2px;
+      background: var(--shell-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .hc-loading-bar-fill {
+      height: 100%;
+      width: 30%;
+      background: linear-gradient(90deg, var(--shell-accent), #ff914d);
+      border-radius: 2px;
+      animation: hc-load-shimmer 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes hc-load-shimmer {
+      from { width: 15%; opacity: 0.7; }
+      to   { width: 85%; opacity: 1;   }
+    }
+
+    /* Countdown centred in remaining viewport */
+    #hc-countdown-overlay { background: transparent; }
+    #hc-countdown-number {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(6rem, 22vw, 15rem);
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 0 60px var(--shell-accent), 0 0 140px rgba(233,69,96,0.3);
+    }
+  </style>
 
   <!-- Import map — must come before any module scripts -->
   <script type="importmap">
@@ -33,45 +162,87 @@
   }
   </script>
 
-  <!-- Firebase SDK v10 compat — must load before js/firebase/firebase.js -->
+  <!-- Firebase SDK v10 compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-  <!-- Three.js render target -->
+  <!-- Three.js render target — fullscreen behind everything -->
   <canvas id="game-canvas"></canvas>
 
-  <!-- HUDManager mounts here -->
+  <!-- ═══ Forza-style topbar — always visible over canvas ════════════════ -->
+  <div id="hc-topbar">
+    <span class="tb-logo">Horizon City</span>
+    <span class="tb-sep">|</span>
+    <span class="tb-district" id="hc-tb-district">Open World</span>
+    <div class="tb-right">
+      <span>
+        <span class="tb-time-dot" id="hc-tb-daydot"></span>
+        <span id="hc-tb-clock">12:00</span>
+      </span>
+      <span class="tb-cr"  id="hc-tb-cr"></span>
+      <span class="tb-xp"  id="hc-tb-xp"></span>
+    </div>
+  </div>
+
+  <!-- ═══ Game overlay roots — HUDManager mounts into these ══════════════ -->
   <div id="hc-hud-root"></div>
-
-  <!-- PhoneMenu mounts here -->
   <div id="hc-phone-menu"></div>
-
-  <!-- FullscreenMap mounts here -->
   <div id="hc-map-container"></div>
-
-  <!-- All shop UIs (AutoShow, Parts, Livery, Boutique) mount here -->
   <div id="hc-shop-container"></div>
-
-  <!-- RaceSetupScreen mounts here -->
   <div id="hc-race-setup"></div>
-
-  <!-- RaceResultsScreen mounts here -->
   <div id="hc-race-results"></div>
 
-  <!-- Pre-race countdown overlay: 3 - 2 - 1 - GO -->
+  <!-- Pre-race countdown -->
   <div id="hc-countdown-overlay">
     <span id="hc-countdown-number"></span>
   </div>
 
-  <!-- Loading screen — hidden by main.js when boot completes -->
+  <!-- Loading screen — hidden by main.js on boot -->
   <div id="hc-loading-screen">
-    <span>HORIZON CITY</span>
+    <div class="hc-loading-logo"><em>Horizon</em>&nbsp;City</div>
+    <div class="hc-loading-sub">Initialising open world&hellip;</div>
+    <div class="hc-loading-bar-track">
+      <div class="hc-loading-bar-fill"></div>
+    </div>
   </div>
 
-  <!-- Boot — last in body so all DOM nodes above are ready -->
+  <!-- ═══ Topbar live-data bridge ════════════════════════════════════════
+       This tiny script wires the topbar display elements to game state.
+       Called by main.js after boot: window.__hcTopbarInit(getHour, saveManager)
+       ════════════════════════════════════════════════════════════════════ -->
+  <script type="module">
+    window.__hcTopbarInit = function({ getHour, saveManager } = {}) {
+      const dot   = document.getElementById('hc-tb-daydot');
+      const clock = document.getElementById('hc-tb-clock');
+      const dist  = document.getElementById('hc-tb-district');
+      const crEl  = document.getElementById('hc-tb-cr');
+      const xpEl  = document.getElementById('hc-tb-xp');
+
+      function pad(n) { return String(Math.floor(n)).padStart(2, '0'); }
+
+      setInterval(() => {
+        // ── Clock ─────────────────────────────────────────────────────
+        const h = (typeof getHour === 'function') ? getHour() : 12;
+        dot.style.background = (h < 6 || h >= 20) ? '#7080ff' : '#ffee88';
+        clock.textContent = `${pad(h)}:${pad((h % 1) * 60)}`;
+
+        // ── District (city.js sets window.__currentDistrict) ───────────
+        if (window.__currentDistrict) dist.textContent = window.__currentDistrict;
+
+        // ── Economy ────────────────────────────────────────────────────
+        const save = saveManager?.save;
+        if (save) {
+          crEl.textContent = `CR ${(save.credits ?? 0).toLocaleString()}`;
+          xpEl.textContent = `XP ${(save.totalXP  ?? 0).toLocaleString()}`;
+        }
+      }, 1000);
+    };
+  </script>
+
+  <!-- Boot — last in body so all DOM nodes are ready -->
   <script type="module" src="js/main.js"></script>
 
 </body>
