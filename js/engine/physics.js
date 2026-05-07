@@ -47,18 +47,30 @@ const _registry = new Map();
 /** Auto-incrementing handle counter */
 let _nextHandle = 1;
 
+// ─── Preset-aware physics constants ──────────────────────────────────────────
+// On Low: use a 30 Hz timestep (half frequency) and cap to 1 step per frame.
+// This breaks the "death spiral" where a slow frame triggers 5 physics steps,
+// making the next frame even slower, repeating forever.
+const _PHYS_PRESET = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+const _IS_LOW_PHYS = (_PHYS_PRESET === 'low');
+
 /**
- * Fixed physics timestep in seconds (60 Hz).
- * The game loop accumulates real elapsed time and steps the world
- * in fixed chunks so physics is deterministic regardless of frame rate.
+ * Fixed physics timestep in seconds.
+ * Low: 1/30 Hz — steps half as often, saving ~10 ms on slow Macs.
+ * All other presets: 1/60 Hz (standard).
  */
-const FIXED_DT = 1 / 60;
+const FIXED_DT = _IS_LOW_PHYS ? 1 / 30 : 1 / 60;
 
 /** Accumulator for the fixed-timestep integration in stepPhysics(). */
 let _accumulator = 0;
 
-/** Maximum physics steps per frame — prevents spiral of death on very slow frames. */
-const MAX_STEPS_PER_FRAME = 5;
+/**
+ * Maximum physics steps per frame.
+ * Low: 1 — prevents the death spiral entirely. Physics slows at low fps
+ *           but the frame budget is protected.
+ * Others: 5 — standard catch-up allowance.
+ */
+const MAX_STEPS_PER_FRAME = _IS_LOW_PHYS ? 1 : 5;
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
@@ -100,7 +112,10 @@ export async function initPhysics() {
 export function stepPhysics(dt) {
   if (!world) return;
 
-  _accumulator += dt;
+  // On low preset, clamp dt to 50ms so a 200ms lag spike doesn't dump
+  // 200ms into the accumulator and trigger cascading catch-up steps.
+  const safeDt = _IS_LOW_PHYS ? Math.min(dt, 0.05) : dt;
+  _accumulator += safeDt;
 
   let steps = 0;
   while (_accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {

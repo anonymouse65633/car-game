@@ -263,7 +263,12 @@ export async function initBuildings(sceneRef, worldRef) {
   }
 
   // Seed streetlights along the main road grid
-  _seedStreetlights();
+  // Skip on low — shadows and day/night street lights are both disabled,
+  // so the 1010 position objects would never be used.
+  const _bldPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+  if (_bldPreset !== 'low') {
+    _seedStreetlights();
+  }
 
   _ready = true;
   console.log(`[buildings] initBuildings() complete — ${BUILDING_REGISTRY.length} buildings registered.`);

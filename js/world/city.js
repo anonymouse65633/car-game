@@ -25,8 +25,25 @@
 
 import * as THREE from 'three';
 import { GLTFLoader }    from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { scene, GROUPS } from '../engine/renderer.js';
 import { createBody, removeBody } from '../engine/physics.js';
+
+// ─── Shared Material Pool ─────────────────────────────────────────────────────
+// ONE material per district color — never create materials inside loops.
+// Map<colorHex:string, THREE.Material>
+const _matPool = new Map();
+
+function _getPooledMat(colorHex, flat) {
+  const key = `${colorHex}_${flat ? 'L' : 'S'}`;
+  if (_matPool.has(key)) return _matPool.get(key);
+  const color = new THREE.Color(colorHex);
+  const mat   = flat
+    ? new THREE.MeshLambertMaterial({ color })
+    : new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0.0 });
+  _matPool.set(key, mat);
+  return mat;
+}
 
 // ─── District Definitions ────────────────────────────────────────────────────
 
@@ -364,15 +381,31 @@ async function _streamChunks(cx, cz, await_) {
     if (!needed.has(key)) _unloadChunk(key);
   }
 
-  // Load chunks that aren't already loaded
-  const loads = [];
+  // Collect which chunks need loading
+  const toLoad = [];
   for (const key of needed) {
-    if (!_chunks.has(key)) {
-      loads.push(_loadChunk(key));
-    }
+    if (!_chunks.has(key)) toLoad.push(key);
   }
 
-  if (await_) await Promise.all(loads);
+  if (!await_) {
+    // Normal mid-game streaming: fire all loads in parallel (non-blocking)
+    for (const key of toLoad) _loadChunk(key);
+    return;
+  }
+
+  // ── Boot path: load chunks ONE AT A TIME, yielding between each ────────────
+  // Each yield (setTimeout 0) hands control back to the browser event loop so
+  // Chrome can process input and avoid the "page unresponsive" dialog.
+  // The loading screen stays visible until boot() hides it after all awaits.
+  const loadingEl = document.getElementById('hc-loading-screen');
+  for (let i = 0; i < toLoad.length; i++) {
+    const key = toLoad[i];
+    if (loadingEl) loadingEl.querySelector('span').textContent =
+      `HORIZON CITY — Loading world (${i + 1}/${toLoad.length})…`;
+    await _loadChunk(key);
+    // Yield to browser between each chunk — prevents main-thread freeze
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
 }
 
 // ─── Chunk Load / Unload ──────────────────────────────────────────────────────
@@ -508,9 +541,10 @@ function _initInstancedMeshes() {
   for (const arch of _manifest.archetypes) {
     // Placeholder geometry until GLBs load — replaced by _populateBuildingInstances
     const geo  = new THREE.BoxGeometry(arch.w || 20, arch.h || 40, arch.d || 20);
-    // arch.color arrives as a JSON string like "0xe8802a"; parseInt handles the 0x prefix.
+    // Use shared material pool — never create a new material per archetype
     const colorVal = typeof arch.color === 'string' ? parseInt(arch.color) : (arch.color || 0x556677);
-    const mat  = new THREE.MeshStandardMaterial({ color: colorVal });
+    const colorHex = '#' + colorVal.toString(16).padStart(6, '0');
+    const mat  = _getPooledMat(colorHex, _FLAT_MATERIALS);
     const mesh = new THREE.InstancedMesh(geo, mat, arch.maxInstances || 256);
     mesh.name         = `inst_${arch.id}`;
     mesh.castShadow   = true;
@@ -674,13 +708,13 @@ function _buildPlaceholderChunk(group, cx, cz) {
   const worldX = cx * CHUNK_SIZE;
   const worldZ = cz * CHUNK_SIZE;
 
-  // Ground tile
+  const district  = getDistrictAt(worldX + CHUNK_SIZE / 2, worldZ + CHUNK_SIZE / 2);
+
+  // Ground tile — pooled material, no per-chunk allocation
   const groundGeo = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE);
   groundGeo.rotateX(-Math.PI / 2);
-  const district  = getDistrictAt(worldX + CHUNK_SIZE / 2, worldZ + CHUNK_SIZE / 2);
-  const groundMat = _FLAT_MATERIALS
-    ? new THREE.MeshLambertMaterial({ color: new THREE.Color(district.color).multiplyScalar(0.4) })
-    : new THREE.MeshStandardMaterial({ color: new THREE.Color(district.color).multiplyScalar(0.4), roughness: 0.9 });
+  const groundColorHex = '#' + new THREE.Color(district.color).multiplyScalar(0.4).getHexString();
+  const groundMat = _getPooledMat(groundColorHex, _FLAT_MATERIALS);
 
   const lod0 = new THREE.Group(); lod0.name = 'lod0';
   const lod1 = new THREE.Group(); lod1.name = 'lod1'; lod1.visible = false;
@@ -692,14 +726,16 @@ function _buildPlaceholderChunk(group, cx, cz) {
   lod0.add(ground);
   lod1.add(ground.clone());
 
-  // Scatter a few placeholder buildings in the chunk
-  const bldMat = _FLAT_MATERIALS
-    ? new THREE.MeshLambertMaterial({ color: new THREE.Color(district.color).multiplyScalar(0.7) })
-    : new THREE.MeshStandardMaterial({ color: new THREE.Color(district.color).multiplyScalar(0.7), roughness: 0.7 });
+  // Scatter placeholder buildings — pooled shared material
+  const bldColorHex = '#' + new THREE.Color(district.color).multiplyScalar(0.7).getHexString();
+  const bldMat = _getPooledMat(bldColorHex, _FLAT_MATERIALS);
 
   const RNG_SEED = (cx * 73856093) ^ (cz * 19349663);
   const rng = _seededRNG(RNG_SEED);
   const count = 4 + Math.floor(rng() * 6);
+
+  // Collect geometries to merge into a single draw call on low preset
+  const bldGeos = [];
 
   for (let i = 0; i < count; i++) {
     const w = 12 + rng() * 24;
@@ -708,20 +744,39 @@ function _buildPlaceholderChunk(group, cx, cz) {
     const bx = 20 + rng() * (CHUNK_SIZE - 40);
     const bz = 20 + rng() * (CHUNK_SIZE - 40);
 
-    const bldGeo  = new THREE.BoxGeometry(w, h, d);
-    const bldMesh = new THREE.Mesh(bldGeo, bldMat);
-    bldMesh.castShadow    = !_FLAT_MATERIALS;
-    bldMesh.receiveShadow = !_FLAT_MATERIALS;
-    bldMesh.position.set(bx, h / 2, bz);
-    lod0.add(bldMesh);
+    if (_FLAT_MATERIALS) {
+      // Collect for merge — translate geometry into chunk-local space
+      const geo = new THREE.BoxGeometry(w, h, d);
+      geo.translate(bx, h / 2, bz);
+      bldGeos.push(geo);
+    } else {
+      const bldGeo  = new THREE.BoxGeometry(w, h, d);
+      const bldMesh = new THREE.Mesh(bldGeo, bldMat);
+      bldMesh.castShadow    = true;
+      bldMesh.receiveShadow = true;
+      bldMesh.position.set(bx, h / 2, bz);
+      lod0.add(bldMesh);
+    }
 
-    // Simple box physics collider per placeholder building
+    // Box physics collider per building (still needed for collision)
     createBody({
       handle:      `placeholder_bld_${cx}_${cz}_${i}`,
       type:        'fixed',
       translation: { x: worldX + bx, y: h / 2, z: worldZ + bz },
       colliders:   [{ shape: 'cuboid', args: [w / 2, h / 2, d / 2] }],
     });
+  }
+
+  // On low: merge all building boxes into ONE draw call
+  if (_FLAT_MATERIALS && bldGeos.length > 0) {
+    const merged = mergeGeometries(bldGeos, false);
+    bldGeos.forEach(g => g.dispose()); // free individual geos
+    if (merged) {
+      const mergedMesh = new THREE.Mesh(merged, bldMat);
+      mergedMesh.name = 'bld_merged';
+      mergedMesh.frustumCulled = true;
+      lod0.add(mergedMesh);
+    }
   }
 
   group.add(lod0, lod1, lod2);

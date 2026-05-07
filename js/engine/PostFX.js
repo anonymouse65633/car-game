@@ -328,7 +328,11 @@ export function initPostFX(renderer, scene, camera) {
   if (_initPresetBoot !== 'low' && _initPresetBoot !== 'medium') {
     _buildBloomComposer(W, H);
   }
-  _buildMainComposer(W, H);
+  // On low: skip EffectComposer entirely — renderPostFX() uses direct renderer.render().
+  // Avoids ping-pong RenderTarget allocation + shader compilation on boot.
+  if (_initPresetBoot !== 'low') {
+    _buildMainComposer(W, H);
+  }
 
   console.log('[PostFX] ✅ Part 5 — full post-processing stack ready');
   console.log('[PostFX]    SSAO, TAA, SelectiveBloom, MotionBlur, ChromAber, Barrel');
@@ -474,7 +478,13 @@ export function renderPostFX() {
 
   // ── Step 2: Render full scene + all post passes ───────────────────────────
   _camera.layers.enableAll();       // ensure main pass sees everything
-  _mainComposer.render();
+  if (_mainComposer) {
+    // Normal path: all presets except low
+    _mainComposer.render();
+  } else {
+    // Low preset: bypass composer entirely — direct render, zero extra VRAM
+    _renderer.render(_scene, _camera);
+  }
 }
 
 // ─── Per-frame update ─────────────────────────────────────────────────────────

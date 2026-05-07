@@ -177,8 +177,9 @@ function _initRenderer(canvas) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // cap at 2x (preset overrides below)
   renderer.setSize(window.innerWidth, window.innerHeight);
 
-  // Pixel ratio: low=0.75, medium=1, high/ultra/extreme cap at 2
-  const _prMap = { low: 0.75, medium: 1.0, high: 1.5, ultra: 2.0, extreme: 2.0 };
+  // Pixel ratio: low=0.5 (quarter pixels vs native Retina), medium=1, high/ultra/extreme cap at 2
+  // On a Retina MacBook (2× DPR), low=0.5 gives native 1× resolution — massive fill rate saving.
+  const _prMap = { low: 0.5, medium: 1.0, high: 1.5, ultra: 2.0, extreme: 2.0 };
   renderer.setPixelRatio(Math.min(_prMap[_bootPreset] ?? 0.75, window.devicePixelRatio));
 
   // Shadows: disabled on low (massive GPU saving), basic on medium
@@ -331,7 +332,10 @@ function _initPostProcessing() {
 export function resize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const dpr = Math.min(window.devicePixelRatio, 2);
+  // Respect the preset pixel ratio — don't reset to full DPR on resize
+  const _resizePreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
+  const _prResizeMap  = { low: 0.5, medium: 1.0, high: 1.5, ultra: 2.0, extreme: 2.0 };
+  const dpr = Math.min(_prResizeMap[_resizePreset] ?? 0.5, window.devicePixelRatio);
 
   if (camera) {
     camera.aspect = w / h;

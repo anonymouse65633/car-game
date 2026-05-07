@@ -154,8 +154,15 @@ async function boot() {
   // Low preset skips cube-camera reflections (expensive per-frame render)
   applyReflectionPreset(_savedPreset === 'low' ? 'low' : _savedPreset === 'medium' ? 'medium' : 'ultra');
 
-  // Part 6 — Cascaded Shadow Maps (init before city geometry so materials get registered)
-  await initCSM(scene, camera, renderer);
+  // Part 6 — Cascaded Shadow Maps
+  // On low: skip entirely — CSM allocates 3× 2048px shadow maps (48 MB VRAM)
+  // even when shadows are disabled. The existing SUN DirectionalLight from
+  // renderer.js is sufficient for flat shading on low preset.
+  if (_savedPreset !== 'low') {
+    await initCSM(scene, camera, renderer);
+  } else {
+    console.log('[main] Low preset — CSM skipped, using renderer SUN light.');
+  }
 
   await initCity(scene);
   initEnvironment(camera);
@@ -174,10 +181,10 @@ async function boot() {
     initLightShafts(renderer, scene, camera, getComposer());
   }
 
-  // Part 6 — World lights
-  const streetLamps = spawnStreetLamps(scene);
-  finaliseLampIntensities(streetLamps);
-  const lavaGroup   = spawnLavaGlow(scene);
+  // Part 6 — World lights (skip on low — PointLights are evaluated every frame even with shadows off)
+  const streetLamps = _savedPreset !== 'low' ? spawnStreetLamps(scene) : null;
+  if (streetLamps) finaliseLampIntensities(streetLamps);
+  const lavaGroup   = _savedPreset !== 'low' ? spawnLavaGlow(scene) : null;
   // Part 14 — Road Network: spline extrusion, kerbs, markings, surface query
   await initRoadNetwork(scene, getTerrainHeight);
 
@@ -197,7 +204,10 @@ async function boot() {
     });
   }
 
-  initPOI(scene, world, saveManager);
+  // Skip POI on low — 170 boards + 20 landmarks + 5 barn finds = 195 draw calls saved
+  if (_savedPreset !== 'low') {
+    initPOI(scene, world, saveManager);
+  }
   initNPCs(scene, world, getRoadSplines());
 
   // Part 17 — Day/Night: moon, street lights, NPC SpotLight headlights, lens flares
@@ -227,11 +237,11 @@ async function boot() {
   const particleFX = initParticleFX(scene);
   window.__particleFXHandle = particleFX;   // exposed for SettingsMenu applyPreset
 
-  // Part 9 — Water & Mud splash
-  const waterFX = initWaterFX(scene, renderer);
+  // Part 9 — Water & Mud splash (skip on low — frustumCulled=false mesh always drawn)
+  const waterFX = _savedPreset !== 'low' ? initWaterFX(scene, renderer) : null;
 
-  // Part 10 — Tyre smoke, brake sparks & exhaust
-  const smokeFX = initSmokeFX(scene, camera);
+  // Part 10 — Tyre smoke, brake sparks & exhaust (skip on low — shader + frustumCulled=false)
+  const smokeFX = _savedPreset !== 'low' ? initSmokeFX(scene, camera) : null;
 
   const drivingController = new DrivingController(playerCar, inputState);
 
@@ -265,7 +275,13 @@ async function boot() {
   });
   await hudManager.init();
 
+  // ── Frame counter — throttles non-critical visual updates ─────────────────
+  // %4 = every ~67ms at 60fps (vegetation, markings, lava, barnFind)
+  // %8 = every ~133ms at 60fps (day/night — sun barely moves that fast)
+  let _tickFrame = 0;
+
   onTick((dt) => {
+    _tickFrame++;
     stepPhysics(dt);
     // Part 16 — Water drag: slow car when tyres are below water surface
     {
@@ -282,23 +298,27 @@ async function boot() {
     }
     drivingController.update(dt);
     playerCar.update(dt);
-    barnFindManager.tick(playerCar.position);
+    // barnFind scan: every 4th frame — player position barely changes in 4 frames
+    if (_tickFrame % 4 === 0) barnFindManager.tick(playerCar.position);
     tickNPCs(dt, playerCar.position);
     hudManager.update(playerCar.getHUDState());
 
     // Part 6 — CSM, headlights, lava pulse
     updateCSM();
     updateHeadlights(headlights, { isNight: typeof isNight !== 'undefined' ? isNight() : false, speedKmh: playerCar.speedKmh ?? 0 });
-    updateLavaGlow(lavaGroup, performance.now() * 0.001);
+    if (_tickFrame % 4 === 0) updateLavaGlow(lavaGroup, performance.now() * 0.001);
 
     // Part 7 — live paint reflections + brake thermal
-    updateCarReflection(playerCar.mesh, playerCar.position, frame++);
-    updateBrakeThermal(
-      playerCar._calliperMats ?? [],
-      playerCar.brake   ?? 0,
-      playerCar.speedKmh ?? 0,
-      dt,
-    );
+    updateCarReflection(playerCar.mesh, playerCar.position, _tickFrame);
+    // brake thermal: shader-heavy, skip entirely on low
+    if (_savedPreset !== 'low') {
+      updateBrakeThermal(
+        playerCar._calliperMats ?? [],
+        playerCar.brake   ?? 0,
+        playerCar.speedKmh ?? 0,
+        dt,
+      );
+    }
 
     // Part 8 — dirt & dust particles
     updateParticleFX(particleFX, playerCar, {
@@ -307,18 +327,22 @@ async function boot() {
       surfaceType: drivingController.surfaceType ?? 'tarmac',
     }, dt);
 
-    // Part 9 — water spray, puddle splash, bow wave, mud splats, rain ripples
-    updateWaterFX(waterFX, playerCar, {
-      throttle:    drivingController._throttleSmooth ?? 0,
-      brake:       playerCar.brake ?? 0,
-      surfaceType: drivingController.surfaceType ?? 'tarmac',
-    }, typeof getWeather !== 'undefined' ? getWeather() : { isRain: false, blend: 0 }, dt);
+    // Part 9 — water spray, puddle splash, bow wave, mud splats, rain ripples (skip on low)
+    if (_savedPreset !== 'low') {
+      updateWaterFX(waterFX, playerCar, {
+        throttle:    drivingController._throttleSmooth ?? 0,
+        brake:       playerCar.brake ?? 0,
+        surfaceType: drivingController.surfaceType ?? 'tarmac',
+      }, typeof getWeather !== 'undefined' ? getWeather() : { isRain: false, blend: 0 }, dt);
+    }
 
-    // Part 10 — tyre smoke, brake sparks, exhaust puffs, backfire
-    updateSmokeFX(smokeFX, playerCar, drivingController, dt);
+    // Part 10 — tyre smoke, brake sparks, exhaust puffs, backfire (skip on low)
+    if (_savedPreset !== 'low') {
+      updateSmokeFX(smokeFX, playerCar, drivingController, dt);
+    }
 
-    // Part 12 — Surface audio: crossfade loops, speed volume, gravel pings
-    {
+    // Part 12 — Surface audio: crossfade loops, speed volume, gravel pings (skip on low — audio 404s)
+    if (_savedPreset !== 'low') {
       const weather = typeof getWeather !== 'undefined' ? getWeather() : { isRain: false, blend: 0 };
       updateSurfaceAudio({
         surfaceType: drivingController.surfaceType ?? 'tarmac',
@@ -338,20 +362,20 @@ async function boot() {
       updateWaterSystem(performance.now() * 0.001, camera, playerCar, drivingController);
     }
 
-    // Part 15 — Vegetation wind + grass LOD
-    updateVegetation(performance.now() * 0.001, camera);
+    // Part 15 — Vegetation wind + grass LOD (every 4th frame — wind animation is smooth at 15fps)
+    if (_tickFrame % 4 === 0) updateVegetation(performance.now() * 0.001, camera);
 
     // Part 17 — Day/Night: moon arc, street light glow, NPC SpotLights + lens flares
-    {
+    // Every 8th frame — sun/moon move imperceptibly fast at 60fps
+    if (_tickFrame % 8 === 0) {
       const _dnHour = typeof getHour !== 'undefined' ? getHour() : 12;
       updateDayNight(_dnHour, camera, window.__npcTrafficPool ?? []);
     }
 
-    // Part 14 — Road markings UV scroll + surface type override from road splines
-    {
+    // Part 14 — Road markings UV scroll + surface type override (every 4th frame)
+    if (_tickFrame % 4 === 0) {
       const roadSurface = getRoadSurface(playerCar.position.x, playerCar.position.z);
       if (roadSurface && drivingController.surfaceType !== roadSurface) {
-        // Road spline overrides terrain-derived surface type when on a paved road
         drivingController.surfaceType = roadSurface;
       }
       updateRoadMarkings(performance.now() * 0.001);
@@ -389,9 +413,6 @@ async function boot() {
   }, LOOP_PHASE.LATE);
 
   document.getElementById('hc-loading-screen').style.display = 'none';
-
-  // Part 7 — frame counter for cube-camera interval
-  let frame = 0;
 
   startLoop();
 }
