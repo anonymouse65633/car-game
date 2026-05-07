@@ -202,7 +202,7 @@ export class Car {
     this.transmission = null; // Transmission
 
     // ── Customization state ───────────────────────────────────────────────
-    this.paintColor   = carDef.defaultColor ?? 0xcc2222;
+    this.paintColor   = carDef.defaultColor ?? 0xff6b1a;  // FH5 Horizon orange
     this.paintType    = carDef.defaultPaint ?? 'metallic'; // solid/metallic/matte/chrome
     this.parts        = {};   // partSlot → partDef (from partsShop)
     this.bodyKit      = {     // active body kit piece names

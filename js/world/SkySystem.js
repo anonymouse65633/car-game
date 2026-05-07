@@ -100,14 +100,19 @@ export function initSkySystem(scene, renderer, camera) {
   _pmrem = new THREE.PMREMGenerator(_renderer);
   _pmrem.compileEquirectangularShader();
 
-  _buildSky();
-  _buildClouds();
-  _bakePMREM();
-
-  // Set initial sky to FH5 afternoon default (15:00, Mexico feel)
-  forceTimeOfDay(15);
-
-  console.log('[SkySystem] ✅ Part 4 — HDR sky, PMREM env, 3-layer clouds ready');
+  try {
+    _buildSky();
+    _buildClouds();
+    _bakePMREM();
+    // Set initial sky to FH5 afternoon default (15:00, Mexico feel)
+    forceTimeOfDay(15);
+    console.log('[SkySystem] ✅ Part 4 — HDR sky, PMREM env, 3-layer clouds ready');
+  } catch (err) {
+    // Fallback: warm amber FH5 sky if Sky addon fails (CDN issues, etc.)
+    console.warn('[SkySystem] Sky addon failed, using fallback amber sky:', err.message);
+    _scene.background = new THREE.Color(0xd4956a);
+    _scene.fog = new THREE.Fog(0xd4956a, 300, 1200);
+  }
 }
 
 // ─── Sky dome ─────────────────────────────────────────────────────────────────

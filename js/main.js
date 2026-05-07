@@ -219,11 +219,11 @@ async function boot() {
 
   const playerCarDef = saveManager.get('player', 'activeCar') ?? CARS[0];
 
-  // ── Spawn position: Festival Grounds airstrip (FH5 style — game starts at the festival) ──
-  // X: -1800 (airstrip centre), Z: 1000 (mid-runway), Y: terrain height + car half-height
-  const SPAWN_X = -1800;
-  const SPAWN_Z =  1000;
-  const SPAWN_Y = 1.5; // ground chunks are flat at y=0 — wire getTerrainHeight once chunk geo uses it
+  // ── Spawn position: Guanajuato colonial city (FH5-style intro drop-in) ──
+  // Chunk coords (2,-4) = world (1000,-2000) — heart of the colonial district
+  const SPAWN_X = 1200;
+  const SPAWN_Z = -1800;
+  const SPAWN_Y = 1.5;
   const playerSpawnPos = new THREE.Vector3(SPAWN_X, SPAWN_Y, SPAWN_Z);
 
   const playerCar    = await createCar(playerCarDef, { scene, world, isPlayer: true, spawnPos: playerSpawnPos });

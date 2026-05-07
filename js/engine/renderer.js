@@ -153,11 +153,11 @@ export async function initRenderer() {
 // ─── CANVAS ──────────────────────────────────────────────────────────────────
 
 function _getOrCreateCanvas() {
-  let canvas = document.getElementById('hc-canvas');
+  // Must match the canvas id in index.html and the CSS selector in main.css
+  let canvas = document.getElementById('game-canvas');
   if (!canvas) {
     canvas = document.createElement('canvas');
-    canvas.id = 'hc-canvas';
-    // Styling applied by main.css — this just ensures it exists
+    canvas.id = 'game-canvas';
     document.body.appendChild(canvas);
   }
   return canvas;
