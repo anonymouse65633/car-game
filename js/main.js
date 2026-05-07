@@ -102,11 +102,18 @@ import {
 } from './car/CarPaintSystem.js';
 
 async function boot() {
-  await initFirebase();
+  // Firebase: gracefully ignore failures (placeholder config, offline, etc.)
+  try { await initFirebase(); } catch (err) {
+    console.warn('[boot] Firebase unavailable — guest mode.', err.message);
+  }
   saveManager.load();
   initRenderer();
   initAnisotropy(renderer);   // Part 11 — read hardware max aniso immediately
-  await initPhysics();
+  // Physics: Rapier WASM must load — if it fails show a clear error
+  try { await initPhysics(); } catch (err) {
+    console.error('[boot] Physics failed — check CDN access.', err);
+    // Continue anyway; physics-free debug mode
+  }
   initInput();
 
   // Part 4 — HDR sky dome (must be after initRenderer, before first frame)
@@ -155,62 +162,51 @@ async function boot() {
   // Low preset skips cube-camera reflections (expensive per-frame render)
   applyReflectionPreset(_savedPreset === 'low' ? 'low' : _savedPreset === 'medium' ? 'medium' : 'ultra');
 
-  // Part 6 — Cascaded Shadow Maps
-  // On low: skip entirely — CSM allocates 3× 2048px shadow maps (48 MB VRAM)
-  // even when shadows are disabled. The existing SUN DirectionalLight from
-  // renderer.js is sufficient for flat shading on low preset.
+  // Part 6 — Cascaded Shadow Maps (skip on low, catch any GPU errors)
   if (_savedPreset !== 'low') {
-    await initCSM(scene, camera, renderer);
+    try { await initCSM(scene, camera, renderer); }
+    catch (e) { console.warn('[boot] CSM failed, continuing.', e.message); }
   } else {
-    console.log('[main] Low preset — CSM skipped, using renderer SUN light.');
+    console.log('[main] Low preset — CSM skipped.');
   }
 
   await initCity(scene);
-  initLandmarks(scene);  // FH5 landmarks: volcano, dunes, airstrip, temples, dam, tunnel
+  try { initLandmarks(scene); } catch(e) { console.warn('[boot] landmarks failed', e.message); }
   initEnvironment(camera);
-  connectSkySystem(updateSky, updateStars, ensureStars);  // Part 4 wire-up
-  await initBuildings(scene, world);
+  connectSkySystem(updateSky, updateStars, ensureStars);
+  try { await initBuildings(scene, world); } catch(e) { console.warn('[boot] buildings failed', e.message); }
 
-  // Part 11 — Anisotropic filtering: stamp every texture in the fully-built scene.
-  // Buildings, terrain chunks, biome ground, road decals — all get 16x aniso in
-  // one traverse.  BiomeMaterials already stamps new textures at creation time;
-  // this call catches anything created before initAnisotropy() was available.
   applyAnisoToScene(scene);
 
-  // Part 6 — God rays (inserted into the existing PostFX composer)
-  // Skip on low — god rays require an extra scene render pass every frame
   if (_savedPreset !== 'low') {
-    initLightShafts(renderer, scene, camera, getComposer());
+    try { initLightShafts(renderer, scene, camera, getComposer()); }
+    catch(e) { console.warn('[boot] LightShafts failed', e.message); }
   }
 
-  // Part 6 — World lights (skip on low — PointLights are evaluated every frame even with shadows off)
   const streetLamps = _savedPreset !== 'low' ? spawnStreetLamps(scene) : null;
   if (streetLamps) finaliseLampIntensities(streetLamps);
   const lavaGroup   = _savedPreset !== 'low' ? spawnLavaGlow(scene) : null;
-  // Part 14 — Road Network: spline extrusion, kerbs, markings, surface query
-  await initRoadNetwork(scene, getTerrainHeight);
 
-  // Part 15 — Vegetation: biome-placed instanced trees, grass, cacti
-  await initVegetation(scene, {
-    getTerrainHeight,
-    getBiome,
-    getRoadSurface,
-  });
+  try { await initRoadNetwork(scene, getTerrainHeight); }
+  catch(e) { console.warn('[boot] RoadNetwork failed', e.message); }
 
-  // Part 16 — Water System (skip on low — ocean shaders are heavy)
+  try { await initVegetation(scene, { getTerrainHeight, getBiome, getRoadSurface }); }
+  catch(e) { console.warn('[boot] Vegetation failed', e.message); }
+
   if (_savedPreset !== 'low') {
-    await initWaterSystem(scene, renderer, {
-      getTerrainHeight,
-      getSunDirection: typeof getSunDirection !== 'undefined' ? getSunDirection : undefined,
-      getWeather:      typeof getWeather      !== 'undefined' ? getWeather      : undefined,
-    });
+    try {
+      await initWaterSystem(scene, renderer, {
+        getTerrainHeight,
+        getSunDirection: typeof getSunDirection !== 'undefined' ? getSunDirection : undefined,
+        getWeather:      typeof getWeather      !== 'undefined' ? getWeather      : undefined,
+      });
+    } catch(e) { console.warn('[boot] WaterSystem failed', e.message); }
   }
 
-  // Skip POI on low — 170 boards + 20 landmarks + 5 barn finds = 195 draw calls saved
   if (_savedPreset !== 'low') {
-    initPOI(scene, world, saveManager);
+    try { initPOI(scene, world, saveManager); } catch(e) { console.warn('[boot] POI failed', e.message); }
   }
-  initNPCs(scene, world, getRoadSplines());
+  try { initNPCs(scene, world, getRoadSplines()); } catch(e) { console.warn('[boot] NPCs failed', e.message); }
 
   // Part 17 — Day/Night: moon, street lights, NPC SpotLight headlights, lens flares
   initDayNight(scene, renderer);
@@ -421,4 +417,13 @@ async function boot() {
 
 boot().catch((err) => {
   console.error('[Horizon City] Boot failed:', err);
+  // Show error on screen so user knows what went wrong instead of infinite loading
+  const ls = document.getElementById('hc-loading-screen');
+  if (ls) {
+    ls.innerHTML = `<div style="color:#ff6b1a;font-family:monospace;padding:40px;text-align:center">
+      <h2 style="font-size:24px;margin-bottom:16px">⚠ Boot Error</h2>
+      <p style="color:#fff;margin-bottom:8px">${err.message}</p>
+      <p style="color:#aaa;font-size:12px">Open browser console (F12) for details</p>
+    </div>`;
+  }
 });

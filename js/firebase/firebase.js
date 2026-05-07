@@ -79,6 +79,13 @@ export async function initFirebase() {
   // Guard against double-init (hot-reload scenarios)
   if (firebaseApp) return;
 
+  // Skip Firebase entirely if config is placeholder (local dev / undeployed build)
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'PLACEHOLDER') {
+    console.warn('[Firebase] Placeholder config detected — running in offline/guest mode. Cloud saves disabled.');
+    return;
+  }
+
+  try {
   firebaseApp = firebase.initializeApp(firebaseConfig);
   auth        = firebase.auth();
   db          = firebase.firestore();
@@ -114,6 +121,10 @@ export async function initFirebase() {
       resolve();
     });
   });
+  } catch (err) {
+    console.warn('[Firebase] init failed — running in offline/guest mode.', err.message);
+    firebaseApp = null; auth = null; db = null;
+  }
 }
 
 /**
