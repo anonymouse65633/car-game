@@ -5,13 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Horizon City</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-
-  <!-- Rajdhani — the Forza-style racing font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- Game CSS — load order matters: main variables first, then layers -->
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Barlow+Condensed:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/hud.css">
   <link rel="stylesheet" href="css/menus.css">
@@ -19,137 +15,138 @@
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/avatar.css">
   <link rel="stylesheet" href="css/shop.css">
-
+  <link rel="stylesheet" href="css/fh5_overrides.css">
   <style>
-    /* ── Demo-shell chrome: Forza topbar layered over the canvas ─────── */
-    :root {
-      --shell-accent:   #e94560;
-      --shell-bar-bg:   rgba(13, 13, 24, 0.88);
-      --shell-border:   #2e2e48;
-      --shell-muted:    #8888aa;
-      --shell-dim:      #55556a;
-      --shell-topbar-h: 44px;
-    }
 
-    /* Topbar sits above HUD (z 800) but below menus (850+) */
-    #hc-topbar {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: var(--shell-topbar-h);
-      background: var(--shell-bar-bg);
-      backdrop-filter: blur(10px) saturate(1.4);
-      -webkit-backdrop-filter: blur(10px) saturate(1.4);
-      border-bottom: 1px solid var(--shell-border);
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 0 20px;
-      z-index: 810;
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--shell-muted);
-      pointer-events: none;
-      user-select: none;
-    }
-    #hc-topbar .tb-logo {
-      color: var(--shell-accent);
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-shadow: 0 0 18px rgba(233, 69, 96, 0.55);
-    }
-    #hc-topbar .tb-sep { opacity: 0.2; font-size: 14px; }
-    #hc-topbar .tb-district { color: #c8c8dc; transition: color 0.6s; }
-    #hc-topbar .tb-right {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    #hc-topbar .tb-time-dot {
-      display: inline-block;
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: #ffee88;
-      margin-right: 5px;
-      vertical-align: middle;
-      transition: background 1s;
-    }
-    #hc-topbar .tb-cr  { color: #FFD700; font-weight: 700; }
-    #hc-topbar .tb-xp  { color: #00BFFF; }
+    html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#03050a; }
+    #game-canvas { position:fixed; inset:0; width:100%; height:100%; display:block; z-index:0; }
 
-    /* Push every game overlay down by the topbar height */
-    #hc-hud-root,
-    #hc-phone-menu,
-    #hc-map-container,
-    #hc-shop-container,
-    #hc-race-setup,
-    #hc-race-results,
-    #hc-countdown-overlay {
-      top: var(--shell-topbar-h) !important;
-    }
-
-    /* ── Loading screen in Horizon style ──────────────────────────────── */
+    /* ══ FH5-STYLE LOADING SCREEN ══ */
     #hc-loading-screen {
-      background: #06060c;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
-      font-family: 'Rajdhani', sans-serif;
+      position:fixed; inset:0; z-index:9999;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      font-family:'Barlow Condensed','Rajdhani',sans-serif;
+      overflow:hidden; background:#03050a;
+      transition:opacity 0.8s ease;
     }
-    .hc-loading-logo {
-      font-size: clamp(2rem, 8vw, 5rem);
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      color: #fff;
-      text-transform: uppercase;
+    #hc-loading-screen.fading { opacity:0; pointer-events:none; }
+
+    .hc-ls-bg {
+      position:absolute; inset:0; z-index:0;
+      background:
+        radial-gradient(ellipse 120% 40% at 50% 0%,   rgba(6,10,20,0.9) 0%,transparent 100%),
+        radial-gradient(ellipse 160% 55% at 50% 62%,  rgba(255,120,20,0.18) 0%,transparent 70%),
+        radial-gradient(ellipse 100% 30% at 50% 65%,  rgba(255,85,0,0.12) 0%,transparent 60%),
+        radial-gradient(ellipse 140% 50% at 50% 100%, rgba(0,0,0,0.7) 0%,transparent 70%),
+        linear-gradient(180deg,#030608 0%,#060a10 30%,#0d1018 55%,#0a0c12 70%,#050507 100%);
     }
-    .hc-loading-logo em {
-      color: var(--shell-accent);
-      font-style: normal;
-    }
-    .hc-loading-sub {
-      font-size: 11px;
-      letter-spacing: 0.3em;
-      color: var(--shell-dim);
-      text-transform: uppercase;
-    }
-    .hc-loading-bar-track {
-      width: clamp(180px, 38vw, 380px);
-      height: 2px;
-      background: var(--shell-border);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .hc-loading-bar-fill {
-      height: 100%;
-      width: 30%;
-      background: linear-gradient(90deg, var(--shell-accent), #ff914d);
-      border-radius: 2px;
-      animation: hc-load-shimmer 1.5s ease-in-out infinite alternate;
-    }
-    @keyframes hc-load-shimmer {
-      from { width: 15%; opacity: 0.7; }
-      to   { width: 85%; opacity: 1;   }
+    .hc-ls-bg::after {
+      content:''; position:absolute; inset:0;
+      background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.007) 3px,rgba(255,255,255,0.007) 4px);
     }
 
-    /* Countdown centred in remaining viewport */
-    #hc-countdown-overlay { background: transparent; }
+    .hc-ls-landscape {
+      position:absolute; bottom:0; left:0; right:0; height:42%; z-index:1;
+      background:
+        radial-gradient(ellipse 80% 120% at 50% 110%,rgba(255,95,15,0.07) 0%,transparent 60%),
+        linear-gradient(180deg,transparent 0%,rgba(8,6,4,0.4) 40%,rgba(5,4,3,0.85) 70%,#030205 100%);
+      clip-path:polygon(0% 100%,0% 58%,4% 52%,8% 42%,12% 36%,15% 28%,18% 24%,22% 30%,26% 22%,30% 16%,33% 20%,37% 14%,40% 8%,43% 12%,46% 6%,48% 10%,50% 4%,52% 9%,55% 3%,57% 7%,60% 11%,63% 18%,67% 22%,70% 16%,73% 20%,76% 28%,80% 24%,83% 32%,86% 36%,89% 44%,92% 52%,96% 58%,100% 60%,100% 100%);
+    }
+
+    .hc-ls-corner {
+      position:absolute; top:clamp(16px,3vh,28px); left:clamp(20px,3vw,36px); z-index:20;
+      font-size:0.6rem; font-weight:700; letter-spacing:0.3em;
+      color:rgba(255,255,255,0.14); text-transform:uppercase;
+    }
+
+    .hc-ls-content {
+      position:relative; z-index:10;
+      display:flex; flex-direction:column; align-items:center; gap:0;
+      margin-top:-8vh;
+    }
+    .hc-ls-studio {
+      font-size:clamp(0.55rem,1.4vw,0.85rem); font-weight:500; letter-spacing:0.45em;
+      color:rgba(255,255,255,0.28); text-transform:uppercase; margin-bottom:12px;
+    }
+    .hc-ls-logo { display:flex; flex-direction:column; align-items:center; line-height:0.88; }
+    .hc-ls-title-top {
+      font-size:clamp(3.5rem,11vw,9rem); font-weight:800; letter-spacing:0.06em;
+      text-transform:uppercase; color:#ffffff;
+      text-shadow:0 0 80px rgba(255,255,255,0.06),0 2px 4px rgba(0,0,0,0.8);
+    }
+    .hc-ls-title-bot {
+      font-size:clamp(2rem,6.5vw,5.4rem); font-weight:700; letter-spacing:0.32em;
+      text-transform:uppercase; color:#FF6B00;
+      text-shadow:0 0 40px rgba(255,107,0,0.5),0 0 80px rgba(255,107,0,0.2),0 2px 4px rgba(0,0,0,0.8);
+      margin-top:2px;
+    }
+    .hc-ls-divider {
+      width:clamp(60px,12vw,100px); height:1px;
+      background:linear-gradient(90deg,transparent,rgba(255,107,0,0.7),transparent);
+      margin:18px auto;
+    }
+    .hc-ls-tagline {
+      font-size:clamp(0.6rem,1.6vw,0.9rem); font-weight:600; letter-spacing:0.5em;
+      color:rgba(255,255,255,0.22); text-transform:uppercase;
+    }
+
+    .hc-ls-bar-zone {
+      position:absolute; bottom:0; left:0; right:0; z-index:20;
+    }
+    .hc-ls-status {
+      font-size:clamp(0.5rem,1.1vw,0.72rem); font-weight:500; letter-spacing:0.25em;
+      color:rgba(255,255,255,0.22); text-transform:uppercase;
+      text-align:right; padding-right:clamp(16px,3vw,32px); padding-bottom:6px;
+    }
+    .hc-ls-bar-track { width:100%; height:3px; background:rgba(255,255,255,0.06); position:relative; overflow:hidden; }
+    .hc-ls-bar-fill {
+      position:absolute; top:0; left:0; height:100%; width:0%;
+      background:linear-gradient(90deg,#FF5500,#FF8C00,#FFAA00);
+      transition:width 0.4s ease;
+    }
+    .hc-ls-bar-fill::after {
+      content:''; position:absolute; top:-2px; right:0; width:40px; height:7px;
+      background:radial-gradient(ellipse at center,rgba(255,220,150,0.9),transparent 70%);
+      filter:blur(2px); animation:hc-bar-glow 0.8s ease-in-out infinite alternate;
+    }
+    @keyframes hc-bar-glow { from{opacity:.7;width:30px} to{opacity:1;width:50px} }
+    .hc-ls-bar-fill.shimmer {
+      width:100% !important;
+      background:linear-gradient(90deg,transparent 0%,rgba(255,107,0,0.3) 20%,rgba(255,170,50,0.6) 50%,rgba(255,107,0,0.3) 80%,transparent 100%);
+      background-size:200% 100%;
+      animation:hc-shimmer-slide 1.6s linear infinite;
+    }
+    @keyframes hc-shimmer-slide { from{background-position:-200% center} to{background-position:200% center} }
+
+    .hc-ls-pulse {
+      position:absolute; bottom:28px; left:clamp(16px,3vw,32px);
+      display:flex; align-items:center; gap:8px; z-index:20;
+    }
+    .hc-ls-pulse-dot {
+      width:5px; height:5px; border-radius:50%; background:#FF6B00;
+      animation:hc-pulse-dot 1.2s ease-in-out infinite;
+      box-shadow:0 0 6px rgba(255,107,0,0.6);
+    }
+    @keyframes hc-pulse-dot { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
+    .hc-ls-pulse-text {
+      font-size:0.62rem; font-weight:600; letter-spacing:0.2em;
+      color:rgba(255,255,255,0.2); text-transform:uppercase;
+    }
+
+    /* ══ COUNTDOWN ══ */
+    #hc-countdown-overlay {
+      position:fixed; inset:0; z-index:850;
+      display:flex; align-items:center; justify-content:center;
+      pointer-events:none; background:transparent;
+    }
     #hc-countdown-number {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: clamp(6rem, 22vw, 15rem);
-      font-weight: 700;
-      color: #fff;
-      text-shadow: 0 0 60px var(--shell-accent), 0 0 140px rgba(233,69,96,0.3);
+      font-family:'Barlow Condensed','Rajdhani',sans-serif;
+      font-size:clamp(6rem,22vw,14rem); font-weight:800; color:#fff;
+      letter-spacing:-0.02em;
+      text-shadow:0 0 60px rgba(255,107,0,0.6),0 0 120px rgba(255,107,0,0.3),0 4px 20px rgba(0,0,0,0.8);
     }
-  </style>
 
-  <!-- Import map — must come before any module scripts -->
+  </style>
   <script type="importmap">
   {
     "imports": {
@@ -161,89 +158,52 @@
     }
   }
   </script>
-
-  <!-- Firebase SDK v10 compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-
-  <!-- Three.js render target — fullscreen behind everything -->
   <canvas id="game-canvas"></canvas>
-
-  <!-- ═══ Forza-style topbar — always visible over canvas ════════════════ -->
-  <div id="hc-topbar">
-    <span class="tb-logo">Horizon City</span>
-    <span class="tb-sep">|</span>
-    <span class="tb-district" id="hc-tb-district">Open World</span>
-    <div class="tb-right">
-      <span>
-        <span class="tb-time-dot" id="hc-tb-daydot"></span>
-        <span id="hc-tb-clock">12:00</span>
-      </span>
-      <span class="tb-cr"  id="hc-tb-cr"></span>
-      <span class="tb-xp"  id="hc-tb-xp"></span>
-    </div>
-  </div>
-
-  <!-- ═══ Game overlay roots — HUDManager mounts into these ══════════════ -->
   <div id="hc-hud-root"></div>
   <div id="hc-phone-menu"></div>
   <div id="hc-map-container"></div>
   <div id="hc-shop-container"></div>
   <div id="hc-race-setup"></div>
   <div id="hc-race-results"></div>
-
-  <!-- Pre-race countdown -->
-  <div id="hc-countdown-overlay">
-    <span id="hc-countdown-number"></span>
-  </div>
-
-  <!-- Loading screen — hidden by main.js on boot -->
+  <div id="hc-countdown-overlay"><span id="hc-countdown-number"></span></div>
   <div id="hc-loading-screen">
-    <div class="hc-loading-logo"><em>Horizon</em>&nbsp;City</div>
-    <div class="hc-loading-sub">Initialising open world&hellip;</div>
-    <div class="hc-loading-bar-track">
-      <div class="hc-loading-bar-fill"></div>
+    <div class="hc-ls-bg"></div>
+    <div class="hc-ls-landscape"></div>
+    <div class="hc-ls-corner">A Horizon City Production</div>
+    <div class="hc-ls-content">
+      <div class="hc-ls-studio">Open World Racing</div>
+      <div class="hc-ls-logo">
+        <div class="hc-ls-title-top">HORIZON</div>
+        <div class="hc-ls-title-bot">CITY</div>
+      </div>
+      <div class="hc-ls-divider"></div>
+      <div class="hc-ls-tagline">Open World &nbsp;&middot;&nbsp; Free Roam &nbsp;&middot;&nbsp; Racing</div>
     </div>
-  </div>
-
-  <!-- ═══ Topbar live-data bridge ════════════════════════════════════════
-       This tiny script wires the topbar display elements to game state.
-       Called by main.js after boot: window.__hcTopbarInit(getHour, saveManager)
-       ════════════════════════════════════════════════════════════════════ -->
+    <div class="hc-ls-bar-zone">
+      <div class="hc-ls-pulse">
+        <div class="hc-ls-pulse-dot"></div>
+        <div class="hc-ls-pulse-text">Initialising world&hellip;</div>
+      </div>
+      <div class="hc-ls-status"><span></span></div>
+      <div class="hc-ls-bar-track">
+        <div class="hc-ls-bar-fill shimmer" id="hc-ls-bar"></div>
+      </div>
+    </div>
+</div>
   <script type="module">
-    window.__hcTopbarInit = function({ getHour, saveManager } = {}) {
-      const dot   = document.getElementById('hc-tb-daydot');
-      const clock = document.getElementById('hc-tb-clock');
-      const dist  = document.getElementById('hc-tb-district');
-      const crEl  = document.getElementById('hc-tb-cr');
-      const xpEl  = document.getElementById('hc-tb-xp');
-
-      function pad(n) { return String(Math.floor(n)).padStart(2, '0'); }
-
-      setInterval(() => {
-        // ── Clock ─────────────────────────────────────────────────────
-        const h = (typeof getHour === 'function') ? getHour() : 12;
-        dot.style.background = (h < 6 || h >= 20) ? '#7080ff' : '#ffee88';
-        clock.textContent = `${pad(h)}:${pad((h % 1) * 60)}`;
-
-        // ── District (city.js sets window.__currentDistrict) ───────────
-        if (window.__currentDistrict) dist.textContent = window.__currentDistrict;
-
-        // ── Economy ────────────────────────────────────────────────────
-        const save = saveManager?.save;
-        if (save) {
-          crEl.textContent = `CR ${(save.credits ?? 0).toLocaleString()}`;
-          xpEl.textContent = `XP ${(save.totalXP  ?? 0).toLocaleString()}`;
-        }
-      }, 1000);
+    window.__hcTopbarInit = function() {};
+    window.__hcUpdateLoadingBar = function(pct) {
+      const bar = document.getElementById('hc-ls-bar');
+      if (!bar) return;
+      bar.classList.remove('shimmer');
+      bar.style.width = Math.min(100, pct) + '%';
     };
   </script>
-
-  <!-- Boot — last in body so all DOM nodes are ready -->
   <script type="module" src="js/main.js"></script>
-
 </body>
 </html>

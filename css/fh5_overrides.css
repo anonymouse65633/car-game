@@ -1,0 +1,274 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+   FH5-IDENTICAL OVERRIDES  —  css/fh5_overrides.css
+   Applied LAST to override all previous styles.
+   Every rule here is based on direct Forza Horizon 5 UI research.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── FH5 global font stack ── */
+* {
+  font-family: 'Barlow Condensed', 'Rajdhani', 'Arial Narrow', sans-serif;
+}
+
+/* ══ PHONE MENU — FH5 PANEL HEADER ══════════════════════════════════════════
+   In FH5, the panel content area has a colored header band matching the tab.
+   ══════════════════════════════════════════════════════════════════════════ */
+.pm-panel-header {
+  padding: 28px 32px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Colored left-border on header — matches active tab color */
+.pm-panel-header::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  background: var(--active-tab-color, #FF6B00);
+}
+
+.pm-panel-header h2,
+.pm-panel-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+  padding-left: 12px;
+}
+
+/* ══ MINIMAP — FH5 EXACT RING ════════════════════════════════════════════════
+   Minimap is bottom-LEFT in FH5 with orange ring.
+   The MinimapRenderer already handles this — just reinforce.
+   ══════════════════════════════════════════════════════════════════════════ */
+#hc-minimap-wrap {
+  /* Minimap wrapper — ensure it's bottom-left */
+  position: absolute !important;
+  bottom: 24px !important;
+  left: 24px !important;
+  right: auto !important;
+}
+
+/* ══ HUD — RACE POSITION BADGE ═══════════════════════════════════════════════
+   FH5 shows current race position in top-right as a large orange pill.
+   ══════════════════════════════════════════════════════════════════════════ */
+#hc-race-position {
+  font-size: 2.8rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* ══ SKILL CHAIN NOTIFICATION — FH5 STYLE ════════════════════════════════════
+   Skill chains appear top-right, stacked, with orange/white colors.
+   ══════════════════════════════════════════════════════════════════════════ */
+.hc-skill-notif,
+.hc-skill-chain {
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+
+/* ══ SHOP OVERLAY — FH5 STYLE ════════════════════════════════════════════════
+   Shop screens (AutoShow, Parts, Livery) use FH5's dark-panel aesthetic.
+   ══════════════════════════════════════════════════════════════════════════ */
+#hc-shop-container {
+  background: rgba(6, 8, 14, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* ── Shop header bar ── */
+.hc-shop-header,
+.shop-header,
+[class*="shop-header"] {
+  padding: 28px 36px 24px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+  /* FH5: orange left accent */
+  border-left: 5px solid #FF6B00 !important;
+  background: rgba(0,0,0,0.25) !important;
+}
+
+/* ── Shop category pills ── */
+.shop-category,
+.hc-shop-cat,
+[class*="category-btn"] {
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  border-radius: 2px !important;
+}
+
+/* ── Car cards in AutoShow ── */
+.car-card,
+.hc-car-card,
+[class*="car-card"] {
+  border-radius: 4px !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  background: rgba(16,18,28,0.9) !important;
+  transition: border-color 0.15s, transform 0.15s !important;
+}
+
+.car-card:hover,
+.hc-car-card:hover,
+[class*="car-card"]:hover {
+  border-color: rgba(255,107,0,0.5) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* ── Car PI class badges ── */
+.pi-badge,
+.class-badge,
+[class*="pi-badge"],
+[class*="class-badge"] {
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  padding: 2px 8px !important;
+  border-radius: 2px !important;
+}
+
+/* FH5 class colors */
+[data-class="X"]  { background: #FF0000 !important; }
+[data-class="S2"] { background: #CC00FF !important; }
+[data-class="S1"] { background: #2563EB !important; }
+[data-class="A"]  { background: #E55C00 !important; }
+[data-class="B"]  { background: #15803D !important; }
+[data-class="C"]  { background: #1D4ED8 !important; }
+[data-class="D"]  { background: #374151 !important; }
+
+/* ══ DRIVING HUD — RPM BAR ORANGE GLOW ══════════════════════════════════════ */
+#hc-rpm-bar-fill {
+  /* FH5: orange RPM fill */
+  background: linear-gradient(90deg, #FF5500, #FF8C00) !important;
+  box-shadow: 0 0 8px rgba(255,107,0,0.4) !important;
+}
+
+#hc-rpm-bar-fill.redline {
+  background: linear-gradient(90deg, #FF0000, #FF4500) !important;
+  box-shadow: 0 0 12px rgba(255,0,0,0.7) !important;
+}
+
+/* ══ RACE HUD — TOP CENTER ════════════════════════════════════════════════════
+   FH5: Lap counter top-center, position indicator top-right
+   ══════════════════════════════════════════════════════════════════════════ */
+#hc-lap-counter,
+#hc-race-lap {
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+/* ══ WHEELSPIN UI — FH5 STYLE ════════════════════════════════════════════════
+   FH5's wheelspin wheel is in the center of the screen, dramatic.
+   ══════════════════════════════════════════════════════════════════════════ */
+#hc-wheelspin-overlay,
+.hc-wheelspin-root {
+  background: rgba(0,0,0,0.88) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+/* ══ NOTIFICATIONS — FH5 STYLE ═══════════════════════════════════════════════
+   XP earned: slides in from top-right, white text on dark
+   Skills: yellow/orange badge stack on right side
+   ══════════════════════════════════════════════════════════════════════════ */
+.hc-notification,
+[class*="notification"] {
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  border-radius: 2px !important;
+  /* FH5: clean orange-accented dark cards */
+  border-left: 3px solid #FF6B00 !important;
+  background: rgba(8,10,18,0.92) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* ══ BUTTONS EVERYWHERE — FH5 STYLE ══════════════════════════════════════════
+   FH5 uses square-ish buttons, uppercase, no border-radius
+   ══════════════════════════════════════════════════════════════════════════ */
+button.hc-btn,
+.hc-btn,
+[class*="hc-btn"] {
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  border-radius: 2px !important;
+}
+
+button.hc-btn-primary,
+.hc-btn-primary {
+  background: linear-gradient(135deg, #FF6B00, #FF8C00) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 16px rgba(255,107,0,0.35) !important;
+}
+
+/* ══ FORM SLIDERS (tuning) — FH5 STYLE ═══════════════════════════════════════
+   FH5 tuning sliders: dark track, orange fill, white thumb
+   ══════════════════════════════════════════════════════════════════════════ */
+input[type="range"] {
+  accent-color: #FF6B00 !important;
+}
+
+/* ══ PROGRESS BARS / XP BARS — FH5 STYLE ════════════════════════════════════ */
+.xp-bar-fill,
+[class*="xp-bar"],
+[class*="progress-fill"] {
+  background: linear-gradient(90deg, #00BCD4, #00E5FF) !important;
+  box-shadow: 0 0 8px rgba(0,229,255,0.4) !important;
+}
+
+/* ══ MODAL / DIALOG — FH5 STYLE ══════════════════════════════════════════════ */
+.hc-modal,
+[class*="hc-modal"] {
+  background: rgba(8,10,16,0.97) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.8) !important;
+}
+
+/* ══ FH5 SEASON INDICATOR ════════════════════════════════════════════════════
+   FH5 shows current season (Spring/Summer/Autumn/Winter) with color coding.
+   ══════════════════════════════════════════════════════════════════════════ */
+[data-season="spring"] { color: #98D060 !important; }
+[data-season="summer"] { color: #F0C040 !important; }
+[data-season="autumn"] { color: #E07020 !important; }
+[data-season="winter"] { color: #80C8F0 !important; }
+
+/* ══ FH5 CREDITS DISPLAY ═════════════════════════════════════════════════════ */
+[data-credit-display],
+.cr-display,
+[class*="credit-val"] {
+  color: #FFD700 !important;
+  text-shadow: 0 0 12px rgba(255,215,0,0.25) !important;
+  font-weight: 700 !important;
+}
+
+/* ══ FH5 XP DISPLAY ══════════════════════════════════════════════════════════ */
+[data-xp-display],
+.xp-display {
+  color: #00E5FF !important;
+  font-weight: 700 !important;
+}
+
+/* ══ PHONE MENU DRAG HANDLE ══════════════════════════════════════════════════
+   FH5's menu has a subtle drag indicator at the top.
+   ══════════════════════════════════════════════════════════════════════════ */
+.pm-phone::before {
+  /* Orange instead of grey — FH5 branding */
+  background: rgba(255,107,0,0.3) !important;
+  width: 48px !important;
+  height: 4px !important;
+}
+
+/* ══ FH5 SCROLLBARS ═══════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+::-webkit-scrollbar-thumb { background: rgba(255,107,0,0.4); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,107,0,0.7); }
+

@@ -410,7 +410,12 @@ async function boot() {
     if (_savedPreset !== 'low') updateLightShafts(sunDir, hour, dt);
   }, LOOP_PHASE.LATE);
 
-  document.getElementById('hc-loading-screen').style.display = 'none';
+  // FH5-style: elegant fade-out on game ready
+  const _ls = document.getElementById('hc-loading-screen');
+  if (_ls) {
+    _ls.classList.add('fading');
+    setTimeout(() => { _ls.style.display = 'none'; }, 850);
+  }
 
   // ── Topbar live-data bridge (demo.html shell) ─────────────────────────
   // __hcTopbarInit is defined in index.html. It's a no-op when running the

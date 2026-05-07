@@ -6,7 +6,7 @@
  * Hidden entirely when the player is on foot.
  *
  * Elements:
- *  - Analog-style speedometer dial + sweep needle   (bottom centre)
+ *  - Analog-style speedometer dial + sweep needle   (bottom right — FH5 style)
  *  - Digital speed readout inside the dial
  *  - RPM bar (horizontal, left-to-right) with redline zone
  *  - Gear indicator (number or "A" for auto)
@@ -38,15 +38,16 @@ const ASSIST_FLASH_MS = 600;
 // ─── CSS ─────────────────────────────────────────────────────────────────────
 const DRIVING_HUD_CSS = `
   /* ══════════════════════════════════════════
-     Speedometer dial — bottom centre
+     Speedometer dial — BOTTOM RIGHT (FH5 exact)
   ══════════════════════════════════════════ */
   #hc-speedo {
     position: absolute;
     bottom: var(--hud-edge);
-    left: 50%;
-    transform: translateX(-50%);
-    width: 200px;
-    height: 120px;   /* semi-circle: dial clips bottom half */
+    right: var(--hud-edge);
+    left: auto;
+    transform: none;
+    width: 220px;
+    height: 130px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -55,8 +56,8 @@ const DRIVING_HUD_CSS = `
 
   /* SVG dial lives here */
   #hc-speedo-svg {
-    width: 200px;
-    height: 200px;
+    width: 220px;
+    height: 220px;
     position: absolute;
     top: 0;
     left: 0;
@@ -68,8 +69,8 @@ const DRIVING_HUD_CSS = `
     bottom: 14px;
     left: 50%;
     transform: translateX(-50%);
-    font-family: 'Rajdhani', 'Barlow Condensed', 'Arial Narrow', sans-serif;
-    font-size: 2.4rem;
+    font-family: 'Barlow Condensed', 'Rajdhani', 'Arial Narrow', sans-serif;
+    font-size: 2.6rem;
     font-weight: 700;
     color: var(--hud-white);
     letter-spacing: -0.02em;
@@ -79,20 +80,21 @@ const DRIVING_HUD_CSS = `
   }
 
   #hc-speed-unit {
-    font-size: 0.7rem;
-    font-weight: 400;
+    font-size: 0.68rem;
+    font-weight: 600;
     color: var(--hud-dim);
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    margin-left: 2px;
+    margin-left: 3px;
   }
 
-  /* ── RPM bar + gear ── */
+  /* ── RPM bar + gear — right-aligned above speedo ── */
   #hc-rpm-wrap {
     position: absolute;
-    bottom: calc(var(--hud-edge) + 128px);
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: calc(var(--hud-edge) + 138px);
+    right: var(--hud-edge);
+    left: auto;
+    transform: none;
     width: 260px;
     display: flex;
     align-items: center;

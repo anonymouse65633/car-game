@@ -90,14 +90,14 @@ a {
   --hc-text-muted:      rgba(255, 255, 255, 0.40);
 
   /* Surface colours (dark-mode game UI) */
-  --hc-dark:            #0A0A0A;   /* Page / overlay backgrounds            */
-  --hc-dark-mid:        #141414;   /* Card backgrounds                      */
+  --hc-dark:            #06080e;   /* Page / overlay backgrounds (FH5 exact) */
+  --hc-dark-mid:        #0d1018;   /* Card backgrounds (FH5 exact)          */
   --hc-dark-light:      #222222;   /* Input backgrounds, dividers           */
   --hc-dark-border:     rgba(255, 255, 255, 0.08); /* Subtle borders       */
   --hc-dark-border-strong: rgba(255, 255, 255, 0.16);
 
   /* Gradients */
-  --hc-grad-menu:       linear-gradient(160deg, #0f0f0f 0%, #1a1a1a 100%);
+  --hc-grad-menu:       linear-gradient(160deg, #08090f 0%, #0e1018 100%);
   --hc-grad-card:       linear-gradient(135deg, #141414 0%, #1e1e1e 100%);
   --hc-grad-orange:     linear-gradient(90deg, #FF6B00 0%, #FF9500 100%);
   --hc-grad-race:       linear-gradient(135deg, #0A0A0A 0%, #1a0800 100%);
@@ -110,7 +110,7 @@ a {
   --hc-radius-pill:     999px;
 
   /* Typography */
-  --hc-font:            'Rajdhani', 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --hc-font:            'Barlow Condensed', 'Rajdhani', 'Arial Narrow', sans-serif;
   --hc-font-size-xs:    0.72rem;   /* 11.5px — labels, badges              */
   --hc-font-size-sm:    0.88rem;   /* 14px   — secondary text              */
   --hc-font-size-md:    1.0rem;    /* 16px   — body default                */

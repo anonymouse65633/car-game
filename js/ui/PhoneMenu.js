@@ -32,13 +32,13 @@
 // ─── Tab definitions ─────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'map',      icon: '🗺',  label: 'Map',      key: '1' },
-  { id: 'garage',   icon: '🚗',  label: 'Garage',   key: '2' },
-  { id: 'profile',  icon: '👤',  label: 'Profile',  key: '3' },
-  { id: 'races',    icon: '🏁',  label: 'Races',    key: '4' },
-  { id: 'shops',    icon: '🛒',  label: 'Shops',    key: '5' },
-  { id: 'festival', icon: '📋',  label: 'Festival', key: '6' },
-  { id: 'settings', icon: '⚙',  label: 'Settings', key: '7' },
+  { id: 'map',      icon: '🗺',  label: 'Map',             key: '1', color: '#00BCD4' },
+  { id: 'garage',   icon: '🚗',  label: 'My Cars',         key: '2', color: '#FF6B00' },
+  { id: 'profile',  icon: '👤',  label: 'Profile',         key: '3', color: '#9C27B0' },
+  { id: 'races',    icon: '🏁',  label: 'Races',           key: '4', color: '#F44336' },
+  { id: 'shops',    icon: '🛒',  label: 'Shops',           key: '5', color: '#FFC107' },
+  { id: 'festival', icon: '⭐',  label: 'Festival',        key: '6', color: '#4CAF50' },
+  { id: 'settings', icon: '⚙',  label: 'Settings',        key: '7', color: '#78909C' },
 ];
 
 const KEY_TO_TAB = Object.fromEntries(TABS.map(t => [t.key, t.id]));
@@ -46,18 +46,18 @@ const KEY_TO_TAB = Object.fromEntries(TABS.map(t => [t.key, t.id]));
 // ─── Stylesheet ───────────────────────────────────────────────────────────────
 
 const PHONE_CSS = `
-/* ── Custom font stack ───────────────────────────────────────────────────── */
+/* ── FH5-Exact Phone Menu Variables ─────────────────────────────────────── */
 .pm-root {
-  --pm-bg:         rgba(9, 11, 16, 0.96);
-  --pm-sidebar-w:  196px;
-  --pm-accent:     #2C9CF0;
+  --pm-bg:         rgba(8, 10, 16, 0.97);
+  --pm-sidebar-w:  220px;
+  --pm-accent:     #FF6B00;
   --pm-gold:       #FFD700;
   --pm-green:      #34C759;
   --pm-red:        #FF3B30;
-  --pm-border:     rgba(255,255,255,0.07);
-  --pm-text:       rgba(255,255,255,0.88);
-  --pm-muted:      rgba(255,255,255,0.38);
-  --pm-font:       'Rajdhani', 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --pm-border:     rgba(255,255,255,0.06);
+  --pm-text:       rgba(255,255,255,0.92);
+  --pm-muted:      rgba(255,255,255,0.35);
+  --pm-font:       'Barlow Condensed', 'Rajdhani', 'Arial Narrow', sans-serif;
   --pm-radius:     14px;
   --pm-dur:        320ms;
   --pm-ease:       cubic-bezier(.32, .72, 0, 1);
@@ -89,15 +89,21 @@ const PHONE_CSS = `
   transform: translateX(-50%) translateY(100%);
   transition: transform var(--pm-dur) var(--pm-ease);
 
-  width: min(1160px, 96vw);
-  height: min(88vh, 820px);
-  background: var(--pm-bg);
+  width: min(1200px, 98vw);
+  height: min(90vh, 840px);
+  /* FH5: deep dark frosted glass */
+  background: rgba(8, 10, 16, 0.96);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
   border-radius: var(--pm-radius) var(--pm-radius) 0 0;
-  border: 1px solid var(--pm-border);
+  border: 1px solid rgba(255,255,255,0.08);
   border-bottom: none;
   display: flex;
   overflow: hidden;
-  box-shadow: 0 -12px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset;
+  box-shadow:
+    0 -20px 80px rgba(0,0,0,0.8),
+    0 0 0 1px rgba(255,255,255,0.05) inset,
+    0 -4px 0 rgba(255,107,0,0.4) inset;  /* FH5: orange top accent stripe */
 }
 .pm-root.open .pm-phone {
   transform: translateX(-50%) translateY(0);
@@ -123,47 +129,52 @@ const PHONE_CSS = `
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--pm-border);
-  background: rgba(0,0,0,0.22);
-  padding: 28px 0 16px;
-  gap: 2px;
+  /* FH5: slightly lighter than panel, slight frosted glass */
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(2px);
+  padding: 24px 0 16px;
+  gap: 1px;
 }
 
 .pm-tab-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
+  gap: 14px;
+  padding: 14px 22px;
   cursor: pointer;
   border: none;
   background: transparent;
   color: var(--pm-muted);
   font-family: var(--pm-font);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   text-align: left;
   width: 100%;
   position: relative;
-  transition: color 160ms ease, background 160ms ease;
+  transition: color 140ms ease, background 140ms ease;
   border-radius: 0;
+  /* Each button has a data-color attr set by JS for per-tab accent */
 }
 .pm-tab-btn:hover {
   color: var(--pm-text);
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.05);
 }
 .pm-tab-btn.active {
   color: #fff;
-  background: rgba(44, 156, 240, 0.10);
+  /* background uses var(--tab-color) set inline by JS */
+  background: color-mix(in srgb, var(--tab-color, #FF6B00) 14%, transparent);
 }
 .pm-tab-btn.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
-  background: var(--pm-accent);
-  border-radius: 0 2px 2px 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--tab-color, #FF6B00);
+  /* FH5: full-height left accent bar on active tab */
 }
 
 .pm-tab-icon {
@@ -996,6 +1007,8 @@ export class PhoneMenu {
       btn.setAttribute('role', 'tab');
       btn.setAttribute('aria-controls', `pm-panel-${tab.id}`);
       btn.dataset.tabId = tab.id;
+      // FH5: each tab has its own accent color via CSS custom property
+      if (tab.color) btn.style.setProperty('--tab-color', tab.color);
       btn.innerHTML = `
         <span class="pm-tab-icon">${tab.icon}</span>
         <span class="pm-tab-label">${tab.label}</span>
