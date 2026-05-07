@@ -479,7 +479,11 @@ function _buildInstancedTree(archetype, getH, getBiome, getRoadSurface) {
 
   for (let i = 0; i < pts.length; i++) {
     const { x, z } = pts[i];
-    const y        = getH(x, z);
+    const rawY     = getH(x, z);
+    // Guard against NaN/Infinity from terrain height lookups — these produce
+    // NaN matrices which make Three.js throw "Computed radius is NaN" when
+    // it tries to compute the InstancedMesh bounding sphere.
+    const y        = (typeof rawY === 'number' && isFinite(rawY)) ? rawY : 0;
     const scale    = archetype.minScale + rng() * (archetype.maxScale - archetype.minScale);
     const rotY     = rng() * Math.PI * 2;
 
@@ -582,7 +586,8 @@ function _buildGrass(getH, getBiome, getRoadSurface) {
       if (!grassBiomes.includes(getBiome(x, z))) continue;
       if (getRoadSurface && getRoadSurface(x, z) !== null) continue;
 
-      const y     = getH(x, z);
+      const rawY  = getH(x, z);
+      const y     = (typeof rawY === 'number' && isFinite(rawY)) ? rawY : 0;
       const rotY  = rng() * Math.PI * 2;
       const scale = 0.7 + rng() * 0.6;
 

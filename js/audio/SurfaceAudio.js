@@ -21,7 +21,7 @@
  *    tarmac loop when the surface is wet_tarmac or when rain > 40%.
  *  - All loops are procedurally generated via OfflineAudioContext when no
  *    real asset files are present — the system is fully self-contained.
- *    Drop real OGG files into assets/audio/surface/ and they will be used
+ *    Drop real OGG files into assets/audio/world/ and they will be used
  *    automatically on next page load.
  *
  * SURFACE TYPE MAP (matches driving.js → drivingController.surfaceType)
@@ -74,43 +74,43 @@ import { Howl, Howler } from 'howler';
  */
 const SURFACE_SOUNDS = Object.freeze({
   smooth_tarmac: {
-    src:  ['assets/audio/surface/tarmac_loop.ogg', 'assets/audio/surface/tarmac_loop.mp3'],
+    src:  ['assets/audio/world/tarmac_loop.ogg', 'assets/audio/world/tarmac_loop.mp3'],
     gain: 1.0,
     proc: { type: 'tarmac' },
   },
   cobblestone: {
-    src:  ['assets/audio/surface/cobble_loop.ogg', 'assets/audio/surface/cobble_loop.mp3'],
+    src:  ['assets/audio/world/cobble_loop.ogg', 'assets/audio/world/cobble_loop.mp3'],
     gain: 0.9,
     proc: { type: 'cobble' },
   },
   sand: {
-    src:  ['assets/audio/surface/sand_loop.ogg', 'assets/audio/surface/sand_loop.mp3'],
+    src:  ['assets/audio/world/sand_loop.ogg', 'assets/audio/world/sand_loop.mp3'],
     gain: 0.7,
     proc: { type: 'sand' },
   },
   dirt: {
-    src:  ['assets/audio/surface/gravel_loop.ogg', 'assets/audio/surface/gravel_loop.mp3'],
+    src:  ['assets/audio/world/gravel_loop.ogg', 'assets/audio/world/gravel_loop.mp3'],
     gain: 1.0,
     proc: { type: 'gravel' },
   },
   volcanic_dirt: {
-    src:  ['assets/audio/surface/volcanic_loop.ogg', 'assets/audio/surface/volcanic_loop.mp3'],
+    src:  ['assets/audio/world/volcanic_loop.ogg', 'assets/audio/world/volcanic_loop.mp3'],
     gain: 1.1,
     proc: { type: 'volcanic' },
   },
   mud: {
-    src:  ['assets/audio/surface/mud_loop.ogg', 'assets/audio/surface/mud_loop.mp3'],
+    src:  ['assets/audio/world/mud_loop.ogg', 'assets/audio/world/mud_loop.mp3'],
     gain: 0.85,
     proc: { type: 'mud' },
   },
   wet_grass: {
-    src:  ['assets/audio/surface/grass_loop.ogg', 'assets/audio/surface/grass_loop.mp3'],
+    src:  ['assets/audio/world/grass_loop.ogg', 'assets/audio/world/grass_loop.mp3'],
     gain: 0.6,
     proc: { type: 'grass' },
   },
   // Wet tarmac spray overlay (layered on top of tarmac loop)
   wet_spray: {
-    src:  ['assets/audio/surface/wet_spray_loop.ogg', 'assets/audio/surface/wet_spray_loop.mp3'],
+    src:  ['assets/audio/world/wet_spray_loop.ogg', 'assets/audio/world/wet_spray_loop.mp3'],
     gain: 0.55,
     proc: { type: 'spray' },
   },
