@@ -40,22 +40,22 @@ export class MinimapRenderer {
   // ─── Colour palette (all minimap drawing colours) ───────────────────────────
 
   static COLOURS = {
-    background:      'rgba(10, 12, 16, 0.82)',
-    border:          'rgba(255, 255, 255, 0.18)',
-    borderExpanded:  'rgba(255, 255, 255, 0.35)',
-    road:            'rgba(200, 205, 215, 0.55)',
-    roadMinor:       'rgba(160, 165, 175, 0.35)',
-    player:          '#FFFFFF',
-    playerShadow:    'rgba(0,0,0,0.6)',
+    background:      'rgba(8, 10, 14, 0.88)',
+    border:          '#ff6b1a',              // FH5 Horizon Festival orange ring
+    borderExpanded:  '#ff8c40',              // brighter orange when expanded
+    road:            'rgba(190, 195, 205, 0.60)',
+    roadMinor:       'rgba(140, 145, 155, 0.38)',
+    player:          '#ff6b1a',              // FH5: orange player dot
+    playerShadow:    'rgba(0,0,0,0.7)',
     aiDot:           '#FF3B30',
-    routeLine:       '#2C9CF0',
-    waypointCore:    '#FFFFFF',
-    waypointGlow:    'rgba(44, 156, 240, 0.0)',  // animated
-    poiShop:         '#2C9CF0',   // blue
-    poiRace:         '#FF8C00',   // orange
-    poiBoard:        '#FFD700',   // yellow/gold
-    poiLandmark:     '#FFFFFF',   // white diamond
-    poiFastTravel:   '#A855F7',   // purple
+    routeLine:       '#ff6b1a',              // FH5: orange route line
+    waypointCore:    '#ff6b1a',
+    waypointGlow:    'rgba(255, 107, 26, 0.0)',  // animated FH5 orange
+    poiShop:         '#2C9CF0',
+    poiRace:         '#ff6b1a',              // FH5 orange for race events
+    poiBoard:        '#FFD700',
+    poiLandmark:     '#FFFFFF',
+    poiFastTravel:   '#A855F7',
     compassLabel:    'rgba(255,255,255,0.45)',
     cardinalN:       'rgba(255, 60, 60, 0.85)',
   };
@@ -586,13 +586,30 @@ export class MinimapRenderer {
 
   _drawBorder(ctx, cx, cy, r) {
     ctx.save();
+
+    // Outer glow (subtle orange bloom — FH5 signature)
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 2, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 107, 26, 0.25)';
+    ctx.lineWidth   = 5 * this._dpr;
+    ctx.stroke();
+
+    // Main FH5 Horizon Festival orange border ring
     ctx.beginPath();
     ctx.arc(cx, cy, r - 1, 0, Math.PI * 2);
     ctx.strokeStyle = this._isExpanded
       ? MinimapRenderer.COLOURS.borderExpanded
       : MinimapRenderer.COLOURS.border;
-    ctx.lineWidth   = 1.5 * this._dpr;
+    ctx.lineWidth   = 3 * this._dpr;
     ctx.stroke();
+
+    // Inner dark ring (FH5 has a thin dark separator inside the orange ring)
+    ctx.beginPath();
+    ctx.arc(cx, cy, r - 4, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.lineWidth   = 1 * this._dpr;
+    ctx.stroke();
+
     ctx.restore();
   }
 

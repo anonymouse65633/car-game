@@ -274,7 +274,7 @@ function _archetypes() {
   return [
     {
       name:       'palm',
-      biomes:     ['riviera', 'festival'],
+      biomes:     ['riviera'],           // FH5: palms only on Riviera Maya coast
       maxCount:   TREE_MAX,
       geoFn:      _makePalmGeo,
       trunkColor: 0x8B7355,
@@ -285,7 +285,7 @@ function _archetypes() {
     },
     {
       name:       'pine',
-      biomes:     ['caldera', 'farmland'],
+      biomes:     ['farmland'],          // FH5: pines in highland farmland
       maxCount:   TREE_MAX,
       geoFn:      _makePineGeo,
       trunkColor: 0x5C4033,
@@ -296,7 +296,7 @@ function _archetypes() {
     },
     {
       name:       'organ_pipe_cactus',
-      biomes:     ['baja', 'dunas'],
+      biomes:     ['baja'],              // FH5: organ pipe in Baja desert
       maxCount:   TREE_MAX,
       geoFn:      _makeOrganPipeCactusGeo,
       trunkColor: 0x3A7A2A,
@@ -307,7 +307,7 @@ function _archetypes() {
     },
     {
       name:       'saguaro',
-      biomes:     ['baja'],
+      biomes:     ['baja', 'dunas'],     // FH5: saguaro in Living Desert / Baja
       maxCount:   TREE_MAX,
       geoFn:      _makeSaguaroCactusGeo,
       trunkColor: 0x4A8832,
@@ -318,7 +318,7 @@ function _archetypes() {
     },
     {
       name:       'jungle_fern',
-      biomes:     ['jungle', 'festival'],
+      biomes:     ['jungle'],            // FH5: ferns ONLY in La Selva jungle
       maxCount:   TREE_MAX,
       geoFn:      _makeJungleFernGeo,
       trunkColor: 0x5D4E37,
@@ -329,7 +329,7 @@ function _archetypes() {
     },
     {
       name:       'agave',
-      biomes:     ['farmland', 'baja', 'dunas'],
+      biomes:     ['baja', 'farmland'],  // FH5: agave on arid hills and farmland
       maxCount:   TREE_MAX,
       geoFn:      _makeAgaveGeo,
       trunkColor: 0x607850,
@@ -340,7 +340,7 @@ function _archetypes() {
     },
     {
       name:       'mesquite_scrub',
-      biomes:     ['farmland', 'baja', 'festival'],
+      biomes:     ['farmland', 'baja'],  // FH5: scrub in open farmland and desert
       maxCount:   TREE_MAX,
       geoFn:      _makeMesquiteScrubGeo,
       trunkColor: 0x795548,
@@ -351,7 +351,7 @@ function _archetypes() {
     },
     {
       name:       'dead_tree',
-      biomes:     ['caldera', 'baja', 'dunas'],
+      biomes:     ['caldera'],           // FH5: dead trees ONLY in Gran Caldera volcanic zone
       maxCount:   TREE_MAX,
       geoFn:      _makeDeadTreeGeo,
       trunkColor: 0x4E342E,

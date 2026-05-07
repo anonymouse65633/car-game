@@ -60,15 +60,15 @@ const PMREM_REBAKE_INTERVAL = 2.0; // seconds
 
 const SKY_KF = [
   // hour  turbidity  rayleigh   mie      mieG    exposure  fogNear  fogFar  fogHex
-  {  h:  0, turb: 8.0, ray: 0.4,  mie: 0.003, mieG: 0.75, expo: 0.25, fn: 80,  ff: 300, fog: 0x020614 },
-  {  h:  4, turb: 5.0, ray: 0.8,  mie: 0.004, mieG: 0.78, expo: 0.35, fn: 100, ff: 380, fog: 0x0d1a2e },
-  {  h:  6, turb: 3.0, ray: 2.5,  mie: 0.008, mieG: 0.82, expo: 0.70, fn: 150, ff: 500, fog: 0x6e3a1e },
-  {  h:  8, turb: 2.8, ray: 1.6,  mie: 0.006, mieG: 0.82, expo: 0.90, fn: 200, ff: 520, fog: 0x93b8d8 },
-  { h: 12, turb: 3.5, ray: 1.2,  mie: 0.005, mieG: 0.80, expo: 1.00, fn: 250, ff: 550, fog: 0xc8d8e8 },
-  { h: 15, turb: 3.8, ray: 1.4,  mie: 0.007, mieG: 0.80, expo: 0.95, fn: 220, ff: 540, fog: 0xb8ccde },
-  { h: 18, turb: 4.5, ray: 2.0,  mie: 0.009, mieG: 0.83, expo: 0.75, fn: 140, ff: 480, fog: 0x7a3820 },
-  { h: 20, turb: 6.0, ray: 0.8,  mie: 0.005, mieG: 0.78, expo: 0.45, fn: 100, ff: 380, fog: 0x1a0d06 },
-  { h: 24, turb: 8.0, ray: 0.4,  mie: 0.003, mieG: 0.75, expo: 0.25, fn: 80,  ff: 300, fog: 0x020614 },
+  {  h:  0, turb: 8.0, ray: 0.4,  mie: 0.003, mieG: 0.75, expo: 0.25, fn: 150,  ff: 600,  fog: 0x050a1a },
+  {  h:  4, turb: 5.0, ray: 0.8,  mie: 0.004, mieG: 0.78, expo: 0.35, fn: 200,  ff: 700,  fog: 0x1a1228 },
+  {  h:  6, turb: 3.5, ray: 2.8,  mie: 0.009, mieG: 0.84, expo: 0.70, fn: 250,  ff: 800,  fog: 0xc45c28 },
+  {  h:  8, turb: 3.2, ray: 1.8,  mie: 0.007, mieG: 0.83, expo: 0.92, fn: 300,  ff: 950,  fog: 0xd4956a },
+  { h: 12, turb: 3.8, ray: 1.5,  mie: 0.007, mieG: 0.82, expo: 1.00, fn: 300,  ff: 1200, fog: 0xd4956a },
+  { h: 15, turb: 4.0, ray: 1.6,  mie: 0.008, mieG: 0.82, expo: 0.97, fn: 300,  ff: 1100, fog: 0xc8845c },
+  { h: 18, turb: 5.0, ray: 2.2,  mie: 0.010, mieG: 0.84, expo: 0.75, fn: 200,  ff: 800,  fog: 0xb04820 },
+  { h: 20, turb: 6.5, ray: 0.8,  mie: 0.005, mieG: 0.78, expo: 0.45, fn: 150,  ff: 600,  fog: 0x3a1a0a },
+  { h: 24, turb: 8.0, ray: 0.4,  mie: 0.003, mieG: 0.75, expo: 0.25, fn: 150,  ff: 600,  fog: 0x050a1a },
 ];
 
 // ─── Cloud configuration ──────────────────────────────────────────────────────
@@ -123,12 +123,12 @@ function _buildSky() {
 
   const su = _sky.material.uniforms;
   su.turbidity.value        = 3.5;
-  su.rayleigh.value         = 1.2;
-  su.mieCoefficient.value   = 0.005;
-  su.mieDirectionalG.value  = 0.80;
+  su.rayleigh.value         = 1.4;
+  su.mieCoefficient.value   = 0.007;
+  su.mieDirectionalG.value  = 0.82;
 
-  // Default afternoon Mexico sun: azimuth 210°, elevation 28°
-  _setSunFromAzEl(210, 28);
+  // FH5 Mexico: sun at 35° elevation, azimuth 210° (SSW = warm afternoon light)
+  _setSunFromAzEl(210, 35);
 }
 
 /**

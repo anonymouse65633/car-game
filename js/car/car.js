@@ -326,7 +326,7 @@ export class Car {
     const RAPIER = this._world.constructor._rapier ?? globalThis.RAPIER;
     if (!RAPIER) return;
 
-    const spawn = opts.spawnPos  ?? new THREE.Vector3(0, 1.5, 0);
+    const spawn = opts.spawnPos  ?? new THREE.Vector3(0, 0.72, 0); // wheel radius lift so car clears ground
     const quat  = opts.spawnQuat ?? new THREE.Quaternion();
 
     // Rigid body descriptor — dynamic
@@ -359,25 +359,48 @@ export class Car {
   // ─── Mesh Init ────────────────────────────────────────────────────────────
 
   _initMesh(scene) {
-    // ── Body mesh — Part 7: MeshPhysicalMaterial with clearcoat ──────────
-    const bodyGeo = makeChassisGeometry(this.def);
+    // ── Body mesh — 3-part compound silhouette (main body + cabin roof) ───
+    // FH5 cars: low slung body, raised cabin, raked windscreen
+    const bodyW = this.def.bodyWidth  ?? 2.0;
+    const bodyH = this.def.bodyHeight ?? 0.56;
+    const bodyL = this.def.bodyLength ?? 4.4;
+
+    // 1. Main chassis body (wide, low — the slab)
+    const bodyGeo = new THREE.BoxGeometry(bodyW, bodyH, bodyL);
     const bodyMat = createPBRBodyMat(this.paintColor, this.paintType);
     this._bodyMat  = bodyMat;
     this._bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
     this._bodyMesh.castShadow    = true;
     this._bodyMesh.receiveShadow = false;
     this._bodyMesh.name = 'carBody';
+    // Body sits at Y=0.38 (wheel radius offset — rides above ground correctly)
     this.mesh.add(this._bodyMesh);
 
-    // ── Windshield glass — Part 7: transmission material ─────────────────
-    const screenGeo = new THREE.BoxGeometry(
-      (this.def.bodyWidth ?? 2.0) * 0.9,
-      (this.def.bodyHeight ?? 0.56) * 0.45,
-      0.04,
-    );
-    this._windshield = new THREE.Mesh(screenGeo, createGlassMat(this.windowTint));
-    this._windshield.position.set(0, (this.def.bodyHeight ?? 0.56) * 0.4, (this.def.bodyLength ?? 4.4) * 0.28);
-    this._windshield.rotation.x = -0.25;
+    // 2. Cabin roof (narrower, raised above body — gives proper car silhouette)
+    const roofW = bodyW * 0.72;
+    const roofH = bodyH * 0.90;
+    const roofL = bodyL * 0.42;
+    const roofGeo = new THREE.BoxGeometry(roofW, roofH, roofL);
+    this._roofMesh = new THREE.Mesh(roofGeo, bodyMat);
+    this._roofMesh.castShadow = true;
+    this._roofMesh.name = 'carRoof';
+    // Position roof on top of body, biased slightly rearward (FH5 fastback look)
+    this._roofMesh.position.set(0, bodyH * 0.95, -bodyL * 0.04);
+    this.mesh.add(this._roofMesh);
+
+    // 3. Nose taper (front bumper area — slightly narrower than body)
+    const noseGeo  = new THREE.BoxGeometry(bodyW * 0.88, bodyH * 0.6, bodyL * 0.12);
+    this._noseMesh = new THREE.Mesh(noseGeo, bodyMat);
+    this._noseMesh.name = 'carNose';
+    this._noseMesh.position.set(0, -bodyH * 0.15, bodyL * 0.54);
+    this.mesh.add(this._noseMesh);
+
+    // ── Windshield glass — 35° rake, dark tinted ─────────────────────────
+    const screenGeo = new THREE.BoxGeometry(roofW * 0.90, roofH * 0.80, 0.05);
+    const glassMat  = createGlassMat(this.windowTint);
+    this._windshield = new THREE.Mesh(screenGeo, glassMat);
+    this._windshield.position.set(0, bodyH * 0.55, roofL * 0.48);
+    this._windshield.rotation.x = -0.6; // ~35° from vertical — FH5 sporty rake
     this.mesh.add(this._windshield);
 
     // ── Wheels — Part 7: PBR rim + tyre materials ─────────────────────────

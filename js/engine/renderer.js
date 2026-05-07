@@ -209,17 +209,18 @@ function _initRenderer(canvas) {
 function _initScene() {
   scene = new THREE.Scene();
 
-  // Fog: draw distance scaled to preset — tighter fog on low = fewer objects rendered
-  const _fogStart  = _isLow ? 80  : _isMed ? 150 : 250;
-  const _fogEnd    = _isLow ? 200 : _isMed ? 300 : 500;
+  // Fog: warm Mexican dust haze — FH5 afternoon light
+  // Near/far tuned for Mexico scale: horizon glow at 300m, full draw at 1200m
+  const _fogStart  = _isLow ? 200 : _isMed ? 300 : 400;
+  const _fogEnd    = _isLow ? 600 : _isMed ? 900 : 1200;
   scene.fog = new THREE.Fog(
-    0xc8d8e8,  // cool blue-grey — matches daytime sky
+    0xd4956a,  // warm Mexican dust haze — FH5 afternoon amber
     _fogStart,
     _fogEnd
   );
 
   // Background matches fog colour so the horizon blends
-  scene.background = new THREE.Color(0xc8d8e8);
+  scene.background = new THREE.Color(0xd4956a);
 
   // Build group hierarchy
   GROUPS.world  = new THREE.Group(); GROUPS.world.name  = 'WorldGroup';

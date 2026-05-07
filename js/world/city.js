@@ -508,29 +508,66 @@ function _applyLOD(group, level) {
 
 // ─── Road Mesh ────────────────────────────────────────────────────────────────
 
+// ─── FH5 Biome Ground Colour Map ─────────────────────────────────────────────
+// Maps district ID → hex colour matching FH5 Mexico ground tones
+const BIOME_GROUND_COLORS = {
+  guanajuato: '#8c7355',   // warm cobblestone
+  caldera:    '#3d2b1a',   // volcanic rock dark
+  riviera:    '#c4b090',   // pale sandy coastal
+  dunas:      '#d4c49a',   // Dunas Blancas sand
+  baja:       '#c4956a',   // arid sandy desert
+  farmland:   '#7a9e5c',   // green Mexican farmland
+  festival:   '#404040',   // airstrip tarmac
+  jungle:     '#2d5a1b',   // dense jungle floor
+  highway:    '#282828',   // dark asphalt
+};
+
 /**
- * Build the road surface as a single merged BufferGeometry plane
- * subdivided per district.  In production this would be replaced by
- * the road GLB from the manifest; this procedural version provides
- * a functional floor while assets load.
+ * Build per-district road/ground meshes with FH5 biome colours.
+ * Each district gets its own plane so materials can differ.
  */
 function _buildRoadMesh() {
-  const roadGeo = new THREE.PlaneGeometry(
-    10000, 10000,   // full 10km × 10km world
-    64, 64
-  );
-  roadGeo.rotateX(-Math.PI / 2);
+  // One merged base + per-district colour overlays
+  // First: dark highway base (fills undistricted areas)
+  const baseGeo = new THREE.PlaneGeometry(12000, 12000, 1, 1);
+  baseGeo.rotateX(-Math.PI / 2);
+  const baseMat = _getPooledMat('#1a1a1a', _FLAT_MATERIALS);
+  const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+  baseMesh.name = 'road_base';
+  baseMesh.receiveShadow = !_FLAT_MATERIALS;
+  baseMesh.position.set(0, -0.05, 0);
+  GROUPS.world.add(baseMesh);
 
-  const roadMat = _FLAT_MATERIALS
-    ? new THREE.MeshLambertMaterial({ color: 0x333333 })
-    : new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.85, metalness: 0.05 });
+  // Per-district coloured ground planes
+  for (const district of DISTRICT_DATA) {
+    if (district.id === 'highway') continue; // already covered by base
+    const { x1, z1, x2, z2 } = district.bounds;
+    const w = x2 - x1;
+    const d = z2 - z1;
+    const geo = new THREE.PlaneGeometry(w, d, 1, 1);
+    geo.rotateX(-Math.PI / 2);
+    const colorHex = BIOME_GROUND_COLORS[district.id] ?? '#555555';
+    const mat = _getPooledMat(colorHex, _FLAT_MATERIALS);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.name = `ground_${district.id}`;
+    mesh.receiveShadow = !_FLAT_MATERIALS;
+    // Centre the plane on the district bounds, very slightly above highway base
+    mesh.position.set((x1 + x2) / 2, -0.02, (z1 + z2) / 2);
+    GROUPS.world.add(mesh);
+  }
 
-  const roadMesh       = new THREE.Mesh(roadGeo, roadMat);
-  roadMesh.name        = 'road_base';
-  roadMesh.receiveShadow = !_FLAT_MATERIALS;
-  roadMesh.position.set(0, -0.02, 0); // Slightly below chunk floors to avoid z-fight
-
-  GROUPS.world.add(roadMesh);
+  // Guanajuato cobblestone overlay (warm grey-brown, slightly raised)
+  const guaDist = DISTRICT_DATA.find(d => d.id === 'guanajuato');
+  if (guaDist) {
+    const { x1, z1, x2, z2 } = guaDist.bounds;
+    const geo = new THREE.PlaneGeometry(x2 - x1, z2 - z1, 1, 1);
+    geo.rotateX(-Math.PI / 2);
+    const mat = _getPooledMat('#7a6e60', _FLAT_MATERIALS); // cobblestone
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.name = 'road_guanajuato_cobble';
+    mesh.position.set((x1 + x2) / 2, 0.01, (z1 + z2) / 2);
+    GROUPS.world.add(mesh);
+  }
 }
 
 // ─── Building Instances ───────────────────────────────────────────────────────
@@ -702,63 +739,118 @@ function _buildPlaceholderManifest() {
 }
 
 /**
- * Build a coloured flat chunk with a handful of box "buildings" for dev use.
+ * Build chunk placeholder geometry with FH5-accurate biome colours.
+ * Guanajuato: 7-colour colonial palette, height variance 6–28m, flat parapets, street gaps.
  */
 function _buildPlaceholderChunk(group, cx, cz) {
   const worldX = cx * CHUNK_SIZE;
   const worldZ = cz * CHUNK_SIZE;
 
   const district  = getDistrictAt(worldX + CHUNK_SIZE / 2, worldZ + CHUNK_SIZE / 2);
+  const isGua     = district.id === 'guanajuato';
+  const isCaldera = district.id === 'caldera';
+  const isJungle  = district.id === 'jungle';
 
-  // Ground tile — pooled material, no per-chunk allocation
-  const groundGeo = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE);
-  groundGeo.rotateX(-Math.PI / 2);
-  const groundColorHex = '#' + new THREE.Color(district.color).multiplyScalar(0.4).getHexString();
+  // FH5 Guanajuato 7-colour colonial palette
+  const GUA_PALETTE = [
+    '#e8a020', '#d4472a', '#e8c44a',
+    '#2a8060', '#c44a7a', '#f0e8d0', '#6a4aaa',
+  ];
+
+  // Biome-accurate ground colour
+  const groundColorHex = BIOME_GROUND_COLORS[district.id]
+    ?? '#' + new THREE.Color(district.color).multiplyScalar(0.42).getHexString();
   const groundMat = _getPooledMat(groundColorHex, _FLAT_MATERIALS);
 
   const lod0 = new THREE.Group(); lod0.name = 'lod0';
   const lod1 = new THREE.Group(); lod1.name = 'lod1'; lod1.visible = false;
   const lod2 = new THREE.Group(); lod2.name = 'lod2'; lod2.visible = false;
 
+  const groundGeo = new THREE.PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE);
+  groundGeo.rotateX(-Math.PI / 2);
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.receiveShadow = !_FLAT_MATERIALS;
   ground.position.set(CHUNK_SIZE / 2, 0, CHUNK_SIZE / 2);
   lod0.add(ground);
   lod1.add(ground.clone());
 
-  // Scatter placeholder buildings — pooled shared material
-  const bldColorHex = '#' + new THREE.Color(district.color).multiplyScalar(0.7).getHexString();
-  const bldMat = _getPooledMat(bldColorHex, _FLAT_MATERIALS);
-
   const RNG_SEED = (cx * 73856093) ^ (cz * 19349663);
   const rng = _seededRNG(RNG_SEED);
-  const count = 4 + Math.floor(rng() * 6);
 
-  // Collect geometries to merge into a single draw call on low preset
+  // Building density per district
+  const densityMap = { guanajuato: 8, riviera: 5, jungle: 3, farmland: 3, festival: 2, baja: 1 };
+  const count = isCaldera ? 0 : (densityMap[district.id] ?? 3) + Math.floor(rng() * 3);
+
   const bldGeos = [];
 
   for (let i = 0; i < count; i++) {
-    const w = 12 + rng() * 24;
-    const h = 10 + rng() * 80;
-    const d = 12 + rng() * 24;
-    const bx = 20 + rng() * (CHUNK_SIZE - 40);
-    const bz = 20 + rng() * (CHUNK_SIZE - 40);
+    let w, h, d, bx, bz;
+    let wallColor;
+
+    if (isGua) {
+      // FH5 Guanajuato: colonial proportions, 6–28m heights, narrow lots
+      w = 8  + rng() * 14;
+      h = 6  + rng() * 22;
+      d = 8  + rng() * 14;
+
+      // Street gap: place in one of 4 quadrants around 8m cross-shaped street
+      const halfC = CHUNK_SIZE / 2;
+      const sGap  = 4; // half of 8m street width
+      const qx    = rng() > 0.5 ? 1 : 0;
+      const qz    = rng() > 0.5 ? 1 : 0;
+      const minX  = qx === 0 ? 5         : halfC + sGap + 2;
+      const maxX  = qx === 0 ? halfC - sGap - w - 2 : CHUNK_SIZE - w - 5;
+      const minZ  = qz === 0 ? 5         : halfC + sGap + 2;
+      const maxZ  = qz === 0 ? halfC - sGap - d - 2 : CHUNK_SIZE - d - 5;
+      bx = minX + rng() * Math.max(1, maxX - minX);
+      bz = minZ + rng() * Math.max(1, maxZ - minZ);
+
+      // Seeded colour — adjacent buildings always different (palette index cycles)
+      const palIdx = (i * 3 + Math.floor(rng() * 2)) % GUA_PALETTE.length;
+      wallColor = GUA_PALETTE[palIdx];
+    } else {
+      w = 12 + rng() * 24;
+      h = 10 + rng() * 60;
+      d = 12 + rng() * 24;
+      bx = 20 + rng() * (CHUNK_SIZE - 40);
+      bz = 20 + rng() * (CHUNK_SIZE - 40);
+      wallColor = '#' + new THREE.Color(district.color).multiplyScalar(0.68).getHexString();
+    }
 
     if (_FLAT_MATERIALS) {
-      // Collect for merge — translate geometry into chunk-local space
-      const geo = new THREE.BoxGeometry(w, h, d);
-      geo.translate(bx, h / 2, bz);
-      bldGeos.push(geo);
+      const wallMat = _getPooledMat(wallColor, true);
+      const wallGeo = new THREE.BoxGeometry(w, h, d);
+      wallGeo.translate(bx, h / 2, bz);
+      const wallMesh = new THREE.Mesh(wallGeo, wallMat);
+      lod0.add(wallMesh);
+
+      if (isGua) {
+        // Flat roof parapet — slightly darker, makes it read as colonial architecture
+        const parHex = '#' + new THREE.Color(wallColor).multiplyScalar(0.72).getHexString();
+        const parMat = _getPooledMat(parHex, true);
+        const parGeo = new THREE.BoxGeometry(w + 0.5, 0.5, d + 0.5);
+        parGeo.translate(bx, h + 0.25, bz);
+        lod0.add(new THREE.Mesh(parGeo, parMat));
+      }
     } else {
+      const wallMat = _getPooledMat(wallColor, false);
       const bldGeo  = new THREE.BoxGeometry(w, h, d);
-      const bldMesh = new THREE.Mesh(bldGeo, bldMat);
+      const bldMesh = new THREE.Mesh(bldGeo, wallMat);
       bldMesh.castShadow    = true;
       bldMesh.receiveShadow = true;
       bldMesh.position.set(bx, h / 2, bz);
       lod0.add(bldMesh);
+
+      if (isGua) {
+        const parHex  = '#' + new THREE.Color(wallColor).multiplyScalar(0.72).getHexString();
+        const parMat  = _getPooledMat(parHex, false);
+        const parGeo  = new THREE.BoxGeometry(w + 0.5, 0.5, d + 0.5);
+        const parMesh = new THREE.Mesh(parGeo, parMat);
+        parMesh.position.set(bx, h + 0.25, bz);
+        lod0.add(parMesh);
+      }
     }
 
-    // Box physics collider per building (still needed for collision)
     createBody({
       handle:      `placeholder_bld_${cx}_${cz}_${i}`,
       type:        'fixed',
@@ -767,10 +859,12 @@ function _buildPlaceholderChunk(group, cx, cz) {
     });
   }
 
-  // On low: merge all building boxes into ONE draw call
+  // Merge non-Guanajuato buildings in flat mode for performance
   if (_FLAT_MATERIALS && bldGeos.length > 0) {
+    const bldColorHex = '#' + new THREE.Color(district.color).multiplyScalar(0.65).getHexString();
+    const bldMat = _getPooledMat(bldColorHex, true);
     const merged = mergeGeometries(bldGeos, false);
-    bldGeos.forEach(g => g.dispose()); // free individual geos
+    bldGeos.forEach(g => g.dispose());
     if (merged) {
       const mergedMesh = new THREE.Mesh(merged, bldMat);
       mergedMesh.name = 'bld_merged';

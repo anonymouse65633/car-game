@@ -10,6 +10,7 @@ import { initInput, inputState }                           from './engine/input.
 import { audioManager }                                    from './engine/audio.js';
 import { startLoop, onTick, LOOP_PHASE }                   from './engine/loop.js';
 import { initCity }                                        from './world/city.js';
+import { initLandmarks }                                   from './world/landmarks.js';
 import { initEnvironment, connectSkySystem, isNight, getHour, getWeather } from './world/environment.js';
 import { initBuildings }                                   from './world/buildings.js';
 import { initPOI }                                         from './world/poi.js';
@@ -165,6 +166,7 @@ async function boot() {
   }
 
   await initCity(scene);
+  initLandmarks(scene);  // FH5 landmarks: volcano, dunes, airstrip, temples, dam, tunnel
   initEnvironment(camera);
   connectSkySystem(updateSky, updateStars, ensureStars);  // Part 4 wire-up
   await initBuildings(scene, world);

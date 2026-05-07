@@ -299,35 +299,42 @@ function buildDialSVG(maxSpeed) {
     <svg id="hc-speedo-svg" viewBox="0 0 200 200"
          xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 
-      <!-- Outer ring -->
-      <circle cx="${cx}" cy="${cy}" r="${r + 4}"
-              fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+      <!-- FH5 dark background circle with orange outer ring -->
+      <circle cx="${cx}" cy="${cy}" r="${r + 6}"
+              fill="rgba(0,0,0,0.55)" stroke="#ff6b1a" stroke-width="2.5"/>
 
-      <!-- Main arc track -->
+      <!-- Main arc track (dark grey) -->
       <path d="M ${start.x.toFixed(1)} ${start.y.toFixed(1)}
                A ${r} ${r} 0 1 1 ${end.x.toFixed(1)} ${end.y.toFixed(1)}"
-            fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="5"
+            fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"
             stroke-linecap="round"/>
 
-      <!-- Redline arc -->
+      <!-- Redline arc (red zone) -->
       <path d="M ${redlineStart.x.toFixed(1)} ${redlineStart.y.toFixed(1)}
                A ${r} ${r} 0 0 1 ${redlineEnd.x.toFixed(1)} ${redlineEnd.y.toFixed(1)}"
-            fill="none" stroke="rgba(255,59,59,0.55)" stroke-width="5"
+            fill="none" stroke="rgba(255,59,59,0.65)" stroke-width="7"
             stroke-linecap="round"/>
 
       <!-- Tick marks + labels -->
       ${ticks}
 
-      <!-- Needle — rotated via CSS transform-origin on the group -->
+      <!-- Needle — FH5 white needle with orange hub -->
       <g id="hc-needle-group"
          style="transform-origin: ${cx}px ${cy}px; transform: rotate(-130deg);">
+        <!-- Glow backing -->
         <line x1="${cx}" y1="${cy}"
-              x2="${cx}" y2="${(cy - r + 16).toFixed(1)}"
-              stroke="white" stroke-width="2.5" stroke-linecap="round"
+              x2="${cx}" y2="${(cy - r + 20).toFixed(1)}"
+              stroke="rgba(255,107,26,0.30)" stroke-width="5" stroke-linecap="round"/>
+        <!-- Main needle -->
+        <line x1="${cx}" y1="${cy}"
+              x2="${cx}" y2="${(cy - r + 20).toFixed(1)}"
+              stroke="white" stroke-width="2" stroke-linecap="round"
               opacity="0.95"/>
-        <!-- Needle pivot dot -->
-        <circle cx="${cx}" cy="${cy}" r="5"
-                fill="rgba(255,255,255,0.7)" stroke="none"/>
+        <!-- FH5 orange hub -->
+        <circle cx="${cx}" cy="${cy}" r="7"
+                fill="#ff6b1a" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>
+        <circle cx="${cx}" cy="${cy}" r="3.5"
+                fill="white" opacity="0.9"/>
       </g>
     </svg>
   `;
