@@ -185,7 +185,7 @@ export class Car {
     this.isPlayer = opts.isPlayer ?? false;
 
     // ── Physics references ────────────────────────────────────────────────
-    this._world   = opts.rapierWorld ?? null;
+    this._world = opts.rapierWorld ?? opts.physicsWorld ?? opts.world ?? globalThis._physicsWorld ?? null;
     this._body    = null;   // Rapier RigidBody — set in _initPhysics()
 
     // ── Three.js mesh group ───────────────────────────────────────────────
@@ -323,13 +323,16 @@ export class Car {
   _initPhysics(opts) {
     if (!this._world) return; // headless / test mode
 
-    const RAPIER = this._world.constructor._rapier ?? globalThis.RAPIER;
-    if (!RAPIER) return;
+    // Use our custom RAPIER stub (set on globalThis by physics.js initPhysics)
+    const RAPIER = globalThis.RAPIER;
+    if (!RAPIER) {
+      console.warn('[car] RAPIER stub not found — call initPhysics() before createCar()');
+      return;
+    }
 
-    const spawn = opts.spawnPos  ?? new THREE.Vector3(0, 0.72, 0); // wheel radius lift so car clears ground
+    const spawn = opts.spawnPos  ?? new THREE.Vector3(0, 0.72, 0);
     const quat  = opts.spawnQuat ?? new THREE.Quaternion();
 
-    // Rigid body descriptor — dynamic
     const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(spawn.x, spawn.y, spawn.z)
       .setRotation({ x: quat.x, y: quat.y, z: quat.z, w: quat.w })
@@ -338,22 +341,17 @@ export class Car {
 
     this._body = this._world.createRigidBody(bodyDesc);
 
-    // Set mass / inertia
     const mass = this.def.baseWeight ?? 1400;
     this._body.setAdditionalMass(mass, true);
 
-    // Chassis collider (box)
     const chassisDesc = RAPIER.ColliderDesc
       .cuboid(CHASSIS_HX, CHASSIS_HY, CHASSIS_HZ)
-      .setTranslation(0, 0.05, 0)   // offset CoM slightly up
+      .setTranslation(0, 0.05, 0)
       .setFriction(0.4)
       .setRestitution(0.1)
-      .setDensity(0);               // mass set via body, not density
+      .setDensity(0);
 
     this._world.createCollider(chassisDesc, this._body);
-
-    // Store RAPIER ref for suspension
-    this._RAPIER = RAPIER;
   }
 
   // ─── Mesh Init ────────────────────────────────────────────────────────────
@@ -505,9 +503,9 @@ export class Car {
     // Transmission
     this.transmission = createTransmission(this.def);
 
-    // Suspension (needs physics body)
-    if (this._body && this._RAPIER) {
-      this.suspension = new SuspensionSystem(this.def, this._body, this._RAPIER);
+    // Suspension (needs physics world for raycasts)
+    if (this._body && this._world) {
+      this.suspension = new SuspensionSystem(this.def, this._world);
     }
   }
 

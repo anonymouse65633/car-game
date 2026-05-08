@@ -373,7 +373,9 @@ export class DrivingController {
     // Track lateral G for countersteer
     this._latG = (Ff + Fr) / (mass * 9.81);
 
-    // ── Squeal detection ─────────────────────────────────────────────────
+    // ── Squeal detection — store slip components for audio (Part 7) ────
+    this._frontSlipV   = frontSlipV;
+    this._rearSlipV    = rearSlipV;
     const slipMag = Math.abs(frontSlipV) + Math.abs(rearSlipV);
     this._squealActive = slipMag > 2.5 && speed > 10;
   }

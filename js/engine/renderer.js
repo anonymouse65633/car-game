@@ -1,229 +1,251 @@
 /**
- * renderer.js
+ * renderer.js  —  Part 1 Rebuild
  * ─────────────────────────────────────────────────────────────────────────────
- * Three.js WebGLRenderer, scene graph, camera, lighting, and post-processing.
- * This is the first system initialised — everything else mounts into GROUPS.
+ * Three.js WebGLRenderer, scene graph, camera, and lighting.
  *
- * Usage:
- *   import { initRenderer, scene, camera, renderer, composer, GROUPS, SUN } from './renderer.js';
- *   await initRenderer();          // call once from main.js before anything else
+ * Design decisions vs the old file
+ * ──────────────────────────────────
+ * OLD: _initPostProcessing() created a built-in EffectComposer with bloom +
+ *      FXAA passes.  PostFX.js (Part 6) ALSO creates its own EffectComposer.
+ *      Two composers → two render calls per frame → double-renders, Z-fighting,
+ *      and a blank sky whenever one path errored silently.
  *
- * Resolved by importmap in index.html:
- *   "three"            → https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js
- *   "three/addons/"    → https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/
+ * NEW: No built-in composer.  renderFrame() defaults to a plain
+ *      renderer.render(scene, camera) call.  PostFX.js hooks in via
+ *      hookPostFX() and takes over renderFrame() entirely — zero double-render.
  *
- * Part 10 — Technical Architecture (design doc reference)
+ * Everything else is preserved:
+ *   • GROUPS hierarchy (world / player / ai / ui)
+ *   • SUN + AMBIENT exports for environment.js / DayNightSystem.js
+ *   • pmremGenerator for SkySystem / CarPaintSystem
+ *   • applyGraphicsSettings() API for SettingsMenu
+ *   • setTimeOfDay() fallback (used before SkySystem hooks in)
+ *   • Full preset-aware pixel ratio, shadows, tone mapping
+ *
+ * Import map (index.html):
+ *   "three"         → https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js
+ *   "three/addons/" → https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import * as THREE from 'three';
-import { EffectComposer }   from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass }       from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass }  from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { ShaderPass }       from 'three/addons/postprocessing/ShaderPass.js';
-import { FXAAShader }       from 'three/addons/shaders/FXAAShader.js';
-import { OutputPass }       from 'three/addons/postprocessing/OutputPass.js';
+'use strict';
 
-// Part 5 — PostFX pipeline.  Injected after initRenderer() via hookPostFX().
-// Kept as a lazy reference so renderer.js compiles without PostFX.js present.
-let _postFXRender  = null;  // renderPostFX()
-let _postFXResize  = null;  // resizePostFX(w, h)
+import * as THREE from 'three';
+
+// ─── PostFX hook (Part 6 opt-in) ─────────────────────────────────────────────
+// Stays null until PostFX.js calls hookPostFX() after initPostFX().
+// renderFrame() checks this every call — zero overhead when not hooked.
+
+let _postFXRender = null; // () => void
+let _postFXResize = null; // (w: number, h: number) => void
 
 /**
- * Connect the Part 5 PostFX pipeline.
- * Call from main.js after initPostFX():
+ * Connect the Part 6 PostFX pipeline so it takes over renderFrame().
+ * Call from main.js immediately after initPostFX():
  *
  *   import { initPostFX, renderPostFX, resizePostFX } from './engine/PostFX.js';
  *   initPostFX(renderer, scene, camera);
  *   hookPostFX(renderPostFX, resizePostFX);
  *
- * Once hooked, renderFrame() and resize() delegate to PostFX automatically.
- *
- * @param {function} renderFn   PostFX.renderPostFX
- * @param {function} resizeFn   PostFX.resizePostFX
+ * @param {() => void}            renderFn  PostFX.renderPostFX
+ * @param {(w:number,h:number)=>void} resizeFn  PostFX.resizePostFX
  */
 export function hookPostFX(renderFn, resizeFn) {
   _postFXRender = renderFn;
   _postFXResize = resizeFn;
-  console.log('[renderer] Part 5 PostFX pipeline hooked.');
+  console.log('[renderer] PostFX pipeline hooked — composer takes over renderFrame().');
 }
 
-// Part 4 — SkySystem is an optional peer.  We import lazily so renderer.js
-// can still be used standalone (unit tests, demos) without the sky addon.
-// Call setSkySystemHook(updateFn) from main.js after initSkySystem().
-let _skyUpdateHook = null;
+// ─── SkySystem hook (Part 3 opt-in) ──────────────────────────────────────────
+// setTimeOfDay() forwards to SkySystem once it registers via setSkySystemHook().
+// Before that it uses the built-in sun-arc fallback so the world is never black.
+
+let _skyUpdateHook = null; // (dt: number, hour: number) => void
+
 /**
- * Register the SkySystem update function so renderer.js can forward
- * setTimeOfDay() calls to the physically-based sky dome.
+ * Register the SkySystem's update function.
+ * Call from main.js after initSkySystem().
  *
- * @param {function(dt: number, hour: number): void} fn
+ * @param {(dt: number, hour: number) => void} fn
  */
 export function setSkySystemHook(fn) { _skyUpdateHook = fn; }
 
-// ─── EXPORTED SINGLETONS ─────────────────────────────────────────────────────
-// Populated by initRenderer(). Import these anywhere after init is awaited.
+// ─── Exported singletons ──────────────────────────────────────────────────────
+// All null before initRenderer() returns.  Safe to import anywhere — just
+// check for null in systems that might run before the renderer is ready.
 
-export let scene    = null;
-export let camera   = null;
+/** @type {THREE.WebGLRenderer|null} */
 export let renderer = null;
-export let composer = null;
+
+/** @type {THREE.Scene|null} */
+export let scene = null;
+
+/** @type {THREE.PerspectiveCamera|null} */
+export let camera = null;
 
 /**
- * PMREMGenerator — exported so SkySystem and other Part 4+ systems can
- * bake environment maps without creating a second generator instance.
- * Populated by initRenderer(); null before that.
+ * composer is always null in this file.
+ * Exported so PostFX.js and other callers that do `import { composer }` don't
+ * break — they should use the composer PostFX.js creates internally.
+ * @type {null}
+ */
+export const composer = null;
+
+/**
+ * PMREMGenerator — one per app, created in initRenderer().
+ * Consumed by SkySystem (env maps) and CarPaintSystem (reflections).
  * @type {THREE.PMREMGenerator|null}
  */
 export let pmremGenerator = null;
 
 /**
- * Scene group hierarchy — all systems mount their meshes here rather than
- * directly onto the scene root, keeping the graph organised and debuggable.
+ * Scene group hierarchy.
+ * Every system mounts its meshes into the appropriate group rather than
+ * scene.add() directly, keeping the graph organised and the Three.js
+ * inspector readable.
  *
  * @type {{ world: THREE.Group, player: THREE.Group, ai: THREE.Group, ui: THREE.Group }}
  */
 export const GROUPS = {
-  world:  null, // city chunks, road, environment, NPCs
-  player: null, // player car + avatar
-  ai:     null, // AI car meshes (spawned per race)
-  ui:     null, // world-space UI: waypoint arrows, board icons, prompts
+  world:  null, // terrain, roads, buildings, vegetation, NPCs
+  player: null, // player car mesh + avatar
+  ai:     null, // AI car meshes (created per race, disposed after)
+  ui:     null, // world-space UI: waypoint arrows, board prompts
 };
 
 /**
- * The directional sun light — exported so environment.js can reposition it
- * on the day/night cycle.
- * @type {THREE.DirectionalLight}
+ * Directional sun light.
+ * environment.js and DayNightSystem.js reposition this on the day arc.
+ * @type {THREE.DirectionalLight|null}
  */
 export let SUN = null;
 
 /**
- * Ambient light — exported so environment.js can shift colour temperature.
- * @type {THREE.AmbientLight}
+ * Ambient fill light.
+ * Colour temperature shifts with time of day.
+ * @type {THREE.AmbientLight|null}
  */
 export let AMBIENT = null;
 
-// ─── INTERNAL STATE ──────────────────────────────────────────────────────────
+// ─── Internal state ───────────────────────────────────────────────────────────
 
-// Read preset once at module load — all _init* functions share these flags.
-const _bootPreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
-const _isLow      = _bootPreset === 'low';
-const _isMed      = _bootPreset === 'medium';
-
-/** @type {HTMLCanvasElement} */
+/** @type {HTMLCanvasElement|null} */
 let _canvas = null;
 
-/** @type {UnrealBloomPass} */
-let _bloomPass = null;
+// Read preset once at module evaluation — all sub-inits share the same value.
+// Safe to call before initRenderer() because it only reads localStorage.
+const _preset = (() => {
+  try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; }
+})();
 
-/** @type {ShaderPass} */
-let _fxaaPass = null;
+const _isLow  = _preset === 'low';
+const _isMed  = _preset === 'medium';
+const _isHigh = _preset === 'high' || _preset === 'ultra' || _preset === 'extreme';
 
-// Post-processing settings (can be updated via applyGraphicsSettings())
-const _ppSettings = {
-  bloom:        true,
-  bloomStrength: 0.35,
-  bloomRadius:   0.5,
-  bloomThreshold: 0.75,
-  fxaa:         true,
-};
-
-// ─── INIT ─────────────────────────────────────────────────────────────────────
+// ─── Boot ─────────────────────────────────────────────────────────────────────
 
 /**
  * Initialise the entire rendering stack.
- * Must be called once before the game loop starts.
+ * Must be called once, before the game loop starts, from main.js boot().
  *
- * @returns {Promise<void>}
+ * Sequence: canvas → WebGLRenderer → Scene → Camera → Lighting
+ * Post-processing is NOT set up here — it's PostFX.js's job (hookPostFX).
  */
-export async function initRenderer() {
+export function initRenderer() {
   _canvas = _getOrCreateCanvas();
 
-  _initRenderer(_canvas);
+  _initWebGLRenderer(_canvas);
   _initScene();
   _initCamera();
   _initLighting();
-  _initPostProcessing();
 
   window.addEventListener('resize', resize);
-  resize(); // set correct size immediately
+  resize(); // apply correct size immediately (canvas may start at 300×150)
 
-  console.log('[renderer] ✅ Initialised — THREE r' + THREE.REVISION);
+  console.log(
+    `[renderer] ✅ THREE r${THREE.REVISION} | preset=${_preset} | `
+    + `far=${CAM_FAR.toLocaleString()} | logDepth=true`
+  );
 }
 
-// ─── CANVAS ──────────────────────────────────────────────────────────────────
+// ─── Canvas ───────────────────────────────────────────────────────────────────
 
 function _getOrCreateCanvas() {
-  // Must match the canvas id in index.html and the CSS selector in main.css
-  let canvas = document.getElementById('game-canvas');
-  if (!canvas) {
-    canvas = document.createElement('canvas');
-    canvas.id = 'game-canvas';
-    document.body.appendChild(canvas);
+  let c = document.getElementById('game-canvas');
+  if (!c) {
+    c = document.createElement('canvas');
+    c.id = 'game-canvas';
+    document.body.appendChild(c);
+    console.warn('[renderer] #game-canvas not found in HTML — created dynamically.');
   }
-  return canvas;
+  return c;
 }
 
-// ─── RENDERER ────────────────────────────────────────────────────────────────
+// ─── WebGLRenderer ───────────────────────────────────────────────────────────
 
-function _initRenderer(canvas) {
+function _initWebGLRenderer(canvas) {
   renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: false,       // FXAA handles AA in post; native AA is expensive
-    powerPreference: 'high-performance',
-    stencil: false,         // not needed — saves some VRAM
-    depth: true,
-    logarithmicDepthBuffer: true,  // keeps z-precision at sky-dome distances (1.5M far)
+    antialias:              false,  // PostFX FXAA handles AA; native MSAA is expensive
+    powerPreference:        'high-performance',
+    stencil:                false,  // not used → saves VRAM
+    depth:                  true,
+    // logarithmicDepthBuffer keeps Z-precision across the enormous range between
+    // camera near (0.5 m) and far (1 500 000 m, sky dome radius).
+    // Without this the sky clips through the ground on low preset, and
+    // transparent road markings Z-fight at long distances on any preset.
+    logarithmicDepthBuffer: true,
   });
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // cap at 2x (preset overrides below)
+  // ── Pixel ratio ────────────────────────────────────────────────────────────
+  // low=0.5 (quarter fill-rate on Retina), medium=1.0 (native 1×), high+=2.0.
+  // Capped at the device's actual DPR so we never supersample.
+  const _prMap = { low: 0.5, medium: 1.0, high: 1.5, ultra: 2.0, extreme: 2.0 };
+  renderer.setPixelRatio(Math.min(_prMap[_preset] ?? 0.75, window.devicePixelRatio));
   renderer.setSize(window.innerWidth, window.innerHeight);
 
-  // Pixel ratio: low=0.5 (quarter pixels vs native Retina), medium=1, high/ultra/extreme cap at 2
-  // On a Retina MacBook (2× DPR), low=0.5 gives native 1× resolution — massive fill rate saving.
-  const _prMap = { low: 0.5, medium: 1.0, high: 1.5, ultra: 2.0, extreme: 2.0 };
-  renderer.setPixelRatio(Math.min(_prMap[_bootPreset] ?? 0.75, window.devicePixelRatio));
-
-  // Shadows: disabled on low (massive GPU saving), basic on medium
+  // ── Shadows ────────────────────────────────────────────────────────────────
   if (_isLow) {
     renderer.shadowMap.enabled = false;
   } else if (_isMed) {
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type    = THREE.BasicShadowMap;   // cheapest filtering
+    renderer.shadowMap.type    = THREE.BasicShadowMap;
   } else {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
   }
 
-  // sRGB output — colours look correct without manual gamma correction
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  // ACES Filmic is expensive on low-end GPUs — use Linear on low preset
-  renderer.toneMapping      = _isLow ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
+  // ── Output ─────────────────────────────────────────────────────────────────
+  renderer.outputColorSpace    = THREE.SRGBColorSpace;
+  // LinearToneMapping on low-end saves a per-pixel GPU op; ACES elsewhere
+  renderer.toneMapping         = _isLow ? THREE.LinearToneMapping : THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
 
-  // Part 4 — PMREMGenerator created once here; SkySystem consumes it
+  // ── PMREMGenerator ─────────────────────────────────────────────────────────
+  // Created once here and exported.  SkySystem and CarPaintSystem use this
+  // shared instance — creating a second PMREMGenerator wastes memory and
+  // causes redundant shader compilations.
   pmremGenerator = new THREE.PMREMGenerator(renderer);
   pmremGenerator.compileEquirectangularShader();
 }
 
-// ─── SCENE ───────────────────────────────────────────────────────────────────
+// ─── Scene ────────────────────────────────────────────────────────────────────
+
+// Fog tuned for the 4×4 km Mexico map — warm dust haze on low, longer draw on high.
+// FH5 Mexico afternoon palette: 0xd4956a (amber dust).
+const _FOG_COLOUR = 0xd4956a;
+const _fogNear    = _isLow ?  200 : _isMed ?  400 :  600;
+const _fogFar     = _isLow ?  800 : _isMed ? 1200 : 2000;
 
 function _initScene() {
   scene = new THREE.Scene();
 
-  // Fog: warm Mexican dust haze — FH5 afternoon light
-  // Near/far tuned for Mexico scale: horizon glow at 300m, full draw at 1200m
-  const _fogStart  = _isLow ? 200 : _isMed ? 300 : 400;
-  const _fogEnd    = _isLow ? 600 : _isMed ? 900 : 1200;
-  scene.fog = new THREE.Fog(
-    0xd4956a,  // warm Mexican dust haze — FH5 afternoon amber
-    _fogStart,
-    _fogEnd
-  );
+  scene.fog        = new THREE.Fog(_FOG_COLOUR, _fogNear, _fogFar);
+  // Sky-blue fallback so the canvas is never white during SkySystem startup.
+  // SkySystem will set scene.background to its env map once it's ready.
+  scene.background = new THREE.Color(0x87ceeb);
 
-  // Background matches fog colour so the horizon blends
-  scene.background = new THREE.Color(0xd4956a);
-
-  // Build group hierarchy
+  // ── Group hierarchy ────────────────────────────────────────────────────────
   GROUPS.world  = new THREE.Group(); GROUPS.world.name  = 'WorldGroup';
   GROUPS.player = new THREE.Group(); GROUPS.player.name = 'PlayerGroup';
   GROUPS.ai     = new THREE.Group(); GROUPS.ai.name     = 'AIGroup';
@@ -232,114 +254,96 @@ function _initScene() {
   scene.add(GROUPS.world, GROUPS.player, GROUPS.ai, GROUPS.ui);
 }
 
-// ─── CAMERA ──────────────────────────────────────────────────────────────────
+// ─── Camera ───────────────────────────────────────────────────────────────────
+
+const CAM_FOV  = 65;   // degrees — driving.js ramps this up with speed
+const CAM_NEAR = 0.5;  // metres — close enough for interior shots
 
 /**
- * Third-person chase camera defaults.
- * driving.js updates camera position every frame — these are just initial values.
+ * Far plane must exceed the sky dome radius (500 000 m) on ALL presets.
+ * Previous value was 200 on low preset, which depth-clipped the entire sky.
+ * logarithmicDepthBuffer keeps Z-precision usable across this 3 000 000:1 range.
  */
-const CAM_FOV    = 65;
-const CAM_NEAR   = 0.5;
-// Far plane: must exceed sky sphere radius (500 000) on ALL presets so the
-// sky dome is never depth-clipped.  Logarithmic depth buffer (set below)
-// keeps z-precision acceptable across this enormous range.
-const CAM_FAR    = 1_500_000;
+const CAM_FAR  = 1_500_000;
 
 function _initCamera() {
   camera = new THREE.PerspectiveCamera(
     CAM_FOV,
     window.innerWidth / window.innerHeight,
     CAM_NEAR,
-    CAM_FAR
+    CAM_FAR,
   );
 
-  // Default resting position — driving.js takes over immediately
+  // Resting position — driving.js takes over on the first update tick.
   camera.position.set(0, 5, -12);
   camera.lookAt(0, 1, 0);
 }
 
-// ─── LIGHTING ────────────────────────────────────────────────────────────────
+// ─── Lighting ─────────────────────────────────────────────────────────────────
 
 function _initLighting() {
-  // ── Ambient (fill) ─────────────────────────────────────────────────────────
-  // Colour temperature shifts with day/night cycle via environment.js
-  AMBIENT = new THREE.AmbientLight(0xfff4e0, 0.6); // warm daylight default
+  // ── Ambient fill ───────────────────────────────────────────────────────────
+  // Warm Mexican afternoon white balance.  Intensity + colour updated by
+  // DayNightSystem.js / setTimeOfDay() each frame.
+  AMBIENT = new THREE.AmbientLight(0xfff4e0, 0.6);
+  AMBIENT.name = 'AmbientLight';
   scene.add(AMBIENT);
 
-  // ── Sun / directional ──────────────────────────────────────────────────────
-  SUN = new THREE.DirectionalLight(0xfff8e7, 2.5);
-  SUN.position.set(200, 400, 150); // high-angle afternoon sun default
-  SUN.castShadow = true;
+  // ── Directional sun ────────────────────────────────────────────────────────
+  SUN          = new THREE.DirectionalLight(0xfff8e7, 2.5);
+  SUN.name     = 'SunLight';
+  SUN.position.set(200, 400, 150); // high afternoon angle — overridden by DayNight
 
-  // Shadow map — covers the area immediately around the player
-  const s = SUN.shadow;
-  s.mapSize.width  = _isLow ? 0 : (_isMed ? 512 : 2048);
-  s.mapSize.height = _isLow ? 0 : (_isMed ? 512 : 2048);
-  s.camera.near    = 1;
-  s.camera.far     = 600;
-  s.camera.left    = -80;
-  s.camera.right   =  80;
-  s.camera.top     =  80;
-  s.camera.bottom  = -80;
-  s.bias           = -0.001; // prevents shadow acne on the road
+  // Shadow camera: tight frustum around the player, not the whole scene.
+  // driving.js repositions SUN.shadow.camera.target each frame.
+  SUN.castShadow = !_isLow; // skip shadow map entirely on low
 
-  // Shadow camera follows the player — driving.js repositions SUN.shadow.camera
+  if (SUN.castShadow) {
+    const smSize = _isMed ? 512 : 2048;
+    const s      = SUN.shadow;
+    s.mapSize.set(smSize, smSize);
+    s.camera.near   =   1;
+    s.camera.far    = 800;
+    s.camera.left   = -80;
+    s.camera.right  =  80;
+    s.camera.top    =  80;
+    s.camera.bottom = -80;
+    s.bias          = -0.001; // prevents shadow acne on flat tarmac
+  }
+
   scene.add(SUN);
-  scene.add(SUN.target); // target defaults to (0,0,0); updated per frame
+  scene.add(SUN.target); // target must be in the scene for castShadow to work
 
-  // ── Hemisphere (sky/ground fill) ───────────────────────────────────────────
-  // Soft sky-colour fill from above, warm ground bounce from below
+  // ── Hemisphere (sky / ground bounce) ──────────────────────────────────────
+  // Provides a cheap gradient fill: soft blue from above, warm ochre from below.
+  // Makes shaded faces look like they're sitting in an outdoor environment
+  // even on low preset where the full sky dome may be simplest.
   const hemi = new THREE.HemisphereLight(
-    0xb0cce8,  // sky colour
-    0x7a6a50,  // ground bounce
+    0xb0cce8, // sky colour — cool blue
+    0x7a6a50, // ground bounce — warm brown (Mexican soil)
     0.8
   );
   hemi.name = 'HemisphereLight';
   scene.add(hemi);
 }
 
-// ─── POST-PROCESSING ─────────────────────────────────────────────────────────
-
-function _initPostProcessing() {
-  composer = new EffectComposer(renderer);
-
-  // Pass 1 — standard scene render
-  const renderPass = new RenderPass(scene, camera);
-  composer.addPass(renderPass);
-
-  // Pass 2 — Bloom (neon signs, headlights, speed zones at night)
-  _bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    _ppSettings.bloomStrength,   // strength
-    _ppSettings.bloomRadius,     // radius
-    _ppSettings.bloomThreshold   // threshold
-  );
-  _bloomPass.enabled = _ppSettings.bloom;
-  composer.addPass(_bloomPass);
-
-  // Pass 3 — FXAA (fast anti-aliasing)
-  _fxaaPass = new ShaderPass(FXAAShader);
-  _fxaaPass.enabled = _ppSettings.fxaa;
-  composer.addPass(_fxaaPass);
-
-  // Pass 4 — Output (colour space conversion, tone mapping finalisation)
-  const outputPass = new OutputPass();
-  composer.addPass(outputPass);
-}
-
-// ─── RESIZE ──────────────────────────────────────────────────────────────────
+// ─── Resize ───────────────────────────────────────────────────────────────────
 
 /**
- * Called on window resize and once at init.
- * Also called by the settings menu when toggling fullscreen.
+ * Handle window resize and fullscreen toggles.
+ * Called automatically on 'resize' events and once during initRenderer().
+ * Also call manually from SettingsMenu when toggling fullscreen.
  */
 export function resize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  // Respect the preset pixel ratio — don't reset to full DPR on resize
-  const _resizePreset = (() => { try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; } })();
-  const _prResizeMap  = { low: 0.5, medium: 1.0, high: 1.5, ultra: 2.0, extreme: 2.0 };
-  const dpr = Math.min(_prResizeMap[_resizePreset] ?? 0.5, window.devicePixelRatio);
+
+  // Re-read preset in case the player changed it in Settings mid-session.
+  const currentPreset = (() => {
+    try { return localStorage.getItem('graphicsPreset') ?? 'low'; } catch { return 'low'; }
+  })();
+  const _prMap = { low: 0.5, medium: 1.0, high: 1.5, ultra: 2.0, extreme: 2.0 };
+  const dpr    = Math.min(_prMap[currentPreset] ?? 0.5, window.devicePixelRatio);
 
   if (camera) {
     camera.aspect = w / h;
@@ -351,145 +355,142 @@ export function resize() {
     renderer.setPixelRatio(dpr);
   }
 
-  if (composer) {
-    composer.setSize(w, h);
-  }
-
-  // FXAA needs pixel size uniform updated on resize
-  if (_fxaaPass) {
-    _fxaaPass.material.uniforms['resolution'].value.set(
-      1 / (w * dpr),
-      1 / (h * dpr)
-    );
-  }
-
-  if (_bloomPass) {
-    _bloomPass.resolution.set(w, h);
-  }
-
-  // Part 5 — PostFX handles its own pass resizing when hooked
-  if (_postFXResize) {
-    _postFXResize(w, h);
-  }
+  // PostFX handles its own internal pass resizing once hooked.
+  if (_postFXResize) _postFXResize(w, h);
 }
 
-// ─── GRAPHICS SETTINGS API ───────────────────────────────────────────────────
+// ─── Graphics settings API ────────────────────────────────────────────────────
 
 /**
- * Apply graphics quality settings from SettingsMenu.
- * Called whenever the player changes a graphics option.
+ * Apply graphics quality changes at runtime (from SettingsMenu).
+ * All parameters are optional — only supplied ones are applied.
  *
- * @param {object} opts
- * @param {boolean} [opts.bloom]
- * @param {number}  [opts.bloomStrength]   0.0 – 1.0
- * @param {boolean} [opts.fxaa]
- * @param {number}  [opts.shadowMapSize]   512 | 1024 | 2048
- * @param {number}  [opts.pixelRatio]      1 | 1.5 | 2
- * @param {number}  [opts.toneMappingExposure]
+ * @param {object}  opts
+ * @param {number}  [opts.pixelRatio]            1 | 1.5 | 2
+ * @param {boolean} [opts.shadows]
+ * @param {number}  [opts.shadowMapSize]          512 | 1024 | 2048
+ * @param {number}  [opts.toneMappingExposure]    0.5 – 2.0
+ * @param {'linear'|'aces'} [opts.toneMapping]
  */
 export function applyGraphicsSettings(opts = {}) {
-  if (opts.bloom !== undefined && _bloomPass) {
-    _bloomPass.enabled = opts.bloom;
-  }
-  if (opts.bloomStrength !== undefined && _bloomPass) {
-    _bloomPass.strength = opts.bloomStrength;
-  }
-  if (opts.fxaa !== undefined && _fxaaPass) {
-    _fxaaPass.enabled = opts.fxaa;
-  }
-  if (opts.shadowMapSize !== undefined && SUN) {
-    SUN.shadow.mapSize.set(opts.shadowMapSize, opts.shadowMapSize);
-    SUN.shadow.map?.dispose();
-    SUN.shadow.map = null; // force re-bake
-  }
-  if (opts.pixelRatio !== undefined && renderer) {
+  if (!renderer) return;
+
+  if (opts.pixelRatio !== undefined) {
     renderer.setPixelRatio(Math.min(opts.pixelRatio, window.devicePixelRatio));
     resize();
   }
-  if (opts.toneMappingExposure !== undefined && renderer) {
+
+  if (opts.shadows !== undefined) {
+    renderer.shadowMap.enabled = opts.shadows;
+    // Force shadow map re-bake on all shadow-casting lights
+    scene?.traverse(obj => {
+      if (obj.isMesh) obj.material.needsUpdate = true;
+    });
+  }
+
+  if (opts.shadowMapSize !== undefined && SUN?.castShadow) {
+    SUN.shadow.mapSize.set(opts.shadowMapSize, opts.shadowMapSize);
+    SUN.shadow.map?.dispose();
+    SUN.shadow.map = null; // triggers re-bake next frame
+  }
+
+  if (opts.toneMappingExposure !== undefined) {
     renderer.toneMappingExposure = opts.toneMappingExposure;
+  }
+
+  if (opts.toneMapping !== undefined) {
+    renderer.toneMapping = opts.toneMapping === 'aces'
+      ? THREE.ACESFilmicToneMapping
+      : THREE.LinearToneMapping;
   }
 }
 
-// ─── DAY / NIGHT HELPERS ─────────────────────────────────────────────────────
+// ─── Day / Night helper ───────────────────────────────────────────────────────
 
 /**
- * Update scene lighting for time of day.
- * Called by environment.js every frame with normalised time (0=midnight, 0.5=noon).
+ * Update sun position and scene colours for time of day.
+ * Called by environment.js each frame with a normalised day fraction.
  *
- * @param {number} t  0.0 – 1.0 (fraction of a full day)
+ * If SkySystem has registered via setSkySystemHook(), this delegates to it.
+ * Otherwise the built-in sun-arc fallback runs so the world is never black
+ * during early boot (before SkySystem initialises).
+ *
+ * @param {number} t  Normalised day fraction: 0.0 = midnight, 0.5 = noon, 1.0 = midnight
  */
 export function setTimeOfDay(t) {
-  // Part 4 — if SkySystem is hooked in, delegate to it.
-  // SkySystem expects hour (0–24); t is normalised [0,1].
+  // Delegate to physically-based sky once available.
+  // SkySystem expects hour in [0, 24]; t is [0, 1].
   if (_skyUpdateHook) {
     _skyUpdateHook(0.016, t * 24);
     return;
   }
 
-  // ── Fallback: legacy flat-colour sky (used before Part 4 init) ────────────
-  const angle = (t * Math.PI * 2) - Math.PI * 0.5;
-  const radius = 400;
+  // ── Built-in fallback (used before Part 3 SkySystem registers) ────────────
+  if (!SUN || !AMBIENT || !scene) return;
+
+  const angle      = t * Math.PI * 2 - Math.PI * 0.5;
+  const dayFrac    = Math.max(0, Math.sin(angle)); // 0=night, 1=noon
+  const radius     = 400;
 
   SUN.position.set(
     Math.cos(angle) * radius * 0.6,
     Math.sin(angle) * radius,
     Math.sin(angle * 0.7) * radius * 0.4
   );
+  SUN.intensity = 2.5 * dayFrac;
 
-  // Intensity: 0 at night, full at noon
-  const dayFraction = Math.max(0, Math.sin(angle));
-  SUN.intensity = 2.5 * dayFraction;
-
-  // Colour: warm dawn/dusk, white noon, dark blue night
-  const nightCol  = new THREE.Color(0x0a0a2a);
-  const dawnCol   = new THREE.Color(0xff9060);
-  const noonCol   = new THREE.Color(0xfff8e7);
-  const duskCol   = new THREE.Color(0xff7040);
+  // ── Sun colour: night → dawn → noon → dusk → night ──────────────────────
+  const _night = new THREE.Color(0x0a0a2a);
+  const _dawn  = new THREE.Color(0xff9060);
+  const _noon  = new THREE.Color(0xfff8e7);
+  const _dusk  = new THREE.Color(0xff7040);
 
   let sunCol;
-  if (dayFraction < 0.15) {
-    sunCol = nightCol.lerp(dawnCol, dayFraction / 0.15);
-  } else if (dayFraction < 0.35) {
-    sunCol = dawnCol.clone().lerp(noonCol, (dayFraction - 0.15) / 0.2);
-  } else if (dayFraction < 0.75) {
-    sunCol = noonCol.clone();
-  } else if (dayFraction < 0.9) {
-    sunCol = noonCol.clone().lerp(duskCol, (dayFraction - 0.75) / 0.15);
-  } else {
-    sunCol = duskCol.clone().lerp(nightCol, (dayFraction - 0.9) / 0.1);
-  }
+  if      (dayFrac < 0.15) sunCol = _night.clone().lerp(_dawn,  dayFrac / 0.15);
+  else if (dayFrac < 0.35) sunCol = _dawn.clone().lerp(_noon,   (dayFrac - 0.15) / 0.20);
+  else if (dayFrac < 0.75) sunCol = _noon.clone();
+  else if (dayFrac < 0.90) sunCol = _noon.clone().lerp(_dusk,   (dayFrac - 0.75) / 0.15);
+  else                     sunCol = _dusk.clone().lerp(_night,  (dayFrac - 0.90) / 0.10);
+
   SUN.color.copy(sunCol);
 
-  // Sky / ambient — darker at night
-  const ambientIntensity = 0.15 + dayFraction * 0.45;
-  AMBIENT.intensity = ambientIntensity;
-  scene.background?.set(
-    dayFraction > 0.05
-      ? new THREE.Color(0xc8d8e8).lerp(new THREE.Color(0x080818), 1 - dayFraction)
-      : new THREE.Color(0x080818)
-  );
-  scene.fog.color.copy(scene.background);
+  // Ambient follows brightness
+  AMBIENT.intensity = 0.15 + dayFrac * 0.45;
 
-  // Bloom slightly stronger at night (neon emphasis)
-  if (_bloomPass) {
-    _bloomPass.strength = _ppSettings.bloomStrength + (1 - dayFraction) * 0.4;
-  }
+  // Sky background + fog shift to match
+  const _skyDay   = new THREE.Color(0xc8d8e8);
+  const _skyNight = new THREE.Color(0x080818);
+  const skyCol    = _skyDay.lerp(_skyNight, 1 - dayFrac);
+
+  if (scene.background?.isColor) scene.background.copy(skyCol);
+  if (scene.fog) scene.fog.color.copy(skyCol);
 }
 
-// ─── RENDER CALL ─────────────────────────────────────────────────────────────
+// ─── Render ───────────────────────────────────────────────────────────────────
 
 /**
- * Render one frame. Called by loop.js at the end of each tick.
- * Uses EffectComposer so all post-processing passes run automatically.
+ * Render one frame.
+ * Called by loop.js _builtinRender at the end of each tick (RENDER phase).
+ *
+ * Routing:
+ *   PostFX hooked  →  delegate to PostFX composer (bloom, FXAA, vignette, etc.)
+ *   No PostFX      →  plain renderer.render(scene, camera)
+ *
+ * The old file had a third path: the legacy built-in composer.  That has been
+ * removed.  There is now exactly ONE render call per frame in all cases.
+ *
+ * @param {number} [_alpha]  Physics interpolation factor (0–1) — passed through
+ *                           from loop.js, consumed by future motion-blur pass.
  */
-export function renderFrame() {
-  // Part 5 — if PostFX pipeline is hooked, delegate entirely to it.
-  // PostFX runs the bloom sub-composer then the main multi-pass composer.
+export function renderFrame(_alpha = 0) {
+  if (!renderer || !scene || !camera) return;
+
   if (_postFXRender) {
+    // Part 6 PostFX pipeline handles everything including the scene render pass.
     _postFXRender();
     return;
   }
-  // Fallback: legacy single-composer render (before Part 5 init)
-  composer.render();
+
+  // Fallback: direct renderer call — clean, zero overhead, correct output.
+  renderer.render(scene, camera);
 }

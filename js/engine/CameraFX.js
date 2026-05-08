@@ -38,11 +38,11 @@
  *     Works in both chase and hood modes.
  *
  *  6. SPEED FOV
- *     Lerps FOV from 65° at 0 km/h → 75° at 300 km/h.
- *     The plan target (conservative compared to the existing 68→85) keeps
- *     the horizon stable at high speed while still giving a sense of rush.
+ *     Lerps FOV from 68° at 0 km/h → 90° at 300 km/h.
+ *     This matches the plan target: wide enough to feel the rush at top speed
+ *     while keeping the horizon readable below 150 km/h.
  *     Overrides DrivingController's own FOV management — comment out
- *     the FOV lines in driving.js _updateCamera if you want Part 13 to
+ *     the FOV lines in driving.js _updateCamera if you want Part 6 to
  *     own it fully (see note in integration section below).
  *
  * INTEGRATION
@@ -105,9 +105,9 @@ const LANDING_GAIN    = 0.022;
 const LANDING_MAX     = 0.38;
 
 /** Speed FOV: degrees at 0 km/h. */
-const FOV_BASE        = 65;
-/** Speed FOV: degrees at top speed. */
-const FOV_MAX         = 75;
+const FOV_BASE        = 68;
+/** Speed FOV: degrees at top speed (300 km/h). Widening gives a rush-of-speed feel. */
+const FOV_MAX         = 90;
 /** Speed FOV: km/h that reaches FOV_MAX. */
 const FOV_SPEED       = 300;
 /** Speed FOV: lerp rate per second. */

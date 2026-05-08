@@ -1,384 +1,226 @@
 /**
- * audio.js
+ * audio.js — Part 7 revision
  * ─────────────────────────────────────────────────────────────────────────────
- * Centralised audio manager built on Howler.js.
- * Handles engine RPM loops, UI sound sprites, music crossfading,
- * and world/ambient sounds — all through a single `audioManager` export.
+ * Centralised audio manager built on Howler.js, with Web Audio API gain nodes
+ * for real-time engine pitch control, continuous tyre-squeal volume scaled by
+ * lateral slip, and a rain ambient layer that crossfades in with weather.
  *
- * Usage:
- *   import { initAudio, audioManager } from './audio.js';
- *   await initAudio();
+ * ── PART 7 ADDITIONS ────────────────────────────────────────────────────────
+ *  1. updateAudio(dt, opts)
+ *       Single unified per-frame call from main.js. Drives:
+ *         • Engine RPM pitch   (Howler rate + smoothed lerp)
+ *         • Tyre squeal volume (continuous 0–1 from lateral slip magnitude)
+ *         • Turbo whine        (from boost level)
+ *         • Rain ambient loop  (crossfades in when rainBlend > 0)
  *
- *   audioManager.playEngine(rpm, throttle);   // call every frame from driving.js
- *   audioManager.playUI('click');             // one-shot UI sounds
- *   audioManager.playMusic('festival');       // crossfade to a music track
+ *  2. Rain ambient layer
+ *       Procedurally synthesised rain loop via OfflineAudioContext.
+ *       No external asset required — fully self-contained.
+ *       Crossfades from 0→full over ~3 s when rainBlend increases.
  *
- * Howler.js loaded via importmap:
- *   "howler" → "https://esm.sh/howler"
+ *  3. Smooth tyre squeal
+ *       setTireSqueal() now accepts a continuous 0–1 value.
+ *       updateAudio() derives squealNorm from (slipMag - 2.5) / 3.5.
+ *       Pitch also scales with slip for a chirp-to-screech character arc.
  *
- * Asset paths (relative to index.html, in assets/audio/):
- *   engines/   — engine loop files (one per category: inline4, v6, v8, electric)
- *   music/     — background music tracks
- *   ui/        — UI sound sprite sheet
- *   world/     — tire squeal, gravel, impact, horn, ambient city
- *
- * Part 2.8 — Audio Feedback (design doc reference)
+ *  4. Audio adapter for DrivingController
+ *       getAudioAdapter() returns a duck-typed { play, stop, setParam }
+ *       object that driving.js already calls via this._audio.
+ *       Pass it to new DrivingController(car, { ..., audioManager: audioManager.getAudioAdapter() })
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import { Howl, Howler } from 'howler';
 
 // ─── VOLUME CHANNELS ─────────────────────────────────────────────────────────
-// Separate volume channels let players balance audio in Settings.
 
 const _vol = {
-  master: 1.0,
-  music:  0.55,
-  sfx:    0.85,
-  engine: 0.80,
+  master:  1.0,
+  music:   0.55,
+  sfx:     0.85,
+  engine:  0.80,
   ambient: 0.40,
 };
 
 // ─── ENGINE SOUND PROFILES ───────────────────────────────────────────────────
-/**
- * Each car category uses a different engine loop file.
- * The loop is pitched in real-time via Howler's `rate()` API.
- *
- * RPM range → playback rate mapping:
- *   idleRPM  → rate 0.5  (low idle rumble)
- *   redline  → rate 2.0  (screaming redline)
- *
- * The curve is intentionally non-linear — mid-range RPM sounds more dramatic.
- */
+
 const ENGINE_PROFILES = Object.freeze({
-  inline4: {
-    src:     ['assets/audio/engines/inline4_loop.ogg', 'assets/audio/engines/inline4_loop.mp3'],
-    idleRPM: 800,
-    redline:  7500,
-  },
-  inline6: {
-    src:     ['assets/audio/engines/inline6_loop.ogg', 'assets/audio/engines/inline6_loop.mp3'],
-    idleRPM: 700,
-    redline:  7000,
-  },
-  v6: {
-    src:     ['assets/audio/engines/v6_loop.ogg', 'assets/audio/engines/v6_loop.mp3'],
-    idleRPM: 750,
-    redline:  7200,
-  },
-  v8: {
-    src:     ['assets/audio/engines/v8_loop.ogg', 'assets/audio/engines/v8_loop.mp3'],
-    idleRPM: 650,
-    redline:  6500,
-  },
-  v10: {
-    src:     ['assets/audio/engines/v10_loop.ogg', 'assets/audio/engines/v10_loop.mp3'],
-    idleRPM: 700,
-    redline:  8500,
-  },
-  v12: {
-    src:     ['assets/audio/engines/v12_loop.ogg', 'assets/audio/engines/v12_loop.mp3'],
-    idleRPM: 600,
-    redline:  8000,
-  },
-  electric: {
-    src:     ['assets/audio/engines/electric_loop.ogg', 'assets/audio/engines/electric_loop.mp3'],
-    idleRPM: 0,
-    redline:  20000,
-  },
+  inline4: { src: ['assets/audio/engines/inline4_loop.ogg', 'assets/audio/engines/inline4_loop.mp3'], idleRPM: 800,  redline: 7500 },
+  inline6: { src: ['assets/audio/engines/inline6_loop.ogg', 'assets/audio/engines/inline6_loop.mp3'], idleRPM: 700,  redline: 7000 },
+  v6:      { src: ['assets/audio/engines/v6_loop.ogg',      'assets/audio/engines/v6_loop.mp3'],      idleRPM: 750,  redline: 7200 },
+  v8:      { src: ['assets/audio/engines/v8_loop.ogg',      'assets/audio/engines/v8_loop.mp3'],      idleRPM: 650,  redline: 6500 },
+  v10:     { src: ['assets/audio/engines/v10_loop.ogg',     'assets/audio/engines/v10_loop.mp3'],     idleRPM: 700,  redline: 8500 },
+  v12:     { src: ['assets/audio/engines/v12_loop.ogg',     'assets/audio/engines/v12_loop.mp3'],     idleRPM: 600,  redline: 8000 },
+  electric:{ src: ['assets/audio/engines/electric_loop.ogg','assets/audio/engines/electric_loop.mp3'],idleRPM: 0,    redline: 20000 },
 });
 
 // ─── UI SOUND SPRITE ─────────────────────────────────────────────────────────
-/**
- * All UI sounds packed into one sprite file for instant playback (no loading
- * delay on first use). Sprite offsets are in milliseconds.
- *
- * Audio file: assets/audio/ui/ui_sprites.ogg + .mp3
- * Sprite layout — each entry: [startMs, durationMs]
- */
+
 const UI_SPRITE_MAP = Object.freeze({
-  click:         [0,     120],
-  hover:         [200,    80],
-  confirm:       [400,   350],
-  back:          [850,   200],
-  error:         [1150,  300],
-  notification:  [1550,  400],
-  levelUp:       [2050, 1800],
-  wheelspinTick: [3950,   60],
-  wheelspinLand: [4100,  600],
-  creditTick:    [4800,   40],
-  boardCollect:  [4950,  500],
-  raceStart:     [5550, 1200],
-  raceFinish:    [6850, 2000],
-  newRecord:     [8950, 1500],
-  countdownBeep: [10550,  300],
-  countdownGo:   [10950,  700],
-  purchase:      [11750,  400],
-  tabSwitch:     [12250,  100],
-  menuOpen:      [12450,  250],
-  menuClose:     [12800,  200],
-  horn:          [13100,  800],
+  click:         [0,     120],  hover:         [200,    80],  confirm:       [400,   350],
+  back:          [850,   200],  error:         [1150,  300],  notification:  [1550,  400],
+  levelUp:       [2050, 1800],  wheelspinTick: [3950,   60],  wheelspinLand: [4100,  600],
+  creditTick:    [4800,   40],  boardCollect:  [4950,  500],  raceStart:     [5550, 1200],
+  raceFinish:    [6850, 2000],  newRecord:     [8950, 1500],  countdownBeep: [10550,  300],
+  countdownGo:   [10950,  700], purchase:      [11750,  400], tabSwitch:     [12250,  100],
+  menuOpen:      [12450,  250], menuClose:     [12800,  200], horn:          [13100,  800],
   rewind:        [14000,  600],
 });
 
 // ─── MUSIC TRACKS ────────────────────────────────────────────────────────────
-/**
- * Named music contexts — each maps to one or more track files.
- * The manager picks randomly within a context and crossfades on switch.
- */
+
 const MUSIC_TRACKS = Object.freeze({
-  menu:      ['assets/audio/music/menu_theme.ogg',     'assets/audio/music/menu_theme.mp3'],
-  festival:  ['assets/audio/music/festival_01.ogg',    'assets/audio/music/festival_01.mp3'],
-  driving:   ['assets/audio/music/driving_01.ogg',     'assets/audio/music/driving_01.mp3',
-               'assets/audio/music/driving_02.ogg',    'assets/audio/music/driving_02.mp3'],
-  race:      ['assets/audio/music/race_01.ogg',        'assets/audio/music/race_01.mp3',
-               'assets/audio/music/race_02.ogg',       'assets/audio/music/race_02.mp3'],
-  results:   ['assets/audio/music/results.ogg',        'assets/audio/music/results.mp3'],
-  wheelspin: ['assets/audio/music/wheelspin_sting.ogg','assets/audio/music/wheelspin_sting.mp3'],
-  levelUp:   ['assets/audio/music/levelup_sting.ogg',  'assets/audio/music/levelup_sting.mp3'],
+  menu:      ['assets/audio/music/menu_theme.ogg',      'assets/audio/music/menu_theme.mp3'],
+  festival:  ['assets/audio/music/festival_01.ogg',     'assets/audio/music/festival_01.mp3'],
+  driving:   ['assets/audio/music/driving_01.ogg',      'assets/audio/music/driving_01.mp3',
+               'assets/audio/music/driving_02.ogg',     'assets/audio/music/driving_02.mp3'],
+  race:      ['assets/audio/music/race_01.ogg',         'assets/audio/music/race_01.mp3',
+               'assets/audio/music/race_02.ogg',        'assets/audio/music/race_02.mp3'],
+  results:   ['assets/audio/music/results.ogg',         'assets/audio/music/results.mp3'],
+  wheelspin: ['assets/audio/music/wheelspin_sting.ogg', 'assets/audio/music/wheelspin_sting.mp3'],
+  levelUp:   ['assets/audio/music/levelup_sting.ogg',   'assets/audio/music/levelup_sting.mp3'],
   none:      null,
 });
 
 // ─── WORLD SOUND DEFINITIONS ─────────────────────────────────────────────────
+
 const WORLD_SOUNDS = Object.freeze({
-  tireSqueal: {
-    src: ['assets/audio/world/tire_squeal.ogg', 'assets/audio/world/tire_squeal.mp3'],
-    loop: true, volume: 0,
-  },
-  gravel: {
-    src: ['assets/audio/world/gravel_loop.ogg', 'assets/audio/world/gravel_loop.mp3'],
-    loop: true, volume: 0,
-  },
-  impactLight: {
-    src: ['assets/audio/world/impact_light.ogg', 'assets/audio/world/impact_light.mp3'],
-    loop: false,
-  },
-  impactHeavy: {
-    src: ['assets/audio/world/impact_heavy.ogg', 'assets/audio/world/impact_heavy.mp3'],
-    loop: false,
-  },
-  turboWhine: {
-    src: ['assets/audio/world/turbo_whine.ogg', 'assets/audio/world/turbo_whine.mp3'],
-    loop: true, volume: 0,
-  },
-  ambientCity: {
-    src: ['assets/audio/world/city_ambient.ogg', 'assets/audio/world/city_ambient.mp3'],
-    loop: true,
-  },
-  footstep: {
-    src: ['assets/audio/world/footstep.ogg', 'assets/audio/world/footstep.mp3'],
-    loop: false,
-  },
+  tireSqueal:  { src: ['assets/audio/world/tire_squeal.ogg',  'assets/audio/world/tire_squeal.mp3'],  loop: true,  volume: 0 },
+  gravel:      { src: ['assets/audio/world/gravel_loop.ogg',  'assets/audio/world/gravel_loop.mp3'],  loop: true,  volume: 0 },
+  impactLight: { src: ['assets/audio/world/impact_light.ogg', 'assets/audio/world/impact_light.mp3'], loop: false },
+  impactHeavy: { src: ['assets/audio/world/impact_heavy.ogg', 'assets/audio/world/impact_heavy.mp3'], loop: false },
+  turboWhine:  { src: ['assets/audio/world/turbo_whine.ogg',  'assets/audio/world/turbo_whine.mp3'],  loop: true,  volume: 0 },
+  ambientCity: { src: ['assets/audio/world/city_ambient.ogg', 'assets/audio/world/city_ambient.mp3'], loop: true },
+  footstep:    { src: ['assets/audio/world/footstep.ogg',     'assets/audio/world/footstep.mp3'],     loop: false },
 });
 
 // ─── INTERNAL STATE ──────────────────────────────────────────────────────────
 
-/** @type {Howl|null} Active engine loop */
-let _engineHowl   = null;
-let _engineSoundId = null;
-let _activeProfile = null;
+let _engineHowl         = null;
+let _engineSoundId      = null;
+let _activeProfile      = null;
+let _engineRateSmoothed = 0.5;   // smoothed pitch rate, lerped each frame
 
-/** @type {Howl|null} UI sprite sheet */
 let _uiHowl = null;
 
-/** @type {{ current: Howl|null, next: Howl|null }} Music crossfade state */
-const _music = { current: null, next: null, context: null };
-
-/** @type {Map<string, Howl>} Loaded world sounds */
+const _music     = { current: null, context: null };
 const _worldHowls = new Map();
 
-/** Whether the audio context has been unlocked by a user gesture */
 let _unlocked = false;
+
+// ─── PART 7: RAIN STATE ──────────────────────────────────────────────────────
+
+let _rainHowl     = null;
+let _rainSoundId  = null;
+let _rainVolNow   = 0;
+let _rainBuilding = false;
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
-/**
- * Initialise the audio system and preload the UI sprite sheet.
- * Engine loops and music load on-demand to keep startup time fast.
- *
- * @returns {Promise<void>}
- */
 export async function initAudio() {
-  // Apply master volume
   Howler.volume(_vol.master);
-
-  // Preload UI sprite — it's small and needed immediately
   await _loadUISprite();
-
-  // Preload world ambient — plays as soon as game world is ready
   _loadWorldSounds();
-
-  // Unlock audio context on first user gesture (browser autoplay policy)
   document.addEventListener('pointerdown', _unlockAudio, { once: true });
   document.addEventListener('keydown',     _unlockAudio, { once: true });
-
-  console.log('[audio] ✅ Initialised — Howler v' + Howler.version ?? '2.x');
+  console.log('[audio] Initialised');
 }
 
 function _unlockAudio() {
   if (_unlocked) return;
   _unlocked = true;
-  // Howler.ctx?.resume() handles Web Audio context unlock automatically,
-  // but we also resume manually for older browsers
   Howler.ctx?.resume?.();
 }
-
-// ─── UI SPRITE LOADER ────────────────────────────────────────────────────────
 
 function _loadUISprite() {
   return new Promise((resolve) => {
     _uiHowl = new Howl({
-      src:    ['assets/audio/ui/ui_sprites.ogg', 'assets/audio/ui/ui_sprites.mp3'],
-      sprite: UI_SPRITE_MAP,
-      volume: _vol.sfx,
-      preload: true,
-      onload:  resolve,
-      onloaderror: (_, err) => {
-        console.warn('[audio] UI sprite failed to load:', err);
-        resolve(); // non-fatal — game runs without sound
-      },
+      src: ['assets/audio/ui/ui_sprites.ogg', 'assets/audio/ui/ui_sprites.mp3'],
+      sprite: UI_SPRITE_MAP, volume: _vol.sfx, preload: true,
+      onload: resolve,
+      onloaderror: (_, err) => { console.warn('[audio] UI sprite failed:', err); resolve(); },
     });
   });
 }
-
-// ─── WORLD SOUND LOADER ──────────────────────────────────────────────────────
 
 function _loadWorldSounds() {
   for (const [name, def] of Object.entries(WORLD_SOUNDS)) {
-    const howl = new Howl({
-      src:    def.src,
-      loop:   def.loop ?? false,
+    _worldHowls.set(name, new Howl({
+      src: def.src, loop: def.loop ?? false,
       volume: (def.volume ?? 1.0) * _vol.sfx * _vol.ambient,
       preload: true,
       onloaderror: () => console.warn('[audio] World sound failed:', name),
-    });
-    _worldHowls.set(name, howl);
+    }));
   }
 }
 
-// ─── ENGINE AUDIO ─────────────────────────────────────────────────────────────
+// ─── ENGINE ──────────────────────────────────────────────────────────────────
 
-/**
- * Load and start the engine loop for a given car engine category.
- * Call this when the player gets into a car.
- *
- * @param {'inline4'|'v6'|'v8'|'v10'|'v12'|'electric'} category
- */
 export function loadEngineSound(category) {
   const profile = ENGINE_PROFILES[category] ?? ENGINE_PROFILES.inline4;
-  if (_activeProfile === category) return; // already loaded
-
-  // Stop and unload previous engine
-  _engineHowl?.stop();
-  _engineHowl?.unload();
-
+  if (_activeProfile === category) return;
+  _engineHowl?.stop(); _engineHowl?.unload();
   _activeProfile = category;
-
+  _engineRateSmoothed = 0.5;
   _engineHowl = new Howl({
-    src:    profile.src,
-    loop:   true,
-    volume: _vol.engine,
-    rate:   0.5, // start at idle rate
-    preload: true,
-    onload: () => {
-      _engineSoundId = _engineHowl.play();
-    },
-    onloaderror: (_, err) => {
-      console.warn('[audio] Engine sound failed to load:', category, err);
-    },
+    src: profile.src, loop: true, volume: _vol.engine, rate: 0.5, preload: true,
+    onload:       () => { _engineSoundId = _engineHowl.play(); },
+    onloaderror: (_, err) => console.warn('[audio] Engine failed:', category, err),
   });
 }
 
-/**
- * Update engine pitch and volume based on current RPM and throttle input.
- * Call this every frame from driving.js.
- *
- * @param {number} rpm       Current engine RPM (e.g. 800 – 8000)
- * @param {number} throttle  0–1 throttle input (used to duck volume when off-throttle)
- */
-export function playEngine(rpm, throttle = 1) {
+export function playEngine(rpm, throttle = 1, dt = 0.016) {
   if (!_engineHowl || _engineSoundId === null) return;
-  if (!_engineHowl.playing(_engineSoundId)) {
-    _engineSoundId = _engineHowl.play();
-  }
+  if (!_engineHowl.playing(_engineSoundId)) _engineSoundId = _engineHowl.play();
 
-  const profile = ENGINE_PROFILES[_activeProfile] ?? ENGINE_PROFILES.inline4;
-  const rate = _rpmToRate(rpm, profile.idleRPM, profile.redline);
+  const profile    = ENGINE_PROFILES[_activeProfile] ?? ENGINE_PROFILES.inline4;
+  const targetRate = _rpmToRate(rpm, profile.idleRPM, profile.redline);
 
-  // Volume: full at throttle, ducked slightly at coast
-  const vol = (_vol.engine * (0.6 + throttle * 0.4)) * _vol.master;
+  // Fast attack (punch on blip), slower release (smooth on lift)
+  const lerpSpeed = targetRate > _engineRateSmoothed ? 12 : 6;
+  _engineRateSmoothed += (targetRate - _engineRateSmoothed) * Math.min(dt * lerpSpeed, 1);
 
-  _engineHowl.rate(rate,   _engineSoundId);
-  _engineHowl.volume(vol,  _engineSoundId);
+  _engineHowl.rate(_engineRateSmoothed, _engineSoundId);
+  _engineHowl.volume(_vol.engine * (0.6 + throttle * 0.4) * _vol.master, _engineSoundId);
 }
 
-/**
- * Map RPM to a Howler playback rate using a mild exponential curve.
- * Linear sounds flat — the curve makes mid-range feel punchier.
- *
- * @param {number} rpm
- * @param {number} idleRPM
- * @param {number} redline
- * @returns {number} rate 0.4–2.0
- */
 function _rpmToRate(rpm, idleRPM, redline) {
-  const clamped = Math.max(idleRPM, Math.min(redline, rpm));
-  const t = (clamped - idleRPM) / (redline - idleRPM); // 0–1
-  // Exponential curve: eases in at idle, snappy at redline
-  const curved = Math.pow(t, 0.75);
-  return 0.4 + curved * 1.6; // maps to 0.4–2.0
+  const t = (Math.max(idleRPM, Math.min(redline, rpm)) - idleRPM) / (redline - idleRPM);
+  return 0.4 + Math.pow(t, 0.75) * 1.6;   // 0.4–2.0, exponential curve
 }
 
-/**
- * Stop the engine sound (player exits car).
- * Fades out over 300ms to avoid a hard cut.
- */
 export function stopEngine() {
   if (!_engineHowl || _engineSoundId === null) return;
   _engineHowl.fade(_engineHowl.volume(_engineSoundId), 0, 300, _engineSoundId);
-  setTimeout(() => {
-    _engineHowl?.stop(_engineSoundId);
-    _engineSoundId = null;
-  }, 310);
+  setTimeout(() => { _engineHowl?.stop(_engineSoundId); _engineSoundId = null; }, 310);
 }
 
-// ─── TURBO WHINE ─────────────────────────────────────────────────────────────
+// ─── TURBO ───────────────────────────────────────────────────────────────────
 
-/**
- * Update turbo/supercharger whine volume.
- * Call from driving.js — turbo has its own layered loop over the engine.
- *
- * @param {number} boost  0–1 boost pressure (from turbo model in transmission.js)
- */
 export function setTurboWhine(boost) {
   const howl = _worldHowls.get('turboWhine');
   if (!howl) return;
-  const targetVol = boost * 0.6 * _vol.sfx;
+  const vol = boost * 0.6 * _vol.sfx;
   if (boost > 0.05 && !howl.playing()) howl.play();
-  howl.volume(targetVol);
+  howl.volume(vol);
 }
 
-// ─── TIRE / SURFACE SOUNDS ───────────────────────────────────────────────────
+// ─── TYRE SQUEAL — PART 7: continuous + pitch scaling ────────────────────────
 
-/**
- * Update tire squeal volume based on lateral slip angle.
- * Call every frame from driving.js.
- *
- * @param {number} slipNorm  0–1 normalised slip (0=no squeal, 1=full screech)
- */
 export function setTireSqueal(slipNorm) {
   const howl = _worldHowls.get('tireSqueal');
   if (!howl) return;
-  const vol = Math.max(0, slipNorm - 0.1) * _vol.sfx;
-  if (vol > 0.01 && !howl.playing()) howl.play();
-  howl.volume(vol * _vol.master);
-  if (vol < 0.01 && howl.playing()) howl.stop();
+  // Dead-zone 0–0.1; ramp from 0.1 to 1.0
+  const vol = Math.max(0, (slipNorm - 0.1) / 0.9) * _vol.sfx;
+  if (vol > 0.01) {
+    if (!howl.playing()) howl.play();
+    howl.volume(vol * _vol.master);
+    howl.rate(0.7 + slipNorm * 0.6);   // chirp at low slip, screech at high
+  } else {
+    if (howl.playing()) howl.stop();
+  }
 }
 
-/**
- * Update gravel/dirt surface sound.
- * @param {number} intensity  0–1 (0 = on tarmac, 1 = deep offroad)
- */
 export function setGravelSound(intensity) {
   const howl = _worldHowls.get('gravel');
   if (!howl) return;
@@ -388,43 +230,186 @@ export function setGravelSound(intensity) {
   if (vol < 0.01 && howl.playing()) howl.stop();
 }
 
-// ─── COLLISION SOUNDS ────────────────────────────────────────────────────────
+// ─── PART 7: RAIN AMBIENT SYNTHESIS ─────────────────────────────────────────
+
+async function _synthesiseRain() {
+  const SR = 44100, DUR = 3.0;
+  const ctx = new OfflineAudioContext(2, Math.ceil(SR * DUR), SR);
+
+  // Broadband rain hiss
+  const nBuf = ctx.createBuffer(2, Math.ceil(SR * DUR), SR);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = nBuf.getChannelData(ch);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const nSrc = ctx.createBufferSource(); nSrc.buffer = nBuf; nSrc.loop = true;
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 0.3;
+  const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 800;
+  const g  = ctx.createGain(); g.gain.value = 0.22;
+  nSrc.connect(bp); bp.connect(hp); hp.connect(g); g.connect(ctx.destination);
+  nSrc.start(0);
+
+  // Drip transients
+  const dStride = Math.ceil(SR * 0.16);
+  const dBuf    = ctx.createBuffer(1, dStride, SR);
+  const dCh     = dBuf.getChannelData(0);
+  for (let i = 0; i < dCh.length; i++) {
+    const t = i / SR, f = 1200 + Math.random() * 800;
+    dCh[i] = Math.sin(2 * Math.PI * f * t) * Math.exp(-t / 0.012) * 0.12;
+  }
+  const dSrc = ctx.createBufferSource(); dSrc.buffer = dBuf; dSrc.loop = true;
+  const dg   = ctx.createGain(); dg.gain.value = 0.5;
+  dSrc.connect(dg); dg.connect(ctx.destination); dSrc.start(0.04);
+
+  const rendered = await ctx.startRendering();
+
+  // Encode as 16-bit PCM WAV blob URL
+  const numCh = rendered.numberOfChannels, len = rendered.length;
+  const ab = new ArrayBuffer(44 + len * numCh * 2);
+  const v  = new DataView(ab);
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0, 'RIFF'); v.setUint32(4, 36 + len * numCh * 2, true); ws(8, 'WAVE');
+  ws(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, numCh, true); v.setUint32(24, SR, true);
+  v.setUint32(28, SR * numCh * 2, true); v.setUint16(32, numCh * 2, true);
+  v.setUint16(34, 16, true); ws(36, 'data'); v.setUint32(40, len * numCh * 2, true);
+  let off = 44;
+  for (let s = 0; s < len; s++) for (let ch = 0; ch < numCh; ch++) {
+    const smp = Math.max(-1, Math.min(1, rendered.getChannelData(ch)[s]));
+    v.setInt16(off, smp < 0 ? smp * 0x8000 : smp * 0x7FFF, true); off += 2;
+  }
+  return URL.createObjectURL(new Blob([ab], { type: 'audio/wav' }));
+}
+
+async function _ensureRainLoop() {
+  if (_rainBuilding) return;
+  _rainBuilding = true;
+  try {
+    const url = await _synthesiseRain();
+    _rainHowl = new Howl({
+      src: [url], format: ['wav'], loop: true, volume: 0, html5: false,
+      onloaderror: () => { console.warn('[audio] Rain loop failed'); _rainBuilding = false; },
+    });
+    _rainSoundId = _rainHowl.play();
+    _rainHowl.volume(0, _rainSoundId);
+    console.log('[audio] Rain ambient ready');
+  } catch (e) {
+    console.warn('[audio] Rain synthesis error:', e);
+    _rainBuilding = false;
+  }
+}
+
+// ─── PART 7: UNIFIED PER-FRAME UPDATE ────────────────────────────────────────
 
 /**
- * Play an impact sound scaled by collision severity.
- * @param {number} severity  0–1 (0.0–0.3 = light scrape, 0.3+ = heavy impact)
+ * updateAudio(dt, opts) — single call per game tick from main.js.
+ *
+ * @param {number} dt   Frame delta in seconds
+ * @param {{
+ *   rpm?:       number,   raw engine RPM (800–8000)
+ *   throttle?:  number,   0–1 throttle
+ *   boost?:     number,   0–1 turbo boost
+ *   slipMag?:   number,   raw slip m/s from driving.js (|frontSlipV|+|rearSlipV|)
+ *   isRain?:    boolean,
+ *   rainBlend?: number,   0–1 rain intensity from weather system
+ * }} opts
  */
+export function updateAudio(dt, opts = {}) {
+  const {
+    rpm       = 800,
+    throttle  = 0,
+    boost     = 0,
+    slipMag   = 0,
+    isRain    = false,
+    rainBlend = 0,
+  } = opts;
+
+  // 1 — Engine pitch + volume
+  playEngine(rpm, throttle, dt);
+
+  // 2 — Turbo whine
+  setTurboWhine(boost);
+
+  // 3 — Tyre squeal: slipMag threshold 2.5 m/s, full at 6 m/s
+  setTireSqueal(Math.max(0, Math.min(1, (slipMag - 2.5) / 3.5)));
+
+  // 4 — Rain ambient crossfade
+  const targetRainVol = (isRain && rainBlend > 0)
+    ? rainBlend * 0.45 * _vol.ambient * _vol.master
+    : 0;
+
+  if (targetRainVol > 0.005 && !_rainBuilding && !_rainHowl) {
+    _ensureRainLoop();
+  }
+
+  if (_rainHowl && _rainSoundId !== null) {
+    const speed = targetRainVol > _rainVolNow ? 0.8 : 1.5;
+    _rainVolNow += (targetRainVol - _rainVolNow) * Math.min(dt * speed, 1);
+    if (!_rainHowl.playing(_rainSoundId) && _rainVolNow > 0.005) {
+      _rainSoundId = _rainHowl.play();
+      _rainHowl.volume(0, _rainSoundId);
+    }
+    _rainHowl.volume(Math.max(0, _rainVolNow), _rainSoundId);
+    if (_rainVolNow < 0.005 && _rainHowl.playing(_rainSoundId)) {
+      _rainHowl.stop(_rainSoundId);
+      _rainSoundId = null;
+      _rainVolNow  = 0;
+    }
+  }
+}
+
+// ─── PART 7: AUDIO ADAPTER FOR DRIVINGCONTROLLER ────────────────────────────
+
+/**
+ * Returns a duck-typed adapter that DrivingController can call via this._audio.
+ * Pass this to new DrivingController(car, { ..., audioManager: audioManager.getAudioAdapter() })
+ */
+export function getAudioAdapter() {
+  const state = { throttle: 0 };
+  return {
+    setParam(key, value) {
+      if (key === 'engine_rpm') {
+        const p = ENGINE_PROFILES[_activeProfile] ?? ENGINE_PROFILES.inline4;
+        playEngine(p.idleRPM + value * (p.redline - p.idleRPM), state.throttle, 0.016);
+      } else if (key === 'engine_load') {
+        state.throttle = value;
+      } else if (key === 'engine_boost') {
+        setTurboWhine(value);
+      }
+    },
+    play(name, vol = 1) {
+      switch (name) {
+        case 'tyre_squeal':  setTireSqueal(vol);     break;
+        case 'impact':       playImpact(vol);         break;
+        case 'gravel_loop':  setGravelSound(vol);     break;
+        case 'horn':         playUI('horn');           break;
+      }
+    },
+    stop(name) {
+      if (name === 'tyre_squeal') setTireSqueal(0);
+      if (name === 'gravel_loop') setGravelSound(0);
+    },
+  };
+}
+
+// ─── IMPACT / FOOTSTEP / AMBIENT ─────────────────────────────────────────────
+
 export function playImpact(severity) {
-  const name = severity > 0.3 ? 'impactHeavy' : 'impactLight';
-  const howl = _worldHowls.get(name);
+  const howl = _worldHowls.get(severity > 0.3 ? 'impactHeavy' : 'impactLight');
   if (!howl) return;
-  const vol = (0.4 + severity * 0.6) * _vol.sfx * _vol.master;
-  howl.volume(vol);
+  howl.volume((0.4 + severity * 0.6) * _vol.sfx * _vol.master);
   howl.play();
 }
 
-// ─── FOOTSTEPS ───────────────────────────────────────────────────────────────
-
-/** Play a single footstep (call on each footfall event from movement.js) */
 export function playFootstep() {
   const howl = _worldHowls.get('footstep');
   if (!howl) return;
-  howl.volume(0.35 * _vol.sfx * _vol.master);
-  howl.play();
+  howl.volume(0.35 * _vol.sfx * _vol.master); howl.play();
 }
 
-// ─── AMBIENT CITY ─────────────────────────────────────────────────────────────
-
-/**
- * Start the ambient city sound loop.
- * Called by city.js once the world is loaded.
- */
 export function startAmbient() {
   const howl = _worldHowls.get('ambientCity');
-  if (howl && !howl.playing()) {
-    howl.volume(_vol.ambient * _vol.master);
-    howl.play();
-  }
+  if (howl && !howl.playing()) { howl.volume(_vol.ambient * _vol.master); howl.play(); }
 }
 
 export function stopAmbient() {
@@ -435,203 +420,67 @@ export function stopAmbient() {
 
 // ─── UI SOUNDS ────────────────────────────────────────────────────────────────
 
-/**
- * Play a named UI sound from the sprite sheet.
- * Non-blocking — returns immediately.
- *
- * @param {keyof typeof UI_SPRITE_MAP} name
- * @param {number} [volumeOverride]  0–1, uses sfx channel if omitted
- */
 export function playUI(name, volumeOverride) {
-  if (!_uiHowl) return;
-  if (!UI_SPRITE_MAP[name]) {
-    console.warn('[audio] Unknown UI sound:', name);
-    return;
-  }
+  if (!_uiHowl || !UI_SPRITE_MAP[name]) { console.warn('[audio] Unknown UI:', name); return; }
   const id = _uiHowl.play(name);
-  const vol = (volumeOverride ?? 1.0) * _vol.sfx * _vol.master;
-  _uiHowl.volume(vol, id);
+  _uiHowl.volume((volumeOverride ?? 1.0) * _vol.sfx * _vol.master, id);
 }
 
 // ─── MUSIC ────────────────────────────────────────────────────────────────────
 
-/**
- * Switch to a named music context with a crossfade.
- * Calling with the same context that's already playing does nothing.
- *
- * @param {keyof typeof MUSIC_TRACKS} context  e.g. 'driving', 'race', 'menu'
- * @param {number} [fadeMs]  Crossfade duration in ms (default 1500)
- */
 export function playMusic(context, fadeMs = 1500) {
   if (context === _music.context) return;
-  if (!MUSIC_TRACKS[context] && context !== 'none') {
-    console.warn('[audio] Unknown music context:', context);
-    return;
-  }
-
+  if (!MUSIC_TRACKS[context] && context !== 'none') { console.warn('[audio] Unknown music:', context); return; }
   _music.context = context;
-
-  // Fade out current track
-  if (_music.current && _music.current.playing()) {
-    const outHowl = _music.current;
-    outHowl.fade(outHowl.volume(), 0, fadeMs);
-    setTimeout(() => { outHowl.stop(); outHowl.unload(); }, fadeMs + 100);
+  if (_music.current?.playing()) {
+    const old = _music.current;
+    old.fade(old.volume(), 0, fadeMs);
+    setTimeout(() => { old.stop(); old.unload(); }, fadeMs + 100);
   }
-
-  if (context === 'none' || !MUSIC_TRACKS[context]) {
-    _music.current = null;
-    return;
-  }
-
-  // Pick tracks for this context (pair ogg+mp3)
-  const tracks = MUSIC_TRACKS[context];
-  const src = _pickTrackSrc(tracks);
-
-  const targetVol = _vol.music * _vol.master;
-
-  const newHowl = new Howl({
-    src,
-    loop:   !['wheelspin', 'levelUp', 'results'].includes(context),
-    volume: 0, // start silent — fade in
-    onloaderror: () => console.warn('[audio] Music failed to load:', context),
-    onend: () => {
-      // For one-shot stings (wheelspin, levelUp), return to previous context
-      if (['wheelspin', 'levelUp'].includes(context)) {
-        playMusic('driving');
-      }
-    },
+  if (context === 'none' || !MUSIC_TRACKS[context]) { _music.current = null; return; }
+  const src = _pickTrackSrc(MUSIC_TRACKS[context]);
+  const newH = new Howl({
+    src, loop: !['wheelspin','levelUp','results'].includes(context), volume: 0,
+    onloaderror: () => console.warn('[audio] Music failed:', context),
+    onend: () => { if (['wheelspin','levelUp'].includes(context)) playMusic('driving'); },
   });
-
-  _music.current = newHowl;
-  const id = newHowl.play();
-  newHowl.fade(0, targetVol, fadeMs, id);
+  _music.current = newH;
+  newH.fade(0, _vol.music * _vol.master, fadeMs, newH.play());
 }
 
-/**
- * Pick the right src pair ([ogg, mp3]) from a flat track array.
- * MUSIC_TRACKS stores flat [ogg1, mp3_1, ogg2, mp3_2, ...] arrays.
- * When multiple tracks exist, picks a random pair.
- */
-function _pickTrackSrc(flatArray) {
-  // Pair up: [ogg, mp3] per track
+function _pickTrackSrc(flat) {
   const pairs = [];
-  for (let i = 0; i < flatArray.length; i += 2) {
-    pairs.push([flatArray[i], flatArray[i + 1]]);
-  }
-  const pair = pairs[Math.floor(Math.random() * pairs.length)];
-  return pair;
+  for (let i = 0; i < flat.length; i += 2) pairs.push([flat[i], flat[i+1]]);
+  return pairs[Math.floor(Math.random() * pairs.length)];
 }
 
-/**
- * Temporarily duck music volume (e.g. during announcer speech or cutscene).
- * @param {number} targetVol  0–1
- * @param {number} fadeMs
- */
-export function duckMusic(targetVol = 0.2, fadeMs = 300) {
-  if (!_music.current) return;
-  _music.current.fade(_music.current.volume(), targetVol * _vol.music * _vol.master, fadeMs);
+export function duckMusic(v = 0.2, ms = 300) {
+  if (_music.current) _music.current.fade(_music.current.volume(), v * _vol.music * _vol.master, ms);
+}
+export function unduckMusic(ms = 500) {
+  if (_music.current) _music.current.fade(_music.current.volume(), _vol.music * _vol.master, ms);
 }
 
-/**
- * Restore music volume after duck.
- * @param {number} fadeMs
- */
-export function unduckMusic(fadeMs = 500) {
-  if (!_music.current) return;
-  _music.current.fade(
-    _music.current.volume(),
-    _vol.music * _vol.master,
-    fadeMs
-  );
-}
+// ─── VOLUME ───────────────────────────────────────────────────────────────────
 
-// ─── VOLUME CONTROLS ─────────────────────────────────────────────────────────
+export function setMasterVol(v) { _vol.master = Math.max(0, Math.min(1, v)); Howler.volume(_vol.master); }
+export function setMusicVol(v)  { _vol.music  = Math.max(0, Math.min(1, v)); if (_music.current) _music.current.volume(_vol.music * _vol.master); }
+export function setSFXVol(v)    { _vol.sfx    = Math.max(0, Math.min(1, v)); if (_uiHowl) _uiHowl.volume(_vol.sfx); }
+export function setEngineVol(v) { _vol.engine = Math.max(0, Math.min(1, v)); }
+export function setAmbientVol(v){ _vol.ambient = Math.max(0, Math.min(1, v)); const a = _worldHowls.get('ambientCity'); if (a) a.volume(_vol.ambient * _vol.master); }
+export function toggleMute()    { Howler.mute(!Howler._muted); }
+export function getVolumeLevels(){ return { ..._vol }; }
 
-/**
- * Set master volume. All channels are relative to this.
- * @param {number} v  0–1
- */
-export function setMasterVol(v) {
-  _vol.master = Math.max(0, Math.min(1, v));
-  Howler.volume(_vol.master);
-}
+// ─── CONVENIENCE EXPORT ──────────────────────────────────────────────────────
 
-/** @param {number} v  0–1 */
-export function setMusicVol(v) {
-  _vol.music = Math.max(0, Math.min(1, v));
-  if (_music.current) _music.current.volume(_vol.music * _vol.master);
-}
-
-/** @param {number} v  0–1 */
-export function setSFXVol(v) {
-  _vol.sfx = Math.max(0, Math.min(1, v));
-  if (_uiHowl) _uiHowl.volume(_vol.sfx);
-}
-
-/** @param {number} v  0–1 */
-export function setEngineVol(v) {
-  _vol.engine = Math.max(0, Math.min(1, v));
-}
-
-/** @param {number} v  0–1 */
-export function setAmbientVol(v) {
-  _vol.ambient = Math.max(0, Math.min(1, v));
-  const ambHowl = _worldHowls.get('ambientCity');
-  if (ambHowl) ambHowl.volume(_vol.ambient * _vol.master);
-}
-
-/** Toggle global mute without losing volume settings. */
-export function toggleMute() {
-  Howler.mute(!Howler._muted);
-}
-
-/**
- * Return current volume levels (for SettingsMenu to read on open).
- * @returns {{ master:number, music:number, sfx:number, engine:number, ambient:number }}
- */
-export function getVolumeLevels() {
-  return { ..._vol };
-}
-
-// ─── CONVENIENCE OBJECT ──────────────────────────────────────────────────────
-/**
- * `audioManager` — a single named export grouping all audio methods.
- * Import and destructure, or use as audioManager.playUI('click') etc.
- */
 export const audioManager = Object.freeze({
-  // Init
   init: initAudio,
-
-  // Engine
-  loadEngineSound,
-  playEngine,
-  stopEngine,
-  setTurboWhine,
-
-  // Tires / surface
-  setTireSqueal,
-  setGravelSound,
-
-  // World
-  playImpact,
-  playFootstep,
-  startAmbient,
-  stopAmbient,
-
-  // UI
+  updateAudio, getAudioAdapter,
+  loadEngineSound, playEngine, stopEngine, setTurboWhine,
+  setTireSqueal, setGravelSound,
+  playImpact, playFootstep, startAmbient, stopAmbient,
   playUI,
-
-  // Music
-  playMusic,
-  duckMusic,
-  unduckMusic,
-
-  // Volume
-  setMasterVol,
-  setMusicVol,
-  setSFXVol,
-  setEngineVol,
-  setAmbientVol,
-  toggleMute,
-  getVolumeLevels,
+  playMusic, duckMusic, unduckMusic,
+  setMasterVol, setMusicVol, setSFXVol, setEngineVol, setAmbientVol,
+  toggleMute, getVolumeLevels,
 });

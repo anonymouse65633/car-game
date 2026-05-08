@@ -1,334 +1,281 @@
 /**
  * AIOpponent.js
- * Part 7 — Race System & AI
+ * Part 8 — Race System & AI (3-D rewrite)
  *
- * Handles a single AI opponent car in a race.
- * Responsibilities:
- *  - Waypoint path-following (local, no API)
- *  - Personality archetype behaviour
- *  - Receiving and applying Gemini behavioural updates
- *  - Collision avoidance (simple forward raycast approximation)
- *  - Surface-aware speed profiles
+ * Upgraded for the 3-D world:
+ *  - Waypoints now use {pos: THREE.Vector3, targetSpeedKmh, …} from Waypoints.js
+ *  - Navigation happens in the XZ plane; Y is snapped to terrain each frame
+ *  - createMesh(scene) spawns a visible placeholder car in the scene
+ *  - updateMesh(getTerrainHeight) moves and orients the mesh each frame
+ *  - Look-ahead curvature drives pre-corner braking (calls lookAheadCurvature)
+ *  - All legacy archetype/Gemini/slipstream/rubber-band API is preserved
  */
+
+import * as THREE from 'three';
+import { lookAheadCurvature } from './Waypoints.js';
 
 // ─── Personality Archetypes ────────────────────────────────────────────────
 export const ARCHETYPES = {
-  PUSHER: 'Pusher',
-  PACER: 'Pacer',
-  SPRINTER: 'Sprinter',
-  HUNTER: 'Hunter',
-  WILDCARD: 'Wildcard',
+  PUSHER:     'Pusher',
+  PACER:      'Pacer',
+  SPRINTER:   'Sprinter',
+  HUNTER:     'Hunter',
+  WILDCARD:   'Wildcard',
   TECHNICIAN: 'Technician',
 };
 
-/**
- * Base behavioural tendencies per archetype.
- * These act as priors before Gemini overrides them.
- *
- * aggression    : 0-10  – how hard they block / nudge
- * speedBias     : 0-1   – fraction added on top of difficulty base speed
- * lineDeviation : 0-1   – how much they wander from the ideal racing line
- */
 const ARCHETYPE_DEFAULTS = {
-  [ARCHETYPES.PUSHER]:     { aggression: 8,  speedBias: 0.02, lineDeviation: 0.15 },
-  [ARCHETYPES.PACER]:      { aggression: 2,  speedBias: 0.00, lineDeviation: 0.05 },
-  [ARCHETYPES.SPRINTER]:   { aggression: 5,  speedBias: 0.05, lineDeviation: 0.10 },
-  [ARCHETYPES.HUNTER]:     { aggression: 3,  speedBias: -0.04, lineDeviation: 0.08 },
-  [ARCHETYPES.WILDCARD]:   { aggression: 5,  speedBias: 0.00, lineDeviation: 0.20 },
-  [ARCHETYPES.TECHNICIAN]: { aggression: 1,  speedBias: 0.01, lineDeviation: 0.02 },
+  Pusher:     { aggression: 8,  speedBias:  0.02, lineDeviation: 0.15 },
+  Pacer:      { aggression: 2,  speedBias:  0.00, lineDeviation: 0.05 },
+  Sprinter:   { aggression: 5,  speedBias:  0.05, lineDeviation: 0.10 },
+  Hunter:     { aggression: 3,  speedBias: -0.04, lineDeviation: 0.08 },
+  Wildcard:   { aggression: 5,  speedBias:  0.00, lineDeviation: 0.20 },
+  Technician: { aggression: 1,  speedBias:  0.01, lineDeviation: 0.02 },
 };
 
-// Surface speed multipliers (tarmac = baseline)
-const SURFACE_SPEED = {
-  tarmac: 1.00,
-  gravel: 0.82,
-  wet:    0.88,
-  dirt:   0.75,
-};
+const SURFACE_SPEED = { tarmac: 1.00, gravel: 0.82, wet: 0.88, dirt: 0.75 };
 
-// ─── Driver Name Pool ──────────────────────────────────────────────────────
 const DRIVER_NAMES = [
-  'Vega', 'Cruz', 'Nomad', 'Blaze', 'Rook', 'Apex', 'Dusk', 'Kira',
-  'Torque', 'Slate', 'Mira', 'Hawk', 'Zane', 'Fynn', 'Lyra', 'Bolt',
-  'Crest', 'Flint', 'Nova', 'Stride', 'Echo', 'Wren', 'Dash', 'Riven',
-  'Pax', 'Vera', 'Cole', 'Sable', 'Jace', 'Nixe', 'Arc', 'Tyne',
-  'Orion', 'Vale', 'Reeve', 'Dax', 'Sora', 'Mace', 'Lux', 'Asher',
+  'Vega','Cruz','Nomad','Blaze','Rook','Apex','Dusk','Kira',
+  'Torque','Slate','Mira','Hawk','Zane','Fynn','Lyra','Bolt',
+  'Crest','Flint','Nova','Stride','Echo','Wren','Dash','Riven',
+  'Pax','Vera','Cole','Sable','Jace','Nixe','Arc','Tyne',
+  'Orion','Vale','Reeve','Dax','Sora','Mace','Lux','Asher',
 ];
 
-/** Return a random name that isn't already used by another opponent. */
 export function pickDriverName(usedNames = []) {
   const available = DRIVER_NAMES.filter(n => !usedNames.includes(n));
   if (!available.length) return `Driver${Math.floor(Math.random() * 999)}`;
   return available[Math.floor(Math.random() * available.length)];
 }
 
-// ─── AIOpponent Class ──────────────────────────────────────────────────────
+const AI_MESH_COLOURS = [
+  0xe74c3c, 0x3498db, 0x2ecc71, 0xf39c12,
+  0x9b59b6, 0x1abc9c, 0xe67e22, 0xecf0f1,
+];
+let _colourIdx = 0;
+
+let _sharedBodyGeo = null, _sharedRoofGeo = null, _sharedWheelGeo = null;
+function _getSharedGeo() {
+  if (!_sharedBodyGeo) {
+    _sharedBodyGeo  = new THREE.BoxGeometry(1.8, 0.65, 4.2);
+    _sharedRoofGeo  = new THREE.BoxGeometry(1.5, 0.55, 2.2);
+    _sharedWheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.28, 10);
+  }
+  return { body: _sharedBodyGeo, roof: _sharedRoofGeo, wheel: _sharedWheelGeo };
+}
+
 export class AIOpponent {
-  /**
-   * @param {object} opts
-   * @param {string}   opts.name          - Driver name
-   * @param {string}   opts.archetype     - One of ARCHETYPES values
-   * @param {number}   opts.difficultySpeed - Base speed fraction from difficulty table (0-1.05)
-   * @param {object[]} opts.waypoints      - Array of {x, y, z, speed} objects from Waypoint.js
-   * @param {string}   [opts.carColor]    - CSS colour string for rendering
-   */
-  constructor({ name, archetype, difficultySpeed, waypoints, carColor = '#e55' }) {
-    this.name = name;
+  constructor({ name, archetype, difficultySpeed, waypoints, startOffsetX = 0 }) {
+    this.name      = name;
     this.archetype = archetype;
-    this.carColor = carColor;
-
-    // Navigation state
     this.waypoints = waypoints;
-    this.waypointIndex = 0;        // which waypoint we're heading toward
-    this.lapsCompleted = 0;
-    this.finished = false;
-    this.racePosition = 0;         // filled in by RaceManager
+    this.waypointIndex  = 0;
+    this.lapsCompleted  = 0;
+    this.finished       = false;
+    this.finishTime     = 0;
+    this.racePosition   = 0;
 
-    // Physics approximation (2-D top-down friendly)
-    this.x = waypoints[0]?.x ?? 0;
-    this.y = waypoints[0]?.y ?? 0;
-    this.z = waypoints[0]?.z ?? 0;
-    this.speed = 0;                // current speed (units/s)
-    this.heading = 0;              // radians
+    const startWP = waypoints[0];
+    this.position = startWP
+      ? new THREE.Vector3(startWP.pos.x + startOffsetX, startWP.pos.y, startWP.pos.z)
+      : new THREE.Vector3();
 
-    // Behaviour state
-    const defaults = ARCHETYPE_DEFAULTS[archetype] ?? ARCHETYPE_DEFAULTS[ARCHETYPES.PACER];
-    this.aggression = defaults.aggression;
-    this.lineDeviation = defaults.lineDeviation;
+    this.heading  = 0;
+    this.speedMs  = 0;
 
-    // Speed calculation
-    this.difficultySpeed = difficultySpeed;   // e.g. 0.88 for Experienced
-    this.speedModifier = 1.0 + defaults.speedBias; // Gemini updates this
+    const def = ARCHETYPE_DEFAULTS[archetype] ?? ARCHETYPE_DEFAULTS.Pacer;
+    this.aggression    = def.aggression;
+    this.lineDeviation = def.lineDeviation;
+
+    this.difficultySpeed       = difficultySpeed;
+    this.speedModifier         = 1.0 + def.speedBias;
     this.effectiveSpeedFraction = difficultySpeed * this.speedModifier;
 
-    // Surface
-    this.currentSurface = 'tarmac';
-
-    // Slipstream
-    this.inSlipstream = false;
+    this.inSlipstream    = false;
     this.slipstreamBonus = 0;
+    this.currentSurface  = 'tarmac';
 
-    // Gemini state
-    this.geminiDecision = null;    // last decision received: 'A' | 'B' | 'C'
-    this.geminiCommentary = '';    // broadcast to race UI
-    this.lastGeminiUpdate = -Infinity; // elapsed seconds
-
-    // Lap timing
-    this.lapStartTime = 0;
-    this.bestLapTime = Infinity;
-    this.currentLapTime = 0;
-
-    // For Sprinter/Hunter archetype — phase tracking
+    this.geminiDecision   = null;
+    this.geminiCommentary = '';
+    this.lapStartTime     = 0;
+    this.bestLapTime      = Infinity;
+    this.currentLapTime   = 0;
     this._elapsedRaceTime = 0;
+
+    this.mesh = null;
+    this._meshColour = AI_MESH_COLOURS[_colourIdx % AI_MESH_COLOURS.length];
+    _colourIdx++;
   }
 
-  // ─── Getters ─────────────────────────────────────────────────────────────
+  // ─── Getters (legacy RaceManager compat) ──────────────────────────────────
+  get waypointProgress() { return this.lapsCompleted * this.waypoints.length + this.waypointIndex; }
+  get targetWaypoint()   { return this.waypoints[this.waypointIndex] ?? null; }
+  // RaceManager slipstream uses .x / .y for horizontal pos
+  get x() { return this.position.x; }
+  get y() { return this.position.z; }
 
-  /** How many waypoints has this car cleared? Used for gap calculation. */
-  get waypointProgress() {
-    return this.lapsCompleted * this.waypoints.length + this.waypointIndex;
+  // ─── 3-D Mesh ──────────────────────────────────────────────────────────────
+  createMesh(scene) {
+    const geo = _getSharedGeo();
+    const bodyMat  = new THREE.MeshLambertMaterial({ color: this._meshColour });
+    const roofMat  = new THREE.MeshLambertMaterial({ color: this._meshColour });
+    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+
+    const body = new THREE.Mesh(geo.body, bodyMat);
+    body.position.y = 0.65;
+    body.castShadow = true;
+
+    const roof = new THREE.Mesh(geo.roof, roofMat);
+    roof.position.set(0, 1.25, -0.3);
+
+    const wheelOffsets = [[ 0.95, 0.35, 1.35], [-0.95, 0.35, 1.35],
+                          [ 0.95, 0.35,-1.35], [-0.95, 0.35,-1.35]];
+    const wheels = wheelOffsets.map(([wx,wy,wz]) => {
+      const w = new THREE.Mesh(geo.wheel, wheelMat);
+      w.rotation.z = Math.PI / 2;
+      w.position.set(wx, wy, wz);
+      w.castShadow = true;
+      return w;
+    });
+
+    const group = new THREE.Group();
+    group.add(body, roof, ...wheels);
+    group.position.copy(this.position);
+    group.name = `ai_${this.name}`;
+    scene.add(group);
+    this.mesh = group;
+    return group;
   }
 
-  /** Current waypoint target */
-  get targetWaypoint() {
-    return this.waypoints[this.waypointIndex];
+  updateMesh(getTerrainHeight) {
+    if (!this.mesh) return;
+    if (getTerrainHeight) {
+      this.position.y = (getTerrainHeight(this.position.x, this.position.z) ?? 0) + 0.35;
+    }
+    this.mesh.position.copy(this.position);
+    this.mesh.rotation.y = -(this.heading - Math.PI / 2);
   }
 
-  // ─── Gemini Integration ───────────────────────────────────────────────────
+  disposeMesh(scene) {
+    if (this.mesh) { scene.remove(this.mesh); this.mesh = null; }
+  }
 
-  /**
-   * Called by RaceManager after a Gemini response arrives.
-   * @param {object} data  – { decision, aggression, speed_modifier, commentary }
-   */
+  // ─── Gemini ───────────────────────────────────────────────────────────────
   applyGeminiUpdate(data) {
     if (!data) return;
-
-    if (typeof data.aggression === 'number') {
-      this.aggression = Math.max(0, Math.min(10, data.aggression));
-    }
-    if (typeof data.speed_modifier === 'number') {
-      this.speedModifier = Math.max(0.90, Math.min(1.10, data.speed_modifier));
-    }
-    if (data.commentary) {
-      this.geminiCommentary = data.commentary;
-    }
+    if (typeof data.aggression === 'number')     this.aggression    = Math.max(0, Math.min(10, data.aggression));
+    if (typeof data.speed_modifier === 'number') this.speedModifier = Math.max(0.90, Math.min(1.10, data.speed_modifier));
+    if (data.commentary) this.geminiCommentary = data.commentary;
     this.geminiDecision = data.decision ?? null;
-
-    // Re-derive effective speed
     this.effectiveSpeedFraction = this.difficultySpeed * this.speedModifier;
   }
 
-  // ─── Per-frame Update ────────────────────────────────────────────────────
-
-  /**
-   * Update AI car position.
-   * @param {number} dt          – delta time in seconds
-   * @param {AIOpponent[]} others – other cars for collision avoidance
-   * @param {object}  playerState – { x, y, z } for rubber-band awareness
-   * @param {number}  totalLaps   – total laps in this race
-   */
-  update(dt, others = [], playerState = null, totalLaps = 3) {
+  // ─── Per-frame update ──────────────────────────────────────────────────────
+  update(dt, others = [], playerState = null, totalLaps = 3, getTerrainHeight = null) {
     if (this.finished) return;
 
     this._elapsedRaceTime += dt;
-    this.currentLapTime += dt;
+    this.currentLapTime   += dt;
 
-    // Archetype phase modifications
-    const speedFrac = this._archetypeSpeedFraction();
-
-    // Target waypoint
     const target = this.targetWaypoint;
     if (!target) { this.finished = true; return; }
 
-    // Direction to waypoint
-    const dx = target.x - this.x;
-    const dy = target.y - this.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const tp   = target.pos;
+    const dxRaw = tp.x - this.position.x;
+    const dzRaw = tp.z - this.position.z;
+    const dist  = Math.sqrt(dxRaw * dxRaw + dzRaw * dzRaw);
 
-    // Desired heading
-    const desiredHeading = Math.atan2(dy, dx);
+    // Heading in XZ (atan2 with swapped args = clockwise from +Z)
+    const desiredHeading = Math.atan2(dxRaw, dzRaw);
+    const noise = (Math.random() - 0.5) * 2 * this.lineDeviation * 0.05;
+    this.heading = desiredHeading + noise + this._collisionAvoidAngle(others);
 
-    // Add line deviation noise (lower-skill AIs wander from ideal line)
-    const deviationNoise = (Math.random() - 0.5) * 2 * this.lineDeviation * 0.05;
-    this.heading = desiredHeading + deviationNoise;
-
-    // Slipstream bonus
+    // Speed
+    const curveBrake  = this._curvatureBrake();
+    const speedFrac   = this._archetypeSpeedFraction();
+    const surfMul     = SURFACE_SPEED[this.currentSurface] ?? 1.0;
+    const wpSpeed     = (target.targetSpeedKmh ?? 100) / 3.6;
     this.slipstreamBonus = this._checkSlipstream(others);
+    const targetSpd   = wpSpeed * speedFrac * surfMul * (1 + this.slipstreamBonus) * curveBrake;
 
-    // Collision avoidance – soft steer if another car is very close ahead
-    const avoidAngle = this._collisionAvoidAngle(others);
-    this.heading += avoidAngle;
-
-    // Surface-adjusted target speed
-    const surfaceMul = SURFACE_SPEED[this.currentSurface] ?? 1.0;
-    const waypointSpeed = target.speed ?? 60; // units/s
-    const targetSpeed = waypointSpeed * speedFrac * surfaceMul * (1 + this.slipstreamBonus);
-
-    // Simple velocity lerp (no real physics engine needed for AI)
-    this.speed += (targetSpeed - this.speed) * Math.min(1, dt * 3);
+    this.speedMs += (targetSpd - this.speedMs) * Math.min(1, dt * 3);
+    this.speedMs  = Math.max(0, this.speedMs);
 
     // Move
-    this.x += Math.cos(this.heading) * this.speed * dt;
-    this.y += Math.sin(this.heading) * this.speed * dt;
+    this.position.x += Math.sin(this.heading) * this.speedMs * dt;
+    this.position.z += Math.cos(this.heading) * this.speedMs * dt;
 
-    // Advance waypoint when close enough
-    const arrivalThreshold = 8; // units
-    if (dist < arrivalThreshold) {
+    this.updateMesh(getTerrainHeight);
+
+    // Advance waypoint
+    if (dist < 12) {
       this.waypointIndex++;
       if (this.waypointIndex >= this.waypoints.length) {
-        // Completed a lap
         this.waypointIndex = 0;
         this.lapsCompleted++;
-
-        const lapTime = this.currentLapTime;
-        if (lapTime < this.bestLapTime) this.bestLapTime = lapTime;
+        const lapT = this.currentLapTime;
+        if (lapT < this.bestLapTime) this.bestLapTime = lapT;
         this.currentLapTime = 0;
-
         if (this.lapsCompleted >= totalLaps) {
-          this.finished = true;
+          this.finished   = true;
           this.finishTime = this._elapsedRaceTime;
         }
       }
     }
   }
 
-  // ─── Private helpers ──────────────────────────────────────────────────────
+  // ─── Private ──────────────────────────────────────────────────────────────
+  _curvatureBrake() {
+    try {
+      const curv = lookAheadCurvature(this.waypoints, this.waypointIndex, 5);
+      return 1.0 - Math.min(1, curv / Math.PI) * 0.55;
+    } catch { return 1.0; }
+  }
 
-  /**
-   * Archetype-specific speed fraction applied on top of difficultySpeed.
-   * Sprinters start fast and fade; Hunters start slow and accelerate late.
-   */
   _archetypeSpeedFraction() {
     const t = this._elapsedRaceTime;
     switch (this.archetype) {
-      case ARCHETYPES.SPRINTER:
-        // Fast first 60s, linearly fades to -5% by 180s
-        return this.speedModifier + Math.max(-0.05, 0.05 - (t / 180) * 0.10);
-      case ARCHETYPES.HUNTER:
-        // Starts -6%, ramps to +3% after 120s
-        return this.speedModifier + Math.min(0.03, -0.06 + (t / 120) * 0.09);
-      case ARCHETYPES.WILDCARD:
-        // Random ±4% each call – chaotic
-        return this.speedModifier + (Math.random() - 0.5) * 0.08;
-      default:
-        return this.speedModifier;
+      case 'Sprinter': return this.speedModifier + Math.max(-0.05, 0.05 - (t / 180) * 0.10);
+      case 'Hunter':   return this.speedModifier + Math.min(0.03, -0.06 + (t / 120) * 0.09);
+      case 'Wildcard': return this.speedModifier + (Math.random() - 0.5) * 0.08;
+      default:         return this.speedModifier;
     }
   }
 
-  /**
-   * Check if this car is in the slipstream of another car.
-   * Returns a speed bonus fraction (0 or 0.08).
-   */
   _checkSlipstream(others) {
-    const DRAFT_DIST = 12;     // units – ~1.5 car lengths
-    const DRAFT_ANGLE = 0.4;   // radians – narrow cone ahead
     for (const other of others) {
       if (other === this) continue;
-      const dx = other.x - this.x;
-      const dy = other.y - this.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < DRAFT_DIST) {
-        const angle = Math.abs(Math.atan2(dy, dx) - this.heading);
-        if (angle < DRAFT_ANGLE) return 0.08;
-      }
+      const dx = other.position.x - this.position.x;
+      const dz = other.position.z - this.position.z;
+      const d  = Math.sqrt(dx*dx + dz*dz);
+      if (d < 15 && Math.abs(Math.atan2(dx,dz) - this.heading) < 0.45) return 0.08;
     }
     return 0;
   }
 
-  /**
-   * Returns a heading correction angle to avoid nearby cars ahead.
-   * Simulates a short forward raycast.
-   */
   _collisionAvoidAngle(others) {
-    const AVOID_DIST = 14;
-    let correction = 0;
+    let c = 0;
     for (const other of others) {
       if (other === this) continue;
-      const dx = other.x - this.x;
-      const dy = other.y - this.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < AVOID_DIST) {
-        // Only avoid cars roughly ahead of us
-        const relAngle = Math.atan2(dy, dx) - this.heading;
-        if (Math.abs(relAngle) < Math.PI / 3) {
-          // Steer away: positive if other is to our left, negative if right
-          correction += relAngle > 0 ? -0.08 : 0.08;
-        }
+      const dx = other.position.x - this.position.x;
+      const dz = other.position.z - this.position.z;
+      const d  = Math.sqrt(dx*dx + dz*dz);
+      if (d < 10) {
+        const rel = Math.atan2(dx, dz) - this.heading;
+        if (Math.abs(rel) < Math.PI / 3) c += rel > 0 ? -0.07 : 0.07;
       }
     }
-    return Math.max(-0.3, Math.min(0.3, correction)); // clamp to avoid wild swerves
+    return Math.max(-0.25, Math.min(0.25, c));
   }
 
-  // ─── Snapshot for Gemini Prompt ──────────────────────────────────────────
-
-  /**
-   * Returns a plain object describing this AI's current race state.
-   * Used by GeminiRaceAI to build the prompt.
-   */
   getRaceStateSnapshot(playerPosition, totalCars) {
     return {
-      name:          this.name,
-      archetype:     this.archetype,
-      position:      this.racePosition,
-      totalCars,
-      playerPosition,
+      name: this.name, archetype: this.archetype,
+      position: this.racePosition, totalCars, playerPosition,
       lapsCompleted: this.lapsCompleted,
-      speed:         Math.round(this.speed),
-      aggression:    this.aggression,
-      inSlipstream:  this.inSlipstream,
+      speed: Math.round(this.speedMs * 3.6),
+      aggression: this.aggression, inSlipstream: this.inSlipstream,
     };
-  }
-
-  // ─── Serialisation ────────────────────────────────────────────────────────
-
-  toDebugString() {
-    return (
-      `[${this.name}/${this.archetype}] ` +
-      `pos(${this.x.toFixed(1)},${this.y.toFixed(1)}) ` +
-      `spd:${this.speed.toFixed(1)} ` +
-      `wp:${this.waypointIndex}/${this.waypoints.length} ` +
-      `lap:${this.lapsCompleted} ` +
-      `agg:${this.aggression}`
-    );
   }
 }

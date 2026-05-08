@@ -12,7 +12,7 @@ import { startLoop, onTick, LOOP_PHASE }                   from './engine/loop.j
 import { initCity }                                        from './world/city.js';
 import { initLandmarks }                                   from './world/landmarks.js';
 import { initEnvironment, connectSkySystem, isNight, getHour, getWeather } from './world/environment.js';
-import { initBuildings }                                   from './world/buildings.js';
+import { initBuildings, tickBuildings, checkEntryTriggers } from './world/buildings.js';
 import { initPOI }                                         from './world/poi.js';
 import { initNPCs, tickNPCs }                              from './world/npc.js';
 import { CARS }                                            from './car/carData.js';
@@ -29,6 +29,7 @@ import { BarnFindManager }                                 from './progression/B
 import { DailyRewardManager }                              from './progression/DailyRewardManager.js';
 import { FestivalPlaylistManager }                         from './progression/FestivalPlaylistManager.js';
 import { getTerrainHeight, getBiome }                      from './world/terrain.js';
+import { setTerrainHeightProvider }                        from './engine/physics.js';
 import * as THREE                                          from 'three';
 
 // Part 4 — SkySystem
@@ -39,6 +40,11 @@ import {
   initPostFX, renderPostFX, resizePostFX,
   updatePostFX, applyPostSettings, getComposer,
 } from './engine/PostFX.js';
+
+// Part 6 — Standalone MotionBlur (drives uniforms; PostFX uses its pass internally)
+import {
+  initMotionBlur, updateMotionBlur, setMotionBlurEnabled,
+} from './engine/MotionBlur.js';
 
 // Part 18 — Lens Effects: dirt, heat haze, speed lines, headlight flare, grain, vignette
 import { initLensEffects, updateLensEffects, disposeLensEffects } from './engine/LensEffects.js';
@@ -51,7 +57,8 @@ import {
   createCarHeadlights, updateHeadlights,
 } from './engine/CSMSystem.js';
 import { initLightShafts, updateLightShafts } from './world/LightShafts.js';
-import { getSunDirection }                    from './world/SkySystem.js';
+// getSunDirection now comes from DayNightSystem (sun arc owns it in Part 5)
+// import { getSunDirection } from './world/SkySystem.js';  // superseded
 import {
   initParticleFX, updateParticleFX, setParticleQuality,
 } from './fx/ParticleFX.js';
@@ -93,6 +100,7 @@ import {
 import {
   initDayNight, updateDayNight, getMoonLight,
   getStreetLightPositions, isStreetLightsActive,
+  getSunDirection,   // Part 5: sun arc owns direction; replaces SkySystem export
 } from './world/DayNightSystem.js';
 
 // Part 7 — PBR Car Paint
@@ -100,6 +108,12 @@ import {
   initCarPaintSystem, updateCarReflection,
   updateBrakeThermal, applyReflectionPreset,
 } from './car/CarPaintSystem.js';
+
+// Part 8 — Race system
+import { RaceSession }  from './race/RaceSession.js';
+import { getRaceById, RACES } from './race/Racedata.js';
+import { RaceSetupScreen }    from './ui/RaceSetupScreen.js';
+import { RaceResultsScreen }  from './ui/RaceResultsScreen.js';
 
 async function boot() {
   // Firebase: gracefully ignore failures (placeholder config, offline, etc.)
@@ -122,6 +136,10 @@ async function boot() {
   // Part 5 — Full post-processing stack (replaces legacy bloom+FXAA)
   initPostFX(renderer, scene, camera);
   hookPostFX(renderPostFX, resizePostFX);
+
+  // Part 6 — Motion blur (standalone module; PostFX also has an internal pass,
+  // but this module owns the uniform updates and the settings-menu toggle)
+  initMotionBlur(renderer, scene, camera, false);
 
   // Part 11 / Preset — apply saved graphics preset (defaults to 'low' for
   // compatibility; player can raise it in Settings → Graphics).
@@ -187,6 +205,9 @@ async function boot() {
   if (streetLamps) finaliseLampIntensities(streetLamps);
   const lavaGroup   = _savedPreset !== 'low' ? spawnLavaGlow(scene) : null;
 
+  // Wire terrain height into physics raycasts (suspension needs this)
+  setTerrainHeightProvider(getTerrainHeight);
+
   try { await initRoadNetwork(scene, getTerrainHeight); }
   catch(e) { console.warn('[boot] RoadNetwork failed', e.message); }
 
@@ -241,7 +262,11 @@ async function boot() {
   // Part 10 — Tyre smoke, brake sparks & exhaust (skip on low — shader + frustumCulled=false)
   const smokeFX = _savedPreset !== 'low' ? initSmokeFX(scene, camera) : null;
 
-  const drivingController = new DrivingController(playerCar, { camera, scene });
+  // Part 7 — pass audio adapter so DrivingController can drive engine/squeal internally
+  const drivingController = new DrivingController(playerCar, {
+    camera, scene,
+    audioManager: audioManager.getAudioAdapter(),
+  });
 
   // Part 13 — Camera Shake & G-Force Feedback
   initCameraFX(camera, getTerrainHeight);
@@ -262,8 +287,6 @@ async function boot() {
 
   const festivalPlaylistManager = new FestivalPlaylistManager({ saveManager, progressionManager, accoladeManager, notificationSystem });
 
-  // NOTE: RaceManager is created per-race, not at boot.
-
   // HUDManager needs the Three.js canvas — pass it via the options object.
   // init() is async and builds the full DOM overlay + child modules.
   const hudManager = new HUDManager({
@@ -272,6 +295,110 @@ async function boot() {
     onResumeGame: () => { /* resume physics / input if needed */ },
   });
   await hudManager.init();
+
+  // ── Part 8 — Race system setup ───────────────────────────────────────────
+
+  // Shared results screen (shown after every race)
+  const raceResultsScreen = new RaceResultsScreen({
+    container: document.getElementById('hc-menu-layer') ?? document.body,
+  });
+
+  // The active race session (null when free-roaming)
+  let _raceSession = null;
+
+  /**
+   * Start a race. Called from the RaceSetupScreen 'start' event.
+   * @param {string} raceId
+   * @param {string} difficulty  – lowercase key
+   * @param {object} assists
+   */
+  function startRace(raceId, difficulty, assists) {
+    if (_raceSession?.isActive) _raceSession.stop();
+
+    _raceSession = new RaceSession({
+      scene,
+      getTerrainHeight,
+      hudManager,
+      playerCarRef: playerCar,   // car.js object exposes .position, .speedKmh, .lapsCompleted
+      onEnd: (results) => {
+        raceResultsScreen.show(results, {
+          onRaceAgain:    () => openRaceSetup(raceId),
+          onNextEvent:    () => { /* could open map / event picker */ },
+          onReturnToCity: () => { /* already free-roaming */ },
+          onWheelspin:    () => hudManager.showWheelspin?.(),
+        });
+        // Award credits/XP via progression
+        try {
+          progressionManager.addXP(results.xpEarned ?? 0);
+        } catch { /* progression may not expose addXP yet */ }
+      },
+    });
+
+    _raceSession.start({ raceId, difficulty, assists });
+  }
+
+  /**
+   * Show the RaceSetupScreen for a given race.
+   */
+  function openRaceSetup(raceId) {
+    // Build a minimal SettingsStore shim if a real one isn't wired yet
+    const settingsShim = {
+      get:  (k, def) => def,
+      set:  () => {},
+    };
+
+    // RaceSession acts as the raceManager for setup screen
+    const tempSession = _raceSession ?? new RaceSession({
+      scene, getTerrainHeight, hudManager, playerCarRef: playerCar, onEnd: () => {},
+    });
+
+    const hudRoot = document.getElementById('hc-hud-root') ?? document.body;
+    const setupScreen = new RaceSetupScreen(hudRoot, settingsShim, tempSession);
+
+    setupScreen
+      .on('start',  ({ raceId: rid, difficulty, assists }) => {
+        startRace(rid, difficulty, assists);
+      })
+      .on('cancel', () => { /* just dismiss */ });
+
+    setupScreen.show(raceId, {
+      name:  playerCar?.modelName ?? 'My Car',
+      class: 'A',
+      pr:    500,
+    });
+  }
+
+  // ── Proximity trigger: show race setup when approaching a start line ──────
+  // Each race in RACES has a startPos { x, y, z }. When the player gets within
+  // RACE_TRIGGER_RADIUS units, prompt them to start the race.
+  const RACE_TRIGGER_RADIUS  = 60;   // metres
+  const RACE_TRIGGER_COOLDOWN = 8;   // seconds before same trigger fires again
+  const _raceCooldowns = new Map();  // raceId → timestamp
+
+  function _checkRaceProximity(carPos) {
+    if (_raceSession?.isActive) return;   // already racing
+
+    const now = performance.now() / 1000;
+
+    for (const race of RACES) {
+      if (!race.startPos) continue;
+      const { x, z } = race.startPos;
+      const dx = carPos.x - x;
+      const dz = carPos.z - z;
+      if (dx*dx + dz*dz > RACE_TRIGGER_RADIUS * RACE_TRIGGER_RADIUS) continue;
+
+      const lastTrigger = _raceCooldowns.get(race.id) ?? 0;
+      if (now - lastTrigger < RACE_TRIGGER_COOLDOWN) continue;
+
+      _raceCooldowns.set(race.id, now);
+      openRaceSetup(race.id);
+      return;  // one trigger at a time
+    }
+  }
+
+  // Expose so demo.html / index.html scripts can trigger races directly
+  window.__startRace    = startRace;
+  window.__openRaceSetup = openRaceSetup;
 
   // ── Frame counter — throttles non-critical visual updates ─────────────────
   // %4 = every ~67ms at 60fps (vegetation, markings, lava, barnFind)
@@ -345,6 +472,22 @@ async function boot() {
       updateSmokeFX(smokeFX, playerCar, drivingController, dt);
     }
 
+    // Part 7 — Engine RPM pitch, tyre squeal by lateral slip, turbo, rain ambient crossfade
+    {
+      const _w7 = typeof getWeather !== 'undefined' ? getWeather() : { isRain: false, blend: 0 };
+      const tx  = playerCar.transmission;
+      audioManager.updateAudio(dt, {
+        rpm:       tx?.rpm        ?? 800,
+        throttle:  drivingController._throttleSmooth ?? 0,
+        boost:     tx?.boostLevel ?? 0,
+        slipMag:   Math.abs(drivingController._frontSlipV ?? 0) +
+                   Math.abs(drivingController._rearSlipV  ?? 0),
+        speedKmh:  playerCar.speedKmh ?? 0,
+        isRain:    _w7.isRain  ?? false,
+        rainBlend: _w7.blend   ?? 0,
+      });
+    }
+
     // Part 12 — Surface audio: crossfade loops, speed volume, gravel pings (skip on low — audio 404s)
     if (_savedPreset !== 'low') {
       const weather = typeof getWeather !== 'undefined' ? getWeather() : { isRain: false, blend: 0 };
@@ -400,6 +543,12 @@ async function boot() {
       isNight:     night,
     });
 
+    // Part 6 — drive standalone MotionBlur uniforms (also feeds PostFX pass)
+    updateMotionBlur(dt, {
+      speedKph:  playerCar.speedKmh ?? 0,
+      lateralG:  playerCar.lateralG ?? 0,
+    });
+
     // Part 18 — Lens effects (skipped on low)
     if (_savedPreset !== 'low') {
       updateLensEffects(dt, {
@@ -409,6 +558,18 @@ async function boot() {
                     ? getBiome(playerCar.position?.x ?? 0, playerCar.position?.z ?? 0)
                     : '',
       });
+    }
+
+    // Part 4 — building streetlights + neon + entry triggers
+    const carPos = car?.getPosition?.() ?? camera.position;
+    tickBuildings(dt, carPos);
+    checkEntryTriggers(carPos);
+
+    // Part 8 — Race session update + proximity trigger
+    if (_raceSession?.isActive) {
+      _raceSession.update(dt);
+    } else {
+      _checkRaceProximity(carPos);
     }
 
     // Part 6 — god ray sun shaft update
