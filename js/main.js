@@ -241,7 +241,7 @@ async function boot() {
   // Part 10 — Tyre smoke, brake sparks & exhaust (skip on low — shader + frustumCulled=false)
   const smokeFX = _savedPreset !== 'low' ? initSmokeFX(scene, camera) : null;
 
-  const drivingController = new DrivingController(playerCar, inputState);
+  const drivingController = new DrivingController(playerCar, { camera, scene });
 
   // Part 13 — Camera Shake & G-Force Feedback
   initCameraFX(camera, getTerrainHeight);
@@ -280,7 +280,9 @@ async function boot() {
 
   onTick((dt) => {
     _tickFrame++;
-    stepPhysics(dt);
+    // NOTE: loop.js already calls stepPhysics() at fixed 60 Hz before this
+    // subscriber fires — calling it again here caused a double-step.
+
     // Part 16 — Water drag: slow car when tyres are below water surface
     {
       const carPos = playerCar.position;
@@ -288,15 +290,19 @@ async function boot() {
         ? getWaterDragFactor(carPos.x, carPos.z, carPos.y)
         : 1.0;
       if (drag > 1.0 && drivingController._throttleSmooth !== undefined) {
-        // Bleed velocity — apply drag as velocity multiplier this frame
         if (playerCar.body?.velocity) {
           playerCar.body.velocity.scale(Math.max(0, 1 - (drag - 1) * dt * 3));
         }
       }
     }
-    drivingController.update(dt);
-    playerCar.update(dt);
-    // barnFind scan: every 4th frame — player position barely changes in 4 frames
+    // Pass the live inputState so the controller reads throttle/brake/steer,
+    // and pass world so surface raycasts work.  Both were previously missing
+    // which caused a TypeError in _processInput every frame, leaving the car frozen.
+    // DrivingController.update() calls playerCar.update() internally — removed
+    // the extra playerCar.update(dt) call that was causing double mesh sync.
+    drivingController.update(dt, inputState, world);
+
+    // barnFind scan: every 4th frame
     if (_tickFrame % 4 === 0) barnFindManager.tick(playerCar.position);
     tickNPCs(dt, playerCar.position);
     hudManager.update(playerCar.getHUDState());
@@ -378,8 +384,8 @@ async function boot() {
       }
       updateRoadMarkings(performance.now() * 0.001);
     }
-
-    renderFrame();
+    // NOTE: renderFrame() removed — loop.js already calls it in the RENDER
+    // phase via _builtinRender, so calling it here caused a double-render.
   }, LOOP_PHASE.UPDATE);
 
   // Part 5 — drive speed-reactive post-processing uniforms (LATE phase,

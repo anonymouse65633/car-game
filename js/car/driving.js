@@ -277,7 +277,8 @@ export class DrivingController {
 
     // Steer: smooth + assist multiplier
     const smoothRate = STEER_SMOOTH_RATE * (assists.steeringAssist ? ASSIST_SMOOTH_MULT : 1.0);
-    const rawSteer   = clamp(raw.steerAxis ?? 0, -1, 1);
+    // inputState uses `steer` (not `steerAxis`) — read both for compatibility
+    const rawSteer   = clamp(raw.steer ?? raw.steerAxis ?? 0, -1, 1);
     this._steerSmooth = lerp(this._steerSmooth, rawSteer, clamp(smoothRate * dt, 0, 1));
 
     // Speed-sensitive steer angle (less angle at high speed)
